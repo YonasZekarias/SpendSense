@@ -23,3 +23,17 @@ git log --until='2026-03-10' --oneline -12 --date=short
 ```
 
 **What counts (examples):** system trials with component breakdown and ideation; independent design-pattern implementations; component-model test simulations; miscellaneous refactoring / clean-code improvements.
+
+---
+
+## Reporting week 1 — Ideation tab *(log Wed 2026-02-25)*
+
+### Component breakdown (cognitive load)
+
+Target **5–7 boxes** on one mental screen: **Web (Next.js)**, **Core API (Django)**, **PostgreSQL**, **shared UI kit**, **Realtime (optional)** — each box maps to a deployable or testable slice. The living table and dependency notes are in `docs/CBSD_Component_Breakdown.md` (added this reporting week).
+
+### Figma and how things connect
+
+- **Figma:** early frames for auth and landing; each frame gets a future route under `apps/web/src/app/`.
+- **Implementation:** Django apps hold domain data; the web client consumes REST first, then JWT-protected flows as they land.
+- **Slide wording (interconnection):** **Docs, Gemini, Stitch with G, Figma – interconnection** — keep names aligned across design tools, AI-assisted sketches, and repo folders so reviewers can trace a box from slide → frame → path.
