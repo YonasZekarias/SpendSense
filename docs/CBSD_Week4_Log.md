@@ -37,3 +37,28 @@ Target **5–7 boxes** on one mental screen: **Web (Next.js)**, **Core API (Djan
 - **Figma:** early frames for auth and landing; each frame gets a future route under `apps/web/src/app/`.
 - **Implementation:** Django apps hold domain data; the web client consumes REST first, then JWT-protected flows as they land.
 - **Slide wording (interconnection):** **Docs, Gemini, Stitch with G, Figma – interconnection** — keep names aligned across design tools, AI-assisted sketches, and repo folders so reviewers can trace a box from slide → frame → path.
+
+---
+
+## Reporting week 1 — Component model practice *(log Fri 2026-02-27)*
+
+### Deep dive: **Custom User model** (Django identity root)
+
+**Architectural unit:** the Django **user** type the whole API will attach permissions, profile fields, and vendor extensions to — configured in settings and materialized in `users` (or equivalent) migrations.
+
+**Object model (essentials):**
+
+- **`User`** — extends `AbstractUser` (or custom base) as the single **authentication identity** for the project.
+- **Settings contract** — `AUTH_USER_MODEL` points at this model; all foreign keys to “user” must use `get_user_model()` or `settings.AUTH_USER_MODEL` to avoid circular imports and swap bugs.
+
+**X-MAN–style flow (actors / messages):**
+
+| Step | Actor | Message / outcome |
+|------|--------|-------------------|
+| 1 | Developer | Declares `User` model and sets `AUTH_USER_MODEL`. |
+| 2 | Django | Loads model; migrations create the correct table shape. |
+| 3 | API (later) | Serializers and views attach registration, JWT, and profile without changing the core identity table each time. |
+
+**Component model test simulations (ideas):** migration checks that `AUTH_USER_MODEL` resolves; factory or fixture creates a user and asserts unique email/username constraints as defined.
+
+**Design pattern:** **Single identity root** — one user table to anchor RBAC, finance ownership, and market submissions later.
