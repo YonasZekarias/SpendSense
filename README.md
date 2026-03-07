@@ -7,8 +7,8 @@ SpendSense Ethiopia is a comprehensive, hybrid-architecture web platform designe
 *This project is submitted to the Department of Software Engineering, College of Electrical Engineering and Computing at Adama Science and Technology University (ASTU).*
 
 ## 👥 Meet the Team
-* **Azariel Tesfaye**
 * **Yonas Zekariyas**
+* **Azariel Tesfaye**
 * **Yonas Adane**
 * **Yonas Teshome**
 * **Sumaya Adem**
@@ -43,7 +43,7 @@ The project is structured as a monorepo containing the frontend and the dual-bac
 ```text
 spendsense-monorepo/
 ├── spendsense-client/          # Next.js frontend web application
-└── server/                     # Backend directory
+└── spendsense-server/                     # Backend directory
     ├── realtime_service/       # Express.js server for WebSocket real-time alerts
     ├── core_api/               # Django main configuration & routing
     ├── users/                  # Django App: User identity, RBAC, and Vendor profiles
