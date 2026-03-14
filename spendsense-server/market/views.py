@@ -1,22 +1,40 @@
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
+from django.db.models import Avg
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Item
-from .serializers import ItemSerializer
+from .models import PriceSubmission
+from .serializers import PriceSubmissionSerializer
 
 
-class ItemListView(ListAPIView):
-    """GET /api/market/items/ — list tracked items. Query params: category, search."""
-    permission_classes = [AllowAny]
-    serializer_class = ItemSerializer
-    queryset = Item.objects.all().order_by('category', 'name')
+class SubmitPriceView(APIView):
+    """POST /api/market/prices/submit/ — submit a price report (crowdsourcing)."""
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        category = self.request.query_params.get('category')
-        search = self.request.query_params.get('search')
-        if category:
-            qs = qs.filter(category__iexact=category)
-        if search:
-            qs = qs.filter(name__icontains=search)
-        return qs
+    def post(self, request):
+        serializer = PriceSubmissionSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        # Optional: flag outlier vs recent average for same item/city
+        item = serializer.validated_data.get('item')
+        city = serializer.validated_data.get('city')
+        price_value = serializer.validated_data.get('price_value')
+        recent = PriceSubmission.objects.filter(
+            item=item, city=city, status='approved',
+        ).aggregate(avg=Avg('price_value'))
+        avg = recent.get('avg')
+        submission = serializer.save()
+        if avg is not None:
+            from decimal import Decimal
+            pct = abs(float(price_value - avg) / float(avg)) * 100
+            if pct > 50:
+                submission._outlier_warning = (
+                    f'Price differs by {pct:.0f}% from recent average ({avg:.2f}).'
+                )
+        return Response(
+            PriceSubmissionSerializer(submission, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
