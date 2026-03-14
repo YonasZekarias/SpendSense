@@ -6,4 +6,5 @@ app_name = 'market'
 
 urlpatterns = [
     path('prices/submit/', views.SubmitPriceView.as_view(), name='price-submit'),
+    path('prices/averages/', views.PriceAveragesView.as_view(), name='price-averages'),
 ]
