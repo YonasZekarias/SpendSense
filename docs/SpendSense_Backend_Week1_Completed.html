@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendSense Backend — Week 1 Completed Work</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #222; line-height: 1.6; }
+    h1 { font-size: 1.6em; border-bottom: 2px solid #333; padding-bottom: 0.3em; }
+    h2 { font-size: 1.2em; margin-top: 1.5em; color: #333; }
+    h3 { font-size: 1.05em; margin-top: 1em; }
+    p { margin: 0.5em 0; }
+    ul { margin: 0.5em 0; padding-left: 1.5em; }
+    li { margin: 0.25em 0; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 1.5em 0; }
+    .meta { color: #666; font-size: 0.95em; }
+    @media print { body { margin: 0; padding: 15px; } }
+  </style>
+</head>
+<body>
+  <h1>SpendSense Backend — Week 1 Completed Work</h1>
+  <p class="meta"><strong>Document:</strong> Summary of backend deliverables completed in Week 1 (4-Week Task Plan).</p>
+  <hr>
+
+  <h2>1. User &amp; Identity (Django)</h2>
+  <h3>1.1 User model</h3>
+  <ul>
+    <li><strong>Custom User</strong> extends Django’s <code>AbstractBaseUser</code> and <code>PermissionsMixin</code>.</li>
+    <li><strong>USERNAME_FIELD</strong> = <code>email</code> (login with email, not username).</li>
+    <li><strong>Fields:</strong> id (UUID), full_name, email, phone, role, city, household_size, income_bracket, is_staff, is_active, created_at.</li>
+    <li><strong>Password</strong> handled via Django’s built-in hashing (no raw password_hash).</li>
+    <li><strong>UserManager</strong> with create_user() and create_superuser().</li>
+    <li><strong>Admin:</strong> User, Vendor, and Notification registered in Django admin.</li>
+  </ul>
+  <h3>1.2 Auth API</h3>
+  <ul>
+    <li><strong>POST /api/auth/token/</strong> — Login with email and password; returns JWT access + refresh tokens.</li>
+    <li><strong>POST /api/auth/token/refresh/</strong> — Refresh access token using refresh token.</li>
+    <li><strong>Custom JWT view</strong> accepts email (or username) in the request body for compatibility with the API spec.</li>
+  </ul>
+  <h3>1.3 User API</h3>
+  <ul>
+    <li><strong>POST /api/users/register/</strong> — Register: full_name, email, password, optional phone, city, household_size, income_bracket; returns user profile (no password).</li>
+    <li><strong>GET /api/users/me/</strong> — Current user profile (authenticated).</li>
+    <li><strong>PATCH /api/users/me/</strong> — Update own profile (income, household_size, city, etc.); RBAC so users only edit their own profile.</li>
+  </ul>
+  <hr>
+
+  <h2>2. Market — Items &amp; Price Submission</h2>
+  <h3>2.1 Items</h3>
+  <ul>
+    <li><strong>GET /api/market/items/</strong> — List tracked items: id, name, category, unit.</li>
+    <li><strong>Query parameters:</strong> category (filter by category), search (filter by name).</li>
+    <li><strong>Permission:</strong> AllowAny (public read).</li>
+  </ul>
+  <h3>2.2 Price submission (crowdsourcing)</h3>
+  <ul>
+    <li><strong>Model: PriceSubmission</strong> — user, item, price_value, market_location, city, date_observed, status (pending/approved/rejected), created_at.</li>
+    <li><strong>POST /api/market/prices/submit/</strong> — Submit a price report; body: item_id, price_value, market_location, city, date_observed.</li>
+    <li><strong>Validation:</strong> Required fields and price_value &gt; 0.</li>
+    <li><strong>Optional outlier warning:</strong> If price differs from recent approved average by &gt; 50%, response includes a warning message.</li>
+    <li><strong>Permission:</strong> IsAuthenticated; submissions stored with status = pending.</li>
+  </ul>
+  <h3>2.3 Price averages</h3>
+  <ul>
+    <li><strong>GET /api/market/prices/averages/</strong> — Aggregated average prices from approved submissions only.</li>
+    <li><strong>Query parameters:</strong> item_id, city, from_date, to_date.</li>
+    <li><strong>Response:</strong> List of item_id, item_name, average_price, city, source (crowdsourced), count.</li>
+    <li><strong>Permission:</strong> AllowAny.</li>
+  </ul>
+  <hr>
+
+  <h2>3. Database &amp; DevOps</h2>
+  <h3>3.1 Migrations</h3>
+  <p>User model and related changes require running <code>python manage.py makemigrations</code> and <code>python manage.py migrate</code> after merging Week 1 branches (see backend README).</p>
+  <h3>3.2 Seed data</h3>
+  <ul>
+    <li><strong>Management command:</strong> <code>python manage.py seed_items</code></li>
+    <li><strong>Creates initial items</strong> if they do not exist: Teff, Wheat Flour, Cooking Oil, Rice, Sugar, Onion, Tomato, Potato, Lentils, Bread, Fuel (Benzene/Diesel), Minibus, Electricity, Water (Food, Transport, Utilities).</li>
+  </ul>
+  <h3>3.3 Backend run documentation</h3>
+  <p><strong>spendsense-server/README.md</strong> includes: Prerequisites (Python, PostgreSQL); Setup (install deps, .env, migrate, optional seed_items and createsuperuser); How to run (runserver); Pointers to admin and API auth endpoints.</p>
+  <hr>
+
+  <h2>4. Summary Checklist (Week 1 Backend)</h2>
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>User model (AbstractBaseUser, email, password hashing)</td><td>Done</td></tr>
+      <tr><td>JWT auth (token + refresh, email login)</td><td>Done</td></tr>
+      <tr><td>POST /api/users/register/</td><td>Done</td></tr>
+      <tr><td>GET /api/users/me/</td><td>Done</td></tr>
+      <tr><td>PATCH /api/users/me/</td><td>Done</td></tr>
+      <tr><td>GET /api/market/items/ (with filters)</td><td>Done</td></tr>
+      <tr><td>PriceSubmission model</td><td>Done</td></tr>
+      <tr><td>POST /api/market/prices/submit/ (with outlier warning)</td><td>Done</td></tr>
+      <tr><td>GET /api/market/prices/averages/</td><td>Done</td></tr>
+      <tr><td>seed_items management command</td><td>Done</td></tr>
+      <tr><td>Backend README (run/setup docs)</td><td>Done</td></tr>
+    </tbody>
+  </table>
+  <hr>
+
+  <h2>5. Git Branches Delivered (Week 1)</h2>
+  <ol>
+    <li><strong>week1/user-model-auth</strong> — User model + Auth API</li>
+    <li><strong>week1/user-api</strong> — Register + GET/PATCH me</li>
+    <li><strong>week1/market-items</strong> — GET items</li>
+    <li><strong>week1/price-submission</strong> — PriceSubmission + POST submit</li>
+    <li><strong>week1/market-averages</strong> — GET averages</li>
+    <li><strong>week1/migrations-seed-docs</strong> — README + seed_items</li>
+  </ol>
+  <p>All branches have been pushed to the repository. Merge order and PR links are in <code>docs/WEEK1_PULL_REQUESTS.md</code>.</p>
+  <hr>
+  <p class="meta"><em>SpendSense Ethiopia — Backend Week 1 completed work summary.</em></p>
+</body>
+</html>
