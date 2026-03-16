@@ -100,7 +100,9 @@ export default function SignupPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                onChange={(event) => setPassword(event.target.value.replace(/\D/g, ""))}
                 minLength={8}
                 required
               />
