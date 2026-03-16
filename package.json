@@ -1,20 +1,23 @@
 {
-  "name": "spendsense-monorepo",
+  "name": "with-docker",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "clean": "turbo run clean",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "lint": "turbo run lint",
+    "test": "turbo run test"
   },
+  "dependencies": {},
   "devDependencies": {
-    "prettier": "^3.7.4",
-    "turbo": "^2.8.17",
-    "typescript": "5.9.2"
+    "prettier": "^3.2.5",
+    "turbo": "^2.8.17"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=14.0.0",
+    "npm": ">=7.0.0"
   },
   "packageManager": "npm@10.9.2",
   "workspaces": [
