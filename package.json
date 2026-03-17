@@ -10,8 +10,9 @@
     "lint": "turbo run lint",
     "test": "turbo run test"
   },
-  "dependencies": {},
   "devDependencies": {
+    "eslint-plugin-check-file": "^2.8.0",
+    "eslint-plugin-unicorn": "^48.0.1",
     "prettier": "^3.2.5",
     "turbo": "^2.8.17"
   },

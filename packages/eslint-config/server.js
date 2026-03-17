@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["eslint:recommended"],
+  extends: ["eslint:recommended","./base"],
   env: {
     node: true,
     es6: true,
