@@ -1,44 +1,25 @@
-ARG NODE_VERSION=24.13.1
-FROM node:${NODE_VERSION}-slim AS base
+# For more information, please refer to https://aka.ms/vscode-docker-python
+FROM python:3-slim
 
-# The web Dockerfile is copy-pasted into our main docs at /docs/handbook/deploying-with-docker.
-# Make sure you update this Dockerfile, the Dockerfile in the web workspace and copy that over to Dockerfile in the docs.
+EXPOSE 8000
 
-FROM base AS prepare
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-# Set working directory
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+# Install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
+
 WORKDIR /app
-RUN yarn global add turbo
-COPY . .
-RUN turbo prune api --docker
+COPY . /app
 
-# Add lockfile and package.json's of isolated subworkspace
-FROM base AS builder
-WORKDIR /app
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 
-# First install dependencies (as they change less often)
-COPY --from=prepare /app/out/json/ .
-RUN yarn install
-
-# Build the project and its dependencies
-COPY --from=prepare /app/out/full/ .
-
-# Uncomment and use build args to enable remote caching
-# ARG TURBO_TEAM
-# ENV TURBO_TEAM=$TURBO_TEAM
-
-# ARG TURBO_TOKEN
-# ENV TURBO_TOKEN=$TURBO_TOKEN
-
-RUN yarn turbo build
-
-FROM node:${NODE_VERSION}-alpine AS runner
-WORKDIR /app
-
-# Don't run production as root
-RUN addgroup --system --gid 1001 expressjs
-RUN adduser --system --uid 1001 expressjs
-USER expressjs
-COPY --from=builder /app .
-
-CMD node apps/api/dist/index.js
+# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "core_api.wsgi"]

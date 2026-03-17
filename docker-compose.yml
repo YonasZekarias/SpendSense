@@ -11,21 +11,21 @@ services:
       - 3000:3000
     networks:
       - app_network
-  api:
-    container_name: api
+  realtime:
+    container_name: realtime
     build:
       context: .
-      dockerfile: ./apps/api/Dockerfile
+      dockerfile: ./apps/realtime/Dockerfile
     restart: always
     ports:
       - 3001:3001
     networks:
       - app_network
-  api-server:
-    container_name: api-server
+  api:
+    container_name: api
     build:
       context: .
-      dockerfile: ./apps/api-server/Dockerfile
+      dockerfile: ./apps/api/Dockerfile
     restart: always
     ports:
       - 8000:8000
