@@ -7,31 +7,31 @@
   "files": [
     "dist"
   ],
-	"exports": {
-		"./styles/globals.css": "./src/styles/globals.css",
-		"./postcss.config": "./postcss.config.mjs",
-		"./lib/*": "./src/lib/*.ts",
-		"./components/*": "./src/components/ui/*.tsx",
-		"./hooks/*": "./src/hooks/*.ts"
-	},
+  "exports": {
+    "./styles/globals.css": "./src/styles/globals.css",
+    "./postcss.config": "./postcss.config.js",
+    "./lib/*": "./src/lib/*.ts",
+    "./components/*": "./src/components/ui/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts"
+  },
   "license": "MIT",
   "scripts": {
-    "build:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css",
+    "build:styles": "tailwindcss -i ./src/styles/globals.css -o ./dist/index.css",
     "build:components": "tsc",
     "check-types": "tsc --noEmit",
-    "dev:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css --watch",
+    "dev:styles": "tailwindcss -i ./src/styles/globals.css -o ./dist/index.css --watch",
     "dev:components": "tsc --watch",
     "lint": "eslint src --max-warnings 0"
   },
   "peerDependencies": {
-    "react": "^19"
-  },
+  "react": "^18.2.0",
+  "@types/react": "^18"
+},
   "devDependencies": {
     "@repo/eslint-config": "*",
     "@repo/tailwind-config": "*",
     "@repo/typescript-config": "*",
     "@tailwindcss/cli": "^4.1.5",
-    "@types/react": "^19.1.0",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.1",
     "postcss": "^8.5.8",
@@ -49,6 +49,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.577.0",
     "next-themes": "^0.4.6",
+    "radix-ui": "^1.4.3",
     "react-day-picker": "^9.14.0",
     "react-resizable-panels": "^4.7.3",
     "recharts": "^2.15.4",

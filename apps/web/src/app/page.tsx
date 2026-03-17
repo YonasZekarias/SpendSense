@@ -26,7 +26,7 @@ export default function Web() {
       const response = await result.json();
       setResponse(response);
     } catch (err) {
-      console.error(err);
+      console.log(err);
       setError("Unable to fetch response");
     }
   };
@@ -48,6 +48,8 @@ export default function Web() {
           onChange={onChange}
         ></input>
         <Button type="submit">Submit</Button>
+
+        <Button>JHL</Button>                
       </form>
       {error && (
         <div>
@@ -62,6 +64,11 @@ export default function Web() {
           <Button onClick={onReset}>Reset</Button>
         </div>
       )}
+
+
+          <div className="bg-red-500 text-white p-10">
+      Tailwind test
+    </div>
     </div>
   );
 }
