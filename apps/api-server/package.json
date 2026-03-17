@@ -1,0 +1,8 @@
+{
+  "name": "backend-django",
+  "scripts": {
+    "build": "pip install -r requirements.txt",
+    "test": "python manage.py test",
+    "lint": "flake8 ."
+  }
+}

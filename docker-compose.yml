@@ -21,6 +21,16 @@ services:
       - 3001:3001
     networks:
       - app_network
+  api-server:
+    container_name: api-server
+    build:
+      context: .
+      dockerfile: ./apps/api-server/Dockerfile
+    restart: always
+    ports:
+      - 8000:8000
+    networks:
+      - app_network
 
 # Define a network, which allows containers to communicate
 # with each other, by using their container name as a hostname
