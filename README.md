@@ -8,8 +8,8 @@ SpendSense Ethiopia is a comprehensive, hybrid-architecture web platform designe
 
 ## 👥 Meet the Team
 * **Yonas Zekariyas**
+* * **Yonas Adane**
 * **Azariel Tesfaye**
-* **Yonas Adane**
 * **Yonas Teshome**
 * **Sumaya Adem**
 ---
