@@ -39,16 +39,25 @@ This project utilizes a modern, decoupled hybrid architecture:
 ## 📂 Repository Structure
 
 The project is structured as a monorepo containing the frontend and the dual-backend architecture.
-
 ```text
-spendsense-monorepo/
-├── spendsense-client/          # Next.js frontend web application
-└── spendsense-server/                     # Backend directory
-    ├── realtime_service/       # Express.js server for WebSocket real-time alerts
-    ├── core_api/               # Django main configuration & routing
-    ├── users/                  # Django App: User identity, RBAC, and Vendor profiles
-    ├── market/                 # Django App: Items, crowdsourced prices, and ML models
-    ├── finance/                # Django App: Budget tracking and expenses
-    ├── ecommerce/              # Django App: Vendor listings and transactions
-    ├── manage.py               # Django entry point
-    └── requirements.txt        # Python dependencies
+SpendSense/
+├── apps/
+│   ├── api/                           # Django REST API + ML-oriented backend
+│   ├── realtime/                      # Standalone Express + Socket.io real-time server
+│   └── web/                           # Next.js frontend
+├── packages/                          # Shared internal packages
+│   ├── ui/                            # Shared UI component library
+│   ├── logger/                        # Shared logging utilities
+│   ├── eslint-config/                 # Shared lint configuration
+│   ├── jest-presets/                  # Shared Jest presets
+│   ├── tailwind-config/               # Shared Tailwind/PostCSS config
+│   └── typescript-config/             # Shared TypeScript base configs
+├── docs/                              # Project documentation and planning artifacts
+├── docker-compose.yml                 # Local multi-service orchestration
+├── turbo.json                         # Turborepo pipeline configuration
+├── package.json                       # Root workspace scripts/dependencies
+└── README-monorepo.md                 # Monorepo usage notes
+```
+
+
+
