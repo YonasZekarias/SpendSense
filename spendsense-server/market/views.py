@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Item, PriceSubmission
+from .models import PriceSubmission
 from .serializers import PriceSubmissionSerializer
 
 
@@ -28,7 +28,6 @@ class SubmitPriceView(APIView):
         avg = recent.get('avg')
         submission = serializer.save()
         if avg is not None:
-            from decimal import Decimal
             pct = abs(float(price_value - avg) / float(avg)) * 100
             if pct > 50:
                 submission._outlier_warning = (
