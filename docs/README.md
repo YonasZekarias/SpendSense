@@ -60,4 +60,9 @@ After generating, you will have:
 ### Week 1 completed (backend)
 
 - **SpendSense_Backend_Week1_Completed.md** — List of what was completed on the backend in Week 1.
-- **SpendSense_Backend_Week1_Completed.html** — Same content as HTML. **To get a PDF:** open this file in Chrome or Safari → **File → Print → Save as PDF** (or **Export as PDF**).
+- **SpendSense_Backend_Week1_Completed.html** — Same content as HTML. **To get a PDF:** open in Chrome/Safari → **File → Print → Save as PDF**.
+
+### Database schema
+
+- **SpendSense_Database_Schema.md** — Full DB schema (tables, columns, FKs) from Django models.
+- **SpendSense_Database_Schema.html** — Same as HTML. **To get a PDF:** open in Chrome/Safari → **File → Print → Save as PDF**.
