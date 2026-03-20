@@ -53,3 +53,23 @@ One mental screen:
 
 - Map Figma frames to routes under `apps/web/src/app/`.
 - **Slide wording (interconnection):** **Docs, Gemini, Stitch with G, Figma – interconnection** — keep the same names in docs, design tools, and code paths so reviewers can follow slide → frame → folder.
+
+---
+
+## 2026-03-20 (Fri) — Component model practice — period 1
+
+### Architectural unit: Django **User** (identity root)
+
+**Object model:** one `User` type configured via `AUTH_USER_MODEL`; extensions (profile, vendor) hang off this aggregate later.
+
+**X-MAN (actors / messages):**
+
+| Step | Actor | Outcome |
+|------|--------|---------|
+| 1 | Developer | Declares `User` model + `AUTH_USER_MODEL` in settings. |
+| 2 | Django | Migrations create the canonical user table. |
+| 3 | API | Serializers/views add register, JWT, `/me` without forking identity per feature. |
+
+**Test simulation ideas:** assert `get_user_model()` matches settings; create user via factory; unique constraints on email/username as defined.
+
+**Pattern:** single **identity root** for RBAC, finance ownership, and market submissions.
