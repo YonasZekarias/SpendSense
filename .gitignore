@@ -49,7 +49,8 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# --- IDE (local only) ---
+# --- IDE / Cursor (local only; rules stay on your machine) ---
+.cursor/
 .idea/
 .vscode/
 *.swp
