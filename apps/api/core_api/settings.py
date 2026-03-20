@@ -149,6 +149,25 @@ REST_FRAMEWORK = {
     ],
 }
 
+# drf-yasg — Swagger UI (session login disabled; use Bearer JWT in Authorize)
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': (
+                'Paste ONE access token only. Format: Bearer eyJ... (single JWT, three parts). '
+                'Do not paste the whole JSON from login, multiple tokens, or quotes. '
+                'Copy only the string value of the "access" field from POST /api/auth/token/.'
+            ),
+        },
+    },
+    'JSON_EDITOR': True,
+    'SHOW_REQUEST_HEADERS': True,
+}
+
 # JWT (Simple JWT)
 from datetime import timedelta
 SIMPLE_JWT = {

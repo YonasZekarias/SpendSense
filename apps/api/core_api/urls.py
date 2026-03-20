@@ -15,8 +15,9 @@ schema_view = get_schema_view(
         default_version='v1',
         description='SpendSense Ethiopia — Cost of Living, Budget & Smart Shopping API',
     ),
-        permission_classes=(permissions.AllowAny,),  # 👈 ADD THIS
     public=True,
+    permission_classes=(permissions.AllowAny,),
+    authentication_classes=(),  # schema endpoints work without JWT
 )
 
 urlpatterns = [
