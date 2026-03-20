@@ -28,16 +28,25 @@ Use the **access** token in the header for protected endpoints:
 
 ### If you get 401 Unauthorized
 
-1. **Protected endpoints** (`/api/users/me/`, `/api/market/prices/submit/`) require a token.  
-   - First call **POST /api/auth/token/** with `{"email": "your@email.com", "password": "yourpassword"}`.  
-   - Copy the `access` value from the response.  
-   - In Swagger: click **Authorize**, enter `Bearer <paste access token>`, then **Authorize**.  
-   - Or in curl: add header `-H "Authorization: Bearer <access>"`.
+1. **Use the correct URL** — profile is **`GET /api/users/me/`** (not `/me` at the site root).
 
-2. **Login returns 401?**  
-   - User must exist. Call **POST /api/users/register/** first if you haven’t.  
-   - Use the same email and password you registered with.  
-   - Body must be JSON with `email` (or `username`) and `password`.
+2. **Send exactly one access token** — the `Authorization` header must look like:
+   ```http
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....signature_here
+   ```
+   - Copy **only** the `access` string from the login JSON (no `{`, no `"access":`, no quotes around the token).
+   - **Do not** paste several tokens back-to-back or extra `"` characters inside the header value.
+   - **Do not** use `Bearer` twice (`Bearer Bearer eyJ...`).
+
+3. **Swagger Authorize** — type `Bearer ` (with a space) then paste **only** the `access` string. A valid JWT has **three** parts separated by **two** dots: `xxxxx.yyyyy.zzzzz`.
+
+4. **Token must match this server** — if `SECRET_KEY` in `.env` changed, old tokens are invalid; log in again.
+
+5. **User must exist in this database** — tokens from another environment or an old DB (e.g. integer `user_id` while this project uses UUID users) will return 401.
+
+6. **Login returns 401?**  
+   - Register first with **POST /api/users/register/** if needed.  
+   - Use the same email and password; body is JSON with `email` (or `username`) and `password`.
 
 ---
 
