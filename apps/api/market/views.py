@@ -1,24 +1,24 @@
 from django.db.models import Avg, Count
-from rest_framework import status
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Item, PriceSubmission
+from .models import PriceSubmission
 from .serializers import PriceSubmissionSerializer
 
 
-class SubmitPriceView(APIView):
-    """POST /api/market/prices/submit/ — submit a price report (crowdsourcing)."""
-    permission_classes = [IsAuthenticated]
+class SubmitPriceView(generics.CreateAPIView):
+    """POST /api/market/prices/submit/ — browsable API + Swagger show request body."""
 
-    def post(self, request):
-        serializer = PriceSubmissionSerializer(
-            data=request.data,
-            context={'request': request},
-        )
+    permission_classes = [IsAuthenticated]
+    serializer_class = PriceSubmissionSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # Optional: flag outlier vs recent average for same item/city
         item = serializer.validated_data.get('item')
         city = serializer.validated_data.get('city')
         price_value = serializer.validated_data.get('price_value')
@@ -28,7 +28,6 @@ class SubmitPriceView(APIView):
         avg = recent.get('avg')
         submission = serializer.save()
         if avg is not None:
-            from decimal import Decimal
             pct = abs(float(price_value - avg) / float(avg)) * 100
             if pct > 50:
                 submission._outlier_warning = (
@@ -42,8 +41,38 @@ class SubmitPriceView(APIView):
 
 class PriceAveragesView(APIView):
     """GET /api/market/prices/averages/ — aggregated prices from approved submissions."""
+
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'item_id',
+                openapi.IN_QUERY,
+                description='Filter by item primary key',
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                'city',
+                openapi.IN_QUERY,
+                description='Filter by city (case-insensitive)',
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                'from_date',
+                openapi.IN_QUERY,
+                description='Include submissions on or after this date (YYYY-MM-DD)',
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                'to_date',
+                openapi.IN_QUERY,
+                description='Include submissions on or before this date (YYYY-MM-DD)',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={200: 'List of average price rows'},
+    )
     def get(self, request):
         item_id = request.query_params.get('item_id')
         city = request.query_params.get('city')
@@ -60,7 +89,6 @@ class PriceAveragesView(APIView):
         if to_date:
             qs = qs.filter(date_observed__lte=to_date)
 
-        # Group by item + city, return average
         rows = (
             qs.values('item', 'item__name', 'city')
             .annotate(avg_price=Avg('price_value'), count=Count('id'))
