@@ -62,3 +62,21 @@ Target **5–7 boxes** on one mental screen: **Web (Next.js)**, **Core API (Djan
 **Component model test simulations (ideas):** migration checks that `AUTH_USER_MODEL` resolves; factory or fixture creates a user and asserts unique email/username constraints as defined.
 
 **Design pattern:** **Single identity root** — one user table to anchor RBAC, finance ownership, and market submissions later.
+
+---
+
+## Reporting week 2 — Progress tab *(log Mon 2026-03-23)*
+
+| Hash | Type | What changed (short) |
+|------|------|----------------------|
+| `a73adc1` | Integration practice + pattern | Generic CBVs and OpenAPI decorators for **users** and **market** — layered API + explicit schema surface. |
+| `4c51c2e` | Component built (API shell) | Swagger UI Bearer JWT and schema view auth so the contract matches how the web client calls the API. |
+| `6084fe8` | Other practice (docs / integration) | Expanded JWT and 401 troubleshooting in `apps/api/ENDPOINTS.md` for faster onboarding. |
+| `0070a4c` | Component built | Prisma configuration and DB client setup for the **Realtime** app slice. |
+| `13f0c98` | Refactoring / clean code | Realtime `package.json` and `server.ts` cleanup; leaner module boundaries. |
+
+Verify:
+
+```bash
+git log --until='2026-03-28' --oneline -15 --date=short
+```
