@@ -73,3 +73,19 @@ One mental screen:
 **Test simulation ideas:** assert `get_user_model()` matches settings; create user via factory; unique constraints on email/username as defined.
 
 **Pattern:** single **identity root** for RBAC, finance ownership, and market submissions.
+
+---
+
+## 2026-03-23 (Mon) — Progress tab — period 2
+
+| Hash | Type | What changed |
+|------|------|----------------|
+| `a73adc1` | Integration + pattern | Generic CBVs + OpenAPI decorators for **users** and **market**. |
+| `4c51c2e` | Component built (API shell) | Swagger UI Bearer JWT + schema view auth. |
+| `6084fe8` | Integration / docs | JWT and 401 notes in `apps/api/ENDPOINTS.md`. |
+| `0070a4c` | Component built | Prisma + DB client for **Realtime** app. |
+| `13f0c98` | Refactoring / clean code | Realtime `package.json` / `server.ts` tidy. |
+| `b88c10d` | Component built | Week 3 profile fields, password reset, API tests. |
+| `8b2dd75` | Refactoring / clean code | Permission helper cleanup in API tests. |
+
+Verify: `git log --until='2026-04-02' --oneline -20 --date=short`
