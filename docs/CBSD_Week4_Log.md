@@ -80,3 +80,17 @@ Verify:
 ```bash
 git log --until='2026-03-28' --oneline -15 --date=short
 ```
+
+---
+
+## Reporting week 2 — Ideation tab *(log Wed 2026-03-25)*
+
+### Component breakdown (cognitive load)
+
+Same **5–7 box** rule: each row in `docs/CBSD_Component_Breakdown.md` stays small enough to explain in one breath. This week ties **API shell** (Swagger, permissions) and **Realtime** to the diagram so optional sockets do not blur the core **Django + Postgres** picture.
+
+### Figma and how things connect
+
+- **Figma:** shopper / vendor / admin flows; map frames to routes under `apps/web/src/app/`.
+- **Django API:** behaviour in code + **Swagger** (`/swagger/`) and `apps/api/ENDPOINTS.md`.
+- **Slide wording (interconnection):** **Docs, Gemini, Stitch with G, Figma – interconnection** — documentation and design tools stay linked to what ships in the monorepo (same names for components in doc, design, and code where possible).
