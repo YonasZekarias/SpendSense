@@ -89,3 +89,12 @@ One mental screen:
 | `8b2dd75` | Refactoring / clean code | Permission helper cleanup in API tests. |
 
 Verify: `git log --until='2026-04-02' --oneline -20 --date=short`
+
+---
+
+## 2026-03-25 (Wed) — Ideation tab — period 2
+
+- **Cognitive load:** keep the **API shell** (Swagger, permissions) and **Realtime** as optional side boxes so the main picture stays **Django + Postgres + Web**.
+- **Figma:** shopper / vendor / admin flows; each major frame maps to a route under `apps/web/src/app/`.
+- **Contracts:** behaviour in code, **Swagger** (`/swagger/`), and `apps/api/ENDPOINTS.md` for humans.
+- **Interconnection (slide):** **Docs, Gemini, Stitch with G, Figma – interconnection** — documentation, AI-assisted drafts, and design files stay aligned with what is merged in the monorepo.
