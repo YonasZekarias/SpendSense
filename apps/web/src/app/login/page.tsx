@@ -27,7 +27,7 @@ export default function LoginPage() {
             <Wallet className="size-7" />
           </div>
           <h2 className="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-            FinTrack Ethiopia
+            SpendSense Ethiopia
           </h2>
         </Link>
         <div className="flex items-center gap-4">
@@ -233,7 +233,7 @@ export default function LoginPage() {
             <div className="mt-8 flex justify-center gap-2 items-center opacity-75">
               <Lock className="size-3.5 text-gray-400" />
               <span className="text-xs text-gray-400">
-                Secured by FinTrack 256-bit SSL
+                Secured by spendsense
               </span>
             </div>
           </div>
