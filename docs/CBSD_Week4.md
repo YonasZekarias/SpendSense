@@ -98,3 +98,26 @@ Verify: `git log --until='2026-04-02' --oneline -20 --date=short`
 - **Figma:** shopper / vendor / admin flows; each major frame maps to a route under `apps/web/src/app/`.
 - **Contracts:** behaviour in code, **Swagger** (`/swagger/`), and `apps/api/ENDPOINTS.md` for humans.
 - **Interconnection (slide):** **Docs, Gemini, Stitch with G, Figma – interconnection** — documentation, AI-assisted drafts, and design files stay aligned with what is merged in the monorepo.
+
+---
+
+## 2026-03-27 (Fri) — Component model practice — period 2
+
+### Architectural unit: **User aggregate** (profile + password reset)
+
+**Location:** `apps/api/users/` — models, serializers, views, permissions; URLs in `core_api`.
+
+**Object model:** `User` + profile fields + one-time **password reset** token with expiry and single use.
+
+**X-MAN–friendly states:**
+
+| State / transition | Meaning |
+|--------------------|---------|
+| Active session | JWT issued; `/me` and scoped endpoints. |
+| Reset requested | Opaque token issued; user receives link (channel-specific). |
+| Token valid | New password accepted; token invalidated. |
+| Expired / reused | Reject; request new reset. |
+
+**Component model tests:** happy path, expired token, replay, profile authz — see `apps/api/tests/test_week3_users.py`.
+
+**Patterns:** layered API (views → serializers → models); **RBAC** for admin lists vs self-service profile.
