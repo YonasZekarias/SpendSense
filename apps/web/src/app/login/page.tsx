@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Wallet,
   TrendingUp,
@@ -11,9 +12,31 @@ import {
   LogIn,
   Lock,
 } from "lucide-react";
+import { loginWithEmailPassword, saveTokens } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const tokens = await loginWithEmailPassword(email.trim(), password);
+      saveTokens(tokens.access, tokens.refresh);
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] dark:bg-[#101622]">
@@ -105,7 +128,15 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form className="flex flex-col gap-5">
+            <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+              {error && (
+                <div
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200 whitespace-pre-line"
+                  role="alert"
+                >
+                  {error}
+                </div>
+              )}
               {/* Email */}
               <div className="flex flex-col gap-2">
                 <label
@@ -116,12 +147,16 @@ export default function LoginPage() {
                 </label>
                 <div className="relative">
                   <input
-                    className="w-full h-12 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-[#111827] text-[#111318] dark:text-white placeholder:text-gray-400 px-4 focus:outline-none focus:ring-2 focus:ring-[#135bec] focus:border-transparent transition-all"
+                    className="w-full h-12 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-[#111827] text-[#111318] dark:text-white placeholder:text-gray-400 px-4 focus:outline-none focus:ring-2 focus:ring-[#135bec] focus:border-transparent transition-all disabled:opacity-60"
                     id="email"
                     name="email"
                     placeholder="example@email.com"
                     required
                     type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                     <Mail className="size-5" />
@@ -147,17 +182,22 @@ export default function LoginPage() {
                 </div>
                 <div className="relative group">
                   <input
-                    className="w-full h-12 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-[#111827] text-[#111318] dark:text-white placeholder:text-gray-400 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#135bec] focus:border-transparent transition-all"
+                    className="w-full h-12 rounded-lg border border-[#dbdfe6] dark:border-gray-600 bg-white dark:bg-[#111827] text-[#111318] dark:text-white placeholder:text-gray-400 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#135bec] focus:border-transparent transition-all disabled:opacity-60"
                     id="password"
                     name="password"
                     placeholder="Enter your password"
                     required
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                   />
                   <button
-                    className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer disabled:opacity-50"
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
+                    disabled={loading}
                   >
                     {showPassword ? (
                       <Eye className="size-5" />
@@ -170,11 +210,12 @@ export default function LoginPage() {
 
               {/* Sign In */}
               <button
-                className="w-full bg-[#135bec] hover:bg-blue-700 text-white h-12 rounded-lg font-bold text-base mt-2 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-[#135bec] hover:bg-blue-700 disabled:opacity-60 disabled:pointer-events-none text-white h-12 rounded-lg font-bold text-base mt-2 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
                 type="submit"
+                disabled={loading}
               >
                 <LogIn className="size-5" />
-                Sign In
+                {loading ? "Signing in…" : "Sign In"}
               </button>
 
               {/* Divider */}

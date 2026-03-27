@@ -1,16 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Wallet,
   PiggyBank,
   User,
   Mail,
 } from "lucide-react";
+import { registerAndLogin } from "@/lib/auth";
+
+const MIN_PASSWORD = 8;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [role, setRole] = useState<"User" | "Vendor">("User");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    if (!termsAccepted) {
+      setError("Please accept the Terms of Service and Privacy Policy.");
+      return;
+    }
+    if (password.length < MIN_PASSWORD) {
+      setError(`Password must be at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await registerAndLogin({
+        full_name: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f6f8] dark:bg-[#101622] text-[#111318] dark:text-white antialiased">
@@ -113,6 +158,7 @@ export default function RegisterPage() {
                       value="User"
                       checked={role === "User"}
                       onChange={() => setRole("User")}
+                      disabled={loading}
                     />
                   </label>
                   <label className="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 has-checked:bg-white dark:has-checked:bg-[#1a202c] has-checked:shadow-sm transition-all">
@@ -126,12 +172,21 @@ export default function RegisterPage() {
                       value="Vendor"
                       checked={role === "Vendor"}
                       onChange={() => setRole("Vendor")}
+                      disabled={loading}
                     />
                   </label>
                 </div>
               </div>
 
-              <form className="flex flex-col gap-5">
+              <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                {error && (
+                  <div
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200 whitespace-pre-line"
+                    role="alert"
+                  >
+                    {error}
+                  </div>
+                )}
                 {/* Full Name */}
                 <label className="flex flex-col w-full">
                   <p className="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2">
@@ -139,11 +194,15 @@ export default function RegisterPage() {
                   </p>
                   <div className="relative">
                     <input
-                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 pr-12 text-base font-normal leading-normal transition-all"
+                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 pr-12 text-base font-normal leading-normal transition-all disabled:opacity-60"
                       placeholder="Enter your full name"
                       required
                       type="text"
                       name="full_name"
+                      autoComplete="name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={loading}
                     />
                     <User className="absolute right-4 top-3.5 size-5 text-[#9ca3af]" />
                   </div>
@@ -156,11 +215,15 @@ export default function RegisterPage() {
                   </p>
                   <div className="relative">
                     <input
-                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 pr-12 text-base font-normal leading-normal transition-all"
+                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 pr-12 text-base font-normal leading-normal transition-all disabled:opacity-60"
                       placeholder="name@example.com"
                       required
                       type="email"
                       name="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
                     />
                     <Mail className="absolute right-4 top-3.5 size-5 text-[#9ca3af]" />
                   </div>
@@ -173,11 +236,15 @@ export default function RegisterPage() {
                       Password
                     </p>
                     <input
-                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all disabled:opacity-60"
                       placeholder="Min. 8 characters"
                       required
                       type="password"
                       name="password"
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
                     />
                   </label>
                   <label className="flex flex-col w-full">
@@ -185,11 +252,15 @@ export default function RegisterPage() {
                       Confirm Password
                     </p>
                     <input
-                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                      className="flex w-full min-w-0 rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-[#135bec]/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-[#135bec] h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all disabled:opacity-60"
                       placeholder="Re-enter password"
                       required
                       type="password"
                       name="confirm_password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={loading}
                     />
                   </label>
                 </div>
@@ -202,6 +273,9 @@ export default function RegisterPage() {
                       id="terms"
                       name="terms"
                       type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      disabled={loading}
                     />
                   </div>
                   <div className="text-sm leading-6">
@@ -221,10 +295,11 @@ export default function RegisterPage() {
 
                 {/* Submit */}
                 <button
-                  className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-[#135bec] h-12 px-4 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-[#135bec] transition-all mt-2"
+                  className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-[#135bec] h-12 px-4 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-[#135bec] transition-all mt-2 disabled:opacity-60 disabled:pointer-events-none"
                   type="submit"
+                  disabled={loading}
                 >
-                  Create Account
+                  {loading ? "Creating account…" : "Create Account"}
                 </button>
               </form>
 
