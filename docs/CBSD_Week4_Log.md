@@ -94,3 +94,30 @@ Same **5–7 box** rule: each row in `docs/CBSD_Component_Breakdown.md` stays sm
 - **Figma:** shopper / vendor / admin flows; map frames to routes under `apps/web/src/app/`.
 - **Django API:** behaviour in code + **Swagger** (`/swagger/`) and `apps/api/ENDPOINTS.md`.
 - **Slide wording (interconnection):** **Docs, Gemini, Stitch with G, Figma – interconnection** — documentation and design tools stay linked to what ships in the monorepo (same names for components in doc, design, and code where possible).
+
+---
+
+## Reporting week 2 — Component model practice *(log Fri 2026-03-27)*
+
+### Deep dive: **User aggregate** (identity + profile + password reset)
+
+**Architectural unit:** everything that answers “who is this caller and what can they change about their account?” in the Django API — models, serializers, views, and permissions under `apps/api/users/` (plus URL wiring in `core_api`).
+
+**Object model (core entities):**
+
+- **User** — authentication identity; owns budgets, expenses, submissions, vendor profile as applicable.
+- **Profile fields** (as implemented on `User`) — display and contact data separated from credentials.
+- **Password reset artefact** — one-time token (or equivalent) with **validity window**; consumed on successful reset.
+
+**State-style narrative (X-MAN–friendly):**
+
+| State / transition | Meaning |
+|--------------------|---------|
+| Active session | JWT issued; client calls `/me` and scoped endpoints. |
+| Reset requested | System issues token; email channel carries opaque link (implementation-specific). |
+| Token valid | POST with token + new password succeeds; token invalidated. |
+| Token expired / used | Same request rejected; user must request a new reset. |
+
+**Component model test simulations (ideas):** API tests that step through reset happy path, expired token, replay attack (reuse), and profile update authz — same style as `apps/api/tests/test_week3_users.py`.
+
+**Design patterns called out:** layered API (views → serializers → models), **RBAC** (`IsAdminRole` / role checks) for admin-only user lists vs self-service profile.
