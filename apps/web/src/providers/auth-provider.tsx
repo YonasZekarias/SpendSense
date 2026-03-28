@@ -15,10 +15,12 @@ import {
   login,
   register,
   resetPassword,
+} from "@/actions/auth";
+import {
   type LoginPayload,
   type RegisterPayload,
   type UserProfile,
-} from "@/services/authService";
+} from "@/lib/auth-types";
 import {
   clearAccessTokenCookie,
   getAccessTokenFromCookie,

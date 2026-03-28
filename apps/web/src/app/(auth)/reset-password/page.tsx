@@ -1,29 +1,35 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { Label } from "@repo/ui/components/label";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
+import { resetPasswordSchema, type ResetPasswordSchema } from "@/lib/validation/auth-schemas";
+import { createZodResolver } from "@/lib/validation/zod-resolver";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { confirmPasswordReset } = useAuth();
+  const form = useForm<ResetPasswordSchema>({
+    resolver: createZodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onSubmit = async (values: ResetPasswordSchema) => {
     setError(null);
 
     if (!token) {
@@ -31,21 +37,12 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
     try {
-      await confirmPasswordReset(token, password);
+      await confirmPasswordReset(token, values.password);
       setIsSubmitted(true);
       router.push("/login");
     } catch {
       setError("Unable to reset your password. The link may be expired.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -77,18 +74,19 @@ export default function ResetPasswordPage() {
         />
       )}
 
-      <form className="space-y-4" onSubmit={onSubmit} noValidate>
+      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="password">New password</Label>
           <Input
             id="password"
             type="password"
             autoComplete="new-password"
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
+            placeholder="Min. 8 characters"
+            {...form.register("password")}
           />
+          {form.formState.errors.password?.message && (
+            <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -97,15 +95,16 @@ export default function ResetPasswordPage() {
             id="confirm-password"
             type="password"
             autoComplete="new-password"
-            minLength={8}
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
+            placeholder="Re-enter password"
+            {...form.register("confirmPassword")}
           />
+          {form.formState.errors.confirmPassword?.message && (
+            <p className="text-xs text-destructive">{form.formState.errors.confirmPassword.message}</p>
+          )}
         </div>
 
-        <Button className="w-full" disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Updating password..." : "Update password"}
+        <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
+          {form.formState.isSubmitting ? "Updating password..." : "Update password"}
         </Button>
       </form>
     </AuthShell>
