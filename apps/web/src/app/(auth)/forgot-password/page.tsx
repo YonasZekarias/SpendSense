@@ -5,9 +5,16 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
-import { Label } from "@repo/ui/components/label";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { forgotPasswordSchema, type ForgotPasswordSchema } from "@/lib/validation/auth-schemas";
 import { createZodResolver } from "@/lib/validation/zod-resolver";
 import { useAuth } from "@/providers/auth-provider";
@@ -63,25 +70,33 @@ export default function ForgotPasswordPage() {
         />
       )}
 
-      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="name@example.com"
-            {...form.register("email")}
+      <Form {...form}>
+        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {form.formState.errors.email?.message && (
-            <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-          )}
-        </div>
 
-        <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
-          {form.formState.isSubmitting ? "Submitting..." : "Send reset instructions"}
-        </Button>
-      </form>
+          <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
+            {form.formState.isSubmitting ? "Submitting..." : "Send reset instructions"}
+          </Button>
+        </form>
+      </Form>
     </AuthShell>
   );
 }

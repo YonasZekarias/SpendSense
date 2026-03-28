@@ -13,17 +13,21 @@ import {
   forgotPassword,
   getCurrentUser,
   login,
+  refreshAccessToken,
   register,
   resetPassword,
 } from "@/actions/auth";
 import {
+  getAuthErrorStatus,
   type LoginPayload,
   type RegisterPayload,
   type UserProfile,
 } from "@/lib/auth-types";
 import {
-  clearAccessTokenCookie,
+  clearAuthCookies,
   getAccessTokenFromCookie,
+  getRefreshTokenFromCookie,
+  setTokenPairCookies,
   setAccessTokenCookie,
 } from "@/lib/auth-client";
 
@@ -47,6 +51,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
+  const resetSession = useCallback(() => {
+    clearAuthCookies();
+    setAccessToken(null);
+    setUser(null);
+    setStatus("unauthenticated");
+  }, []);
+
+  const refreshSession = useCallback(async (token: string): Promise<string> => {
+    const refreshed = await refreshAccessToken(token);
+    setAccessTokenCookie(refreshed.access);
+    setAccessToken(refreshed.access);
+    return refreshed.access;
+  }, []);
+
   const hydrateCurrentUser = useCallback(async (token: string) => {
     const currentUser = await getCurrentUser(token);
     setUser(currentUser);
@@ -55,32 +73,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const boot = async () => {
-      const token = getAccessTokenFromCookie();
+      const access = getAccessTokenFromCookie();
+      const refresh = getRefreshTokenFromCookie();
 
-      if (!token) {
+      if (!access && !refresh) {
         setStatus("unauthenticated");
         return;
       }
 
-      setAccessToken(token);
-
       try {
-        await hydrateCurrentUser(token);
-      } catch {
-        clearAccessTokenCookie();
-        setAccessToken(null);
-        setUser(null);
-        setStatus("unauthenticated");
+        if (access) {
+          setAccessToken(access);
+          await hydrateCurrentUser(access);
+          return;
+        }
+
+        if (!refresh) {
+          resetSession();
+          return;
+        }
+
+        const nextAccess = await refreshSession(refresh);
+        await hydrateCurrentUser(nextAccess);
+      } catch (error) {
+        if (getAuthErrorStatus(error) === 401 && refresh) {
+          try {
+            const nextAccess = await refreshSession(refresh);
+            await hydrateCurrentUser(nextAccess);
+            return;
+          } catch {
+            resetSession();
+            return;
+          }
+        }
+
+        resetSession();
       }
     };
 
     void boot();
-  }, [hydrateCurrentUser]);
+  }, [hydrateCurrentUser, refreshSession, resetSession]);
 
   const signIn = useCallback(
     async (payload: LoginPayload) => {
       const tokenPair = await login(payload);
-      setAccessTokenCookie(tokenPair.access);
+      setTokenPairCookies(tokenPair);
       setAccessToken(tokenPair.access);
       await hydrateCurrentUser(tokenPair.access);
     },
@@ -100,11 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(() => {
-    clearAccessTokenCookie();
-    setAccessToken(null);
-    setUser(null);
-    setStatus("unauthenticated");
-  }, []);
+    resetSession();
+  }, [resetSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

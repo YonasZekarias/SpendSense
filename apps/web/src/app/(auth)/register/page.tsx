@@ -7,9 +7,16 @@ import { useForm } from "react-hook-form";
 import { Mail, UserRound, Wallet } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
-import { Label } from "@repo/ui/components/label";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
-import { AuthApiError } from "@/lib/auth-types";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { getAuthErrorStatus } from "@/lib/auth-types";
 import { registerSchema, type RegisterSchema } from "@/lib/validation/auth-schemas";
 import { createZodResolver } from "@/lib/validation/zod-resolver";
 import { useAuth } from "@/providers/auth-provider";
@@ -41,7 +48,7 @@ export default function RegisterPage() {
 
 			router.push("/login");
 		} catch (err) {
-			if (err instanceof AuthApiError && err.status === 400) {
+			if (getAuthErrorStatus(err) === 400) {
 				setError("Please review your details and try again.");
 			} else {
 				setError("Unable to create your account right now. Please try again.");
@@ -82,75 +89,101 @@ export default function RegisterPage() {
 				/>
 			)}
 
-						<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-							<div className="space-y-1.5">
-								<Label htmlFor="full_name">Full name</Label>
-								<div className="relative">
-									<Input
-										id="full_name"
-										type="text"
-										autoComplete="name"
-										placeholder="Enter your full name"
-										{...form.register("full_name")}
-									/>
-									<UserRound className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
-								</div>
-								{form.formState.errors.full_name?.message && (
-									<p className="text-xs text-destructive">{form.formState.errors.full_name.message}</p>
-								)}
-							</div>
-
-							<div className="space-y-1.5">
-								<Label htmlFor="email">Email address</Label>
-								<div className="relative">
-									<Input
-										id="email"
-										type="email"
-										autoComplete="email"
-										placeholder="name@example.com"
-										{...form.register("email")}
-									/>
-									<Mail className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
-								</div>
-								{form.formState.errors.email?.message && (
-									<p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-								)}
-							</div>
-
-							<div className="grid gap-4 sm:grid-cols-2">
-								<div className="space-y-1.5">
-									<Label htmlFor="password">Password</Label>
-									<Input
-										id="password"
-										type="password"
-										autoComplete="new-password"
-										placeholder="Min. 8 characters"
-										{...form.register("password")}
-									/>
-									{form.formState.errors.password?.message && (
-										<p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
+						<Form {...form}>
+							<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+								<FormField
+									control={form.control}
+									name="full_name"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Full name</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														id="full_name"
+														type="text"
+														autoComplete="name"
+														placeholder="Enter your full name"
+														{...field}
+													/>
+													<UserRound className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
+												</div>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
 									)}
-								</div>
+								/>
 
-								<div className="space-y-1.5">
-									<Label htmlFor="confirmPassword">Confirm password</Label>
-									<Input
-										id="confirmPassword"
-										type="password"
-										autoComplete="new-password"
-										placeholder="Re-enter password"
-										{...form.register("confirmPassword")}
-									/>
-									{form.formState.errors.confirmPassword?.message && (
-										<p className="text-xs text-destructive">{form.formState.errors.confirmPassword.message}</p>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email address</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														id="email"
+														type="email"
+														autoComplete="email"
+														placeholder="name@example.com"
+														{...field}
+													/>
+													<Mail className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
+												</div>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
 									)}
-								</div>
-							</div>
+								/>
 
-							<Button className="h-11 w-full text-sm font-semibold" disabled={form.formState.isSubmitting} type="submit">
-								{form.formState.isSubmitting ? "Creating account..." : "Create account"}
-							</Button>
-						</form>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<FormField
+										control={form.control}
+										name="password"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Password</FormLabel>
+												<FormControl>
+													<Input
+														id="password"
+														type="password"
+														autoComplete="new-password"
+														placeholder="Min. 8 characters"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<FormField
+										control={form.control}
+										name="confirmPassword"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Confirm password</FormLabel>
+												<FormControl>
+													<Input
+														id="confirmPassword"
+														type="password"
+														autoComplete="new-password"
+														placeholder="Re-enter password"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
+
+								<Button className="h-11 w-full text-sm font-semibold" disabled={form.formState.isSubmitting} type="submit">
+									{form.formState.isSubmitting ? "Creating account..." : "Create account"}
+								</Button>
+							</form>
+						</Form>
 
 						<p className="text-center text-sm text-muted-foreground">
 							Already have an account?{" "}

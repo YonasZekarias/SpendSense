@@ -12,6 +12,23 @@ export class AuthApiError extends Error {
   }
 }
 
+export function getAuthErrorStatus(error: unknown): number | undefined {
+  if (error instanceof AuthApiError) {
+    return error.status;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  return undefined;
+}
+
 export type LoginPayload = {
   email: string;
   password: string;

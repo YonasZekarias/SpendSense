@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
   AUTH_COOKIE_NAME,
+  AUTH_REFRESH_COOKIE_NAME,
   DEFAULT_AUTH_REDIRECT,
 } from "@/lib/auth-constants";
 
@@ -18,7 +19,9 @@ function isProtectedRoute(pathname: string) {
 
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const hasSessionCookie = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
+  const hasAccessCookie = Boolean(request.cookies.get(AUTH_COOKIE_NAME)?.value);
+  const hasRefreshCookie = Boolean(request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value);
+  const hasSessionCookie = hasAccessCookie || hasRefreshCookie;
 
   if (isProtectedRoute(pathname) && !hasSessionCookie) {
     const loginUrl = new URL("/login", request.url);

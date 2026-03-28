@@ -7,10 +7,17 @@ import { useForm } from "react-hook-form";
 import { LogIn, Mail, Wallet } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
-import { Label } from "@repo/ui/components/label";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
 import { sanitizeReturnTo } from "@/lib/auth-constants";
-import { AuthApiError } from "@/lib/auth-types";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { getAuthErrorStatus } from "@/lib/auth-types";
 import { loginSchema, type LoginSchema } from "@/lib/validation/auth-schemas";
 import { createZodResolver } from "@/lib/validation/zod-resolver";
 import { useAuth } from "@/providers/auth-provider";
@@ -23,13 +30,10 @@ export default function LoginPage() {
 		[searchParams],
 	);
 	const { signIn } = useAuth();
-  const form = useForm<LoginSchema>({
+	const form = useForm<LoginSchema>({
 		resolver: createZodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+		defaultValues: { email: "", password: "" },
+	});
 
 	const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +44,7 @@ export default function LoginPage() {
 			await signIn({ email: values.email.trim(), password: values.password });
 			router.replace(returnTo);
 		} catch (err) {
-			if (err instanceof AuthApiError && err.status === 401) {
+			if (getAuthErrorStatus(err) === 401) {
 				setError("Incorrect email or password.");
 			} else {
 				setError("Unable to sign in right now. Please try again.");
@@ -50,7 +54,7 @@ export default function LoginPage() {
 
 	return (
 		<div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-border/50 bg-background shadow-xl">
-			<div className="grid min-h-[620px] md:grid-cols-[1fr_1.2fr]">
+			<div className="grid min-h-155 md:grid-cols-[1fr_1.2fr]">
 				<section className="relative hidden bg-primary p-8 text-primary-foreground md:flex md:flex-col md:justify-between">
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_55%)]" />
 					<div className="relative z-10 space-y-4">
@@ -81,48 +85,62 @@ export default function LoginPage() {
 				/>
 			)}
 
-						<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-							<div className="space-y-1.5">
-								<Label htmlFor="email">Email</Label>
-								<div className="relative">
-									<Input
-										id="email"
-										type="email"
-										autoComplete="email"
-										placeholder="example@email.com"
-										{...form.register("email")}
-									/>
-									<Mail className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
-								</div>
-								{form.formState.errors.email?.message && (
-									<p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-								)}
-							</div>
-
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<Label htmlFor="password">Password</Label>
-									<Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
-										Forgot password?
-									</Link>
-								</div>
-								<Input
-									id="password"
-									type="password"
-									autoComplete="current-password"
-									placeholder="Enter your password"
-									{...form.register("password")}
+						<Form {...form}>
+							<form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														id="email"
+														type="email"
+														autoComplete="email"
+														placeholder="example@email.com"
+														{...field}
+													/>
+													<Mail className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
+												</div>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
 								/>
-								{form.formState.errors.password?.message && (
-									<p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-								)}
-							</div>
 
-							<Button className="h-11 w-full gap-2 text-sm font-semibold" disabled={form.formState.isSubmitting} type="submit">
-								<LogIn className="size-4" />
-								{form.formState.isSubmitting ? "Signing in..." : "Sign in"}
-							</Button>
-						</form>
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<div className="flex items-center justify-between">
+												<FormLabel>Password</FormLabel>
+												<Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+													Forgot password?
+												</Link>
+											</div>
+											<FormControl>
+												<Input
+													id="password"
+													type="password"
+													autoComplete="current-password"
+													placeholder="Enter your password"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<Button className="h-11 w-full gap-2 text-sm font-semibold" disabled={form.formState.isSubmitting} type="submit">
+									<LogIn className="size-4" />
+									{form.formState.isSubmitting ? "Signing in..." : "Sign in"}
+								</Button>
+							</form>
+						</Form>
 
 						<p className="text-center text-sm text-muted-foreground">
 							Don&apos;t have an account?{" "}

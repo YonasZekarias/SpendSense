@@ -6,9 +6,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
-import { Label } from "@repo/ui/components/label";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { resetPasswordSchema, type ResetPasswordSchema } from "@/lib/validation/auth-schemas";
 import { createZodResolver } from "@/lib/validation/zod-resolver";
 import { useAuth } from "@/providers/auth-provider";
@@ -74,39 +81,53 @@ export default function ResetPasswordPage() {
         />
       )}
 
-      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">New password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Min. 8 characters"
-            {...form.register("password")}
+      <Form {...form}>
+        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New password</FormLabel>
+                <FormControl>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Min. 8 characters"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {form.formState.errors.password?.message && (
-            <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-          )}
-        </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm-password">Confirm new password</Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Re-enter password"
-            {...form.register("confirmPassword")}
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm new password</FormLabel>
+                <FormControl>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Re-enter password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {form.formState.errors.confirmPassword?.message && (
-            <p className="text-xs text-destructive">{form.formState.errors.confirmPassword.message}</p>
-          )}
-        </div>
 
-        <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
-          {form.formState.isSubmitting ? "Updating password..." : "Update password"}
-        </Button>
-      </form>
+          <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
+            {form.formState.isSubmitting ? "Updating password..." : "Update password"}
+          </Button>
+        </form>
+      </Form>
     </AuthShell>
   );
 }
