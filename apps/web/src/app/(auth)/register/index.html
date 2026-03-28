@@ -1,0 +1,376 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BudgetTracker ET - Register</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#135bec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101622",
+            },
+            fontFamily: {
+              display: ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="font-display bg-background-light dark:bg-background-dark text-[#111318] dark:text-white antialiased min-h-screen flex flex-col"
+  >
+    <!-- Navbar -->
+    <header
+      class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#dbdfe6] dark:border-[#222831] bg-white dark:bg-[#11151d] px-10 py-3 sticky top-0 z-50"
+    >
+      <div class="flex items-center gap-4 text-[#111318] dark:text-white">
+        <div class="size-8 text-primary">
+          <span class="material-symbols-outlined text-[32px]"
+            >account_balance_wallet</span
+          >
+        </div>
+        <h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">
+          BudgetTracker ET
+        </h2>
+      </div>
+      <div class="flex flex-1 justify-end gap-8">
+        <div class="hidden md:flex items-center gap-9">
+          <a
+            class="text-sm font-medium leading-normal hover:text-primary transition-colors"
+            href="#"
+            >Home</a
+          >
+          <a
+            class="text-sm font-medium leading-normal hover:text-primary transition-colors"
+            href="#"
+            >About</a
+          >
+          <a
+            class="text-sm font-medium leading-normal hover:text-primary transition-colors"
+            href="#"
+            >Contact</a
+          >
+        </div>
+        <button
+          class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-700 transition-colors"
+        >
+          <span class="truncate">Log In</span>
+        </button>
+      </div>
+    </header>
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-10">
+      <div
+        class="w-full max-w-[1200px] flex flex-col md:flex-row bg-white dark:bg-[#1a202c] rounded-xl shadow-lg overflow-hidden border border-[#dbdfe6] dark:border-[#2d3748]"
+      >
+        <!-- Left Side: Visual / Context -->
+        <div
+          class="hidden md:flex md:w-5/12 bg-gray-100 dark:bg-gray-800 relative flex-col justify-between p-10 bg-cover bg-center"
+          style="
+            background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuCKr8hpjpHCl4RHpwWMARd39MqEniwNcMgISdbBZQisP260CevTUxUSNG9SCmC_jejsJ8uEh6fcocAL9TUckohjnql6qOLSkSMoWyw1TowWu7W4Iaijk2lrYYJuljNYJRtSuO3ycQCROC0EViwk8lLALdL51hIQPSBgYw9S8frFiqT0T66kmLOLFtHAx7f-IlYXVOSAxXbG9gh-TIQeMYmbdaxX8j9a0Usd4cgXxP55s-f_20Y5NWDgbZDbkePYJ-PRdW__vhLRE_g&quot;);
+          "
+        >
+          <div
+            class="absolute inset-0 bg-primary/90 mix-blend-multiply"
+            data-alt="Abstract finance background with blue overlay"
+          ></div>
+          <div class="relative z-10">
+            <div
+              class="size-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm mb-6"
+            >
+              <span class="material-symbols-outlined text-white text-3xl"
+                >savings</span
+              >
+            </div>
+            <h1 class="text-white text-4xl font-bold leading-tight mb-4">
+              Master your money in Ethiopia.
+            </h1>
+            <p class="text-blue-100 text-lg">
+              Join thousands of users tracking daily costs, comparing market
+              prices, and budgeting smarter.
+            </p>
+          </div>
+          <div class="relative z-10 mt-10">
+            <div class="flex items-center gap-3">
+              <div class="flex -space-x-2">
+                <img
+                  alt="User portrait"
+                  class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  data-alt="Portrait of a smiling young woman"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAadmpEzxPm0J34Dpr0znp11tlkgZly5f2CaqREVAc0YHqA6_gfjNRenE9nZ0gU00m-AroLERX0pscuwy50PqBQIdAa4HQyhfMi-VTPvhLeRa1P4ZtokQ5OVi-9HmyvwtlByTCFQ1WOjDeO1MaXasC5UpbHhIaqXt5WIzl4HdglIzZCXnRX0tffnZSnfXj-RpW4OoTkQ9oEvsuCzC4bjHtZC8UQ2yuyFv1OvlVn7X-CewlL0cVxRDR0pa8JD0sySXRuDDx7fHwH1q4"
+                />
+                <img
+                  alt="User portrait"
+                  class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  data-alt="Portrait of a serious man"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQDHZREKiD47s0Cy8q6JeeJksoCSMJP5A9E3BveoC9VL75JCHPZHAORPicOa0UxqJXj0SmHp4RR0NRh_ckSy7W5UsPYMoyCeDJbGTX-e92AVp4qCxdJdBxp2zO0yik6YSkSeykItqhOEsE0XQxcIzp8lhEgZQVeme2AWfcWUHix_M-tWLPMwgDIUX1Od9pBSXT218npIgpOuDwLdsjyjfJX7BYxl55Wg9QD3L1MWrKPVx2Y5yILhKoFXNbp4cY8a3GqarvtQavls8"
+                />
+                <img
+                  alt="User portrait"
+                  class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                  data-alt="Portrait of a smiling man"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWQ8WDkR__M5IVMA5qx62tvI4Y5AUVe_6v3QCEsOIIrVvX4W5-YkF8DtrCbeA1xn8iGo0svyoLnwaKT3MvuTMgkZ8NLaqLm_8qQlhWqBBUYDwNUd3N99Rf6sFuJlzYUiJlc1OXCysQ7P8Lfk9_FqbWWdQvOjGnwqwx6RUQ6wXvkzpF1O5YeTIpWDRWJz-sFek0jQ0-cw7g2UDFoMSCWxWh2YNPZ17o2zTAi5a32c8SzWWhA3fUWCL6JORGX7KR42ue6Gp8QQ2LwB8"
+                />
+              </div>
+              <p class="text-white text-sm font-medium">
+                Trusted by 10k+ locals
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Right Side: Form -->
+        <div
+          class="w-full md:w-7/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center"
+        >
+          <div class="max-w-[480px] mx-auto w-full">
+            <div class="mb-8">
+              <h2
+                class="text-[#111318] dark:text-white text-3xl font-bold leading-tight mb-2"
+              >
+                Create your account
+              </h2>
+              <p class="text-[#616f89] dark:text-gray-400 text-sm">
+                Start tracking expenses and shopping smarter today.
+              </p>
+            </div>
+            <!-- Role Selector -->
+            <div class="mb-6">
+              <p
+                class="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2"
+              >
+                I am a...
+              </p>
+              <div
+                class="flex h-12 w-full items-center justify-center rounded-lg bg-[#f0f2f4] dark:bg-[#2d3748] p-1"
+              >
+                <label
+                  class="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#1a202c] has-[:checked]:shadow-sm has-[:checked]:text-primary transition-all"
+                >
+                  <span
+                    class="truncate text-sm font-medium text-[#616f89] dark:text-gray-400 group-has-[:checked]:text-primary dark:group-has-[:checked]:text-primary"
+                    >Regular User</span
+                  >
+                  <input
+                    checked=""
+                    class="invisible w-0 h-0"
+                    name="role"
+                    type="radio"
+                    value="User"
+                  />
+                </label>
+                <label
+                  class="group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#1a202c] has-[:checked]:shadow-sm has-[:checked]:text-primary transition-all"
+                >
+                  <span
+                    class="truncate text-sm font-medium text-[#616f89] dark:text-gray-400 group-has-[:checked]:text-primary dark:group-has-[:checked]:text-primary"
+                    >Vendor</span
+                  >
+                  <input
+                    class="invisible w-0 h-0"
+                    name="role"
+                    type="radio"
+                    value="Vendor"
+                  />
+                </label>
+              </div>
+            </div>
+            <form action="#" class="flex flex-col gap-5">
+              <!-- Full Name -->
+              <label class="flex flex-col w-full">
+                <p
+                  class="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2"
+                >
+                  Full Name
+                </p>
+                <div class="relative">
+                  <input
+                    class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-primary h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                    placeholder="Enter your full name"
+                    required=""
+                    type="text"
+                  />
+                  <span
+                    class="material-symbols-outlined absolute right-4 top-3 text-[#9ca3af] text-[20px]"
+                    >person</span
+                  >
+                </div>
+              </label>
+              <!-- Email -->
+              <label class="flex flex-col w-full">
+                <p
+                  class="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2"
+                >
+                  Email Address
+                </p>
+                <div class="relative">
+                  <input
+                    class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-primary h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                    placeholder="name@example.com"
+                    required=""
+                    type="email"
+                  />
+                  <span
+                    class="material-symbols-outlined absolute right-4 top-3 text-[#9ca3af] text-[20px]"
+                    >mail</span
+                  >
+                </div>
+              </label>
+              <!-- Password -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <label class="flex flex-col w-full">
+                  <p
+                    class="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2"
+                  >
+                    Password
+                  </p>
+                  <div class="relative">
+                    <input
+                      class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-primary h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                      placeholder="Min. 8 characters"
+                      required=""
+                      type="password"
+                    />
+                  </div>
+                </label>
+                <label class="flex flex-col w-full">
+                  <p
+                    class="text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal pb-2"
+                  >
+                    Confirm Password
+                  </p>
+                  <div class="relative">
+                    <input
+                      class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-[#111318] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] focus:border-primary h-12 placeholder:text-[#9ca3af] px-4 text-base font-normal leading-normal transition-all"
+                      placeholder="Re-enter password"
+                      required=""
+                      type="password"
+                    />
+                  </div>
+                </label>
+              </div>
+              <!-- Terms Checkbox -->
+              <div class="flex items-start gap-3 mt-2">
+                <div class="flex h-6 items-center">
+                  <input
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700"
+                    id="terms"
+                    name="terms"
+                    type="checkbox"
+                  />
+                </div>
+                <div class="text-sm leading-6">
+                  <label
+                    class="font-medium text-[#616f89] dark:text-gray-400"
+                    for="terms"
+                    >By creating an account, you agree to our
+                    <a
+                      class="font-semibold text-primary hover:text-blue-600"
+                      href="#"
+                      >Terms of Service</a
+                    >
+                    and
+                    <a
+                      class="font-semibold text-primary hover:text-blue-600"
+                      href="#"
+                      >Privacy Policy</a
+                    >.</label
+                  >
+                </div>
+              </div>
+              <!-- Submit Button -->
+              <button
+                class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-primary h-12 px-4 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all mt-2"
+                type="submit"
+              >
+                Create Account
+              </button>
+            </form>
+            <!-- Divider -->
+            <div class="relative my-8">
+              <div
+                aria-hidden="true"
+                class="absolute inset-0 flex items-center"
+              >
+                <div
+                  class="w-full border-t border-gray-200 dark:border-gray-700"
+                ></div>
+              </div>
+              <div class="relative flex justify-center">
+                <span
+                  class="bg-white dark:bg-[#1a202c] px-3 text-sm text-[#616f89] dark:text-gray-400"
+                  >Or continue with</span
+                >
+              </div>
+            </div>
+            <!-- Social Login -->
+            <button
+              class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-lg border border-[#dbdfe6] dark:border-[#4a5568] bg-white dark:bg-[#2d3748] h-12 px-4 text-[#111318] dark:text-white text-sm font-medium leading-normal shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              type="button"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                viewbox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                ></path>
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                ></path>
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                ></path>
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                ></path>
+              </svg>
+              Sign up with Google
+            </button>
+            <div class="mt-8 text-center">
+              <p class="text-sm text-[#616f89] dark:text-gray-400">
+                Already have an account?
+                <a
+                  class="font-semibold text-primary hover:text-blue-600"
+                  href="#"
+                  >Log In</a
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
