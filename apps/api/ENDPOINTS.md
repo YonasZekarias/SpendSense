@@ -54,9 +54,24 @@ Use the **access** token in the header for protected endpoints:
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/users/register/` | No | Register. Body: `full_name`, `email`, `password`, optional `phone`, `city`, `household_size`, `income_bracket`. |
-| GET | `/api/users/me/` | Yes | Current user profile. |
-| PATCH | `/api/users/me/` | Yes | Update profile (partial). |
+| POST | `/api/users/register/` | No | Register. Body: `full_name`, `email`, `password`, optional `phone`, `city`, `household_size`, `income_bracket`, `notification_preferences`, `onboarding_completed`. |
+| GET | `/api/users/me/` | Yes | Current user profile (includes `notification_preferences`, `onboarding_completed`). |
+| PATCH | `/api/users/me/` | Yes | Update profile (partial): city, household, income, **`notification_preferences`** (JSON), **`onboarding_completed`** (for `/onboarding` → dashboard). |
+| POST | `/api/users/password/reset/request/` | No | **Week 3** forgot-password. Body: `{ "email": "..." }`. Always `200` with generic message; sends email with `uid` + `token` query params when user exists. |
+| POST | `/api/users/password/reset/confirm/` | No | **Week 3** reset-password. Body: `{ "uid": "<from email>", "token": "<from email>", "new_password": "..." }`. |
+| GET | `/api/users/me/notifications/` | Yes | List notifications. |
+| PATCH | `/api/users/me/notifications/<id>/` | Yes | Mark read, etc. |
+
+### Password reset (Week 3 frontend)
+
+Configure the link target for emails (defaults suit local Next.js):
+
+| Env var | Purpose |
+|---------|---------|
+| `FRONTEND_URL` | e.g. `http://localhost:3000` |
+| `PASSWORD_RESET_FRONTEND_PATH` | e.g. `/reset-password` (page reads `?uid=&token=`) |
+| `EMAIL_BACKEND` | Default: console in `DEBUG`; set SMTP in production |
+| `DEFAULT_FROM_EMAIL` | From address for reset emails |
 
 ---
 
@@ -108,3 +123,11 @@ pip install -r requirements.txt
 ```
 
 Then restart the server: `python manage.py runserver`.
+
+---
+
+## Automated checks
+
+```bash
+cd apps/api && python manage.py test tests.test_week3_users -v 2
+```

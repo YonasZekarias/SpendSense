@@ -22,12 +22,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'full_name', 'email', 'phone', 'password',
             'role', 'city', 'household_size', 'income_bracket',
+            'notification_preferences', 'onboarding_completed',
         )
         extra_kwargs = {
             'phone': {'required': False},
             'city': {'required': False},
             'household_size': {'required': False},
             'income_bracket': {'required': False},
+            'notification_preferences': {'required': False},
+            'onboarding_completed': {'required': False},
             'role': {'default': 'user', 'read_only': True},
         }
 
@@ -42,9 +45,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
-            'city', 'household_size', 'income_bracket', 'created_at',
+            'city', 'household_size', 'income_bracket',
+            'notification_preferences', 'onboarding_completed', 'created_at',
         )
         read_only_fields = ('id', 'email', 'role', 'created_at')
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
 
 
 class AdminUserBriefSerializer(serializers.ModelSerializer):
