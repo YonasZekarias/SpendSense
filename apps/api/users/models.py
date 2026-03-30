@@ -39,6 +39,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     city = models.CharField(max_length=100, null=True, blank=True)
     household_size = models.PositiveIntegerField(null=True, blank=True)
     income_bracket = models.CharField(max_length=50, null=True, blank=True)
+    notification_preferences = models.JSONField(default=dict, blank=True)
+    onboarding_completed = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -72,7 +74,7 @@ class Vendor(models.Model):
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     type = models.CharField(max_length=50)
     message = models.TextField()
     is_read = models.BooleanField(default=False)

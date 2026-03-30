@@ -6,6 +6,16 @@ app_name = 'users'
 
 urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
+    path(
+        'password/reset/request/',
+        views.PasswordResetRequestView.as_view(),
+        name='password-reset-request',
+    ),
+    path(
+        'password/reset/confirm/',
+        views.PasswordResetConfirmView.as_view(),
+        name='password-reset-confirm',
+    ),
     path('me/notifications/<int:pk>/', views.NotificationDetailView.as_view(), name='notification-detail'),
     path('me/notifications/', views.NotificationListView.as_view(), name='notification-list'),
     path('me/', views.MeView.as_view(), name='me'),
