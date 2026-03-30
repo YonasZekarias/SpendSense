@@ -18,6 +18,7 @@ export default function UsersPage() {
       <section className="rounded-xl border border-border/70 p-4">
         <h2 className="text-sm font-medium text-muted-foreground">Current Session</h2>
         <p className="mt-2 text-sm">Name: {user?.full_name || "Unknown"}</p>
+        <p className="mt-2 text-sm">Role: {user?.role || "Unknown"}</p>
         <p className="text-sm">Email: {user?.email || "Unknown"}</p>
       </section>
 
