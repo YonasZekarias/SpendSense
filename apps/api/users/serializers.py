@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User
+from .models import Notification, User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -45,3 +45,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'city', 'household_size', 'income_bracket', 'created_at',
         )
         read_only_fields = ('id', 'email', 'role', 'created_at')
+
+
+class AdminUserBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'full_name', 'phone', 'role', 'is_active', 'created_at',
+        )
+        read_only_fields = fields
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('is_active',)
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'type', 'message', 'is_read', 'created_at')
+        read_only_fields = ('id', 'type', 'message', 'created_at')

@@ -5,8 +5,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from core_api.permissions import IsAdminRole
+
+from .models import User
 from .serializers import (
+    AdminUserBriefSerializer,
+    AdminUserUpdateSerializer,
     CustomTokenObtainPairSerializer,
+    NotificationSerializer,
     RegisterSerializer,
     UserProfileSerializer,
 )
@@ -63,3 +69,37 @@ class MeView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class AdminUserListView(generics.ListAPIView):
+    permission_classes = [IsAdminRole]
+    queryset = User.objects.all().order_by('-created_at')
+    serializer_class = AdminUserBriefSerializer
+
+
+class AdminUserDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAdminRole]
+    queryset = User.objects.all()
+    lookup_field = 'pk'
+
+    def get_serializer_class(self):
+        if self.request.method in ('PATCH', 'PUT'):
+            return AdminUserUpdateSerializer
+        return AdminUserBriefSerializer
+
+
+class NotificationListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        return self.request.user.notification_set.all().order_by('-created_at')
+
+
+class NotificationDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        return self.request.user.notification_set.all()
