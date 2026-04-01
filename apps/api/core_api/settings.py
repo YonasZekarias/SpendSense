@@ -181,6 +181,21 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
     'http://localhost:3000,http://127.0.0.1:3000'
 ).split(',')
 
+# Week 3 — password reset emails link to the Next.js app (forgot / reset password pages)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+PASSWORD_RESET_FRONTEND_PATH = os.environ.get(
+    'PASSWORD_RESET_FRONTEND_PATH',
+    '/reset-password',
+)
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'SpendSense <noreply@spendsense.local>')
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+    if DEBUG
+    else 'django.core.mail.backends.smtp.EmailBackend',
+)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

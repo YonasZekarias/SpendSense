@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User
+from .models import Notification, User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -22,12 +22,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'full_name', 'email', 'phone', 'password',
             'role', 'city', 'household_size', 'income_bracket',
+            'notification_preferences', 'onboarding_completed',
         )
         extra_kwargs = {
             'phone': {'required': False},
             'city': {'required': False},
             'household_size': {'required': False},
             'income_bracket': {'required': False},
+            'notification_preferences': {'required': False},
+            'onboarding_completed': {'required': False},
             'role': {'default': 'user', 'read_only': True},
         }
 
@@ -42,6 +45,39 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
-            'city', 'household_size', 'income_bracket', 'created_at',
+            'city', 'household_size', 'income_bracket',
+            'notification_preferences', 'onboarding_completed', 'created_at',
         )
         read_only_fields = ('id', 'email', 'role', 'created_at')
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+
+class AdminUserBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'full_name', 'phone', 'role', 'is_active', 'created_at',
+        )
+        read_only_fields = fields
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('is_active',)
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'type', 'message', 'is_read', 'created_at')
+        read_only_fields = ('id', 'type', 'message', 'created_at')

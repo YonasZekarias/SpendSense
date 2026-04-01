@@ -1,0 +1,62 @@
+export type AuthFieldErrors = Record<string, string[]>;
+
+export class AuthApiError extends Error {
+  status: number;
+  fieldErrors: AuthFieldErrors;
+
+  constructor(message: string, status: number, fieldErrors: AuthFieldErrors = {}) {
+    super(message);
+    this.name = "AuthApiError";
+    this.status = status;
+    this.fieldErrors = fieldErrors;
+  }
+}
+
+export function getAuthErrorStatus(error: unknown): number | undefined {
+  if (error instanceof AuthApiError) {
+    return error.status;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  return undefined;
+}
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
+export type RegisterPayload = {
+  full_name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  city?: string;
+  household_size?: number;
+  income_bracket?: string;
+};
+
+export type TokenPair = {
+  access: string;
+  refresh: string;
+};
+
+export type UserProfile = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  city?: string;
+  household_size?: number;
+  income_bracket?: string;
+  created_at: string;
+};
