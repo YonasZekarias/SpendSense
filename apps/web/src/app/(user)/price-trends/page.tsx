@@ -128,7 +128,6 @@ export default function PriceTrendsPage() {
         </div>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white dark:bg-[#1e2330] rounded-xl p-5 border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm flex flex-col">
           <div className="flex justify-between items-start mb-4">
@@ -171,7 +170,6 @@ export default function PriceTrendsPage() {
         </div>
       </div>
 
-      {/* Controls */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-[#1e2330] p-4 rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm">
         <div className="flex-1">
           <div className="relative">
@@ -231,7 +229,6 @@ export default function PriceTrendsPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white dark:bg-[#1e2330] rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[900px]">
