@@ -13,7 +13,8 @@ __pycache__/
 venv/
 env/
 ENV/
-
+*.md
+*.html
 # --- Django ---
 *.sqlite3
 db.sqlite3
