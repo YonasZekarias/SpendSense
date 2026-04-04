@@ -2,8 +2,6 @@ import re
 
 from django.core import mail
 from django.test import TestCase, override_settings
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -79,6 +77,9 @@ class Week3UserAuthTests(TestCase):
         self.assertIn('account exists', res.data['detail'].lower())
 
     def test_password_reset_confirm_invalid_token(self):
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+
         uid = urlsafe_base64_encode(force_bytes(str(self.user.pk)))
         res = self.client.post(
             '/api/users/password/reset/confirm/',
