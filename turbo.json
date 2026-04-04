@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/dist/**"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/dist/**","storybook-static/**"],
       "dependsOn": ["^build"],
       "env": ["NEXT_PUBLIC_API_HOST"]
     },
