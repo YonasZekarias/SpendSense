@@ -6,16 +6,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Item, PriceSubmission
-from .serializers import ItemSerializer, PriceSubmissionSerializer
-
-
-class ItemsView(generics.ListAPIView):
-    """GET /api/market/items/ — list tracked items (seeded via seed_items)."""
-
-    permission_classes = [AllowAny]
-    serializer_class = ItemSerializer
-    queryset = Item.objects.all().order_by('name')
+from .models import PriceSubmission
+from .serializers import PriceSubmissionSerializer
 
 
 class SubmitPriceView(generics.CreateAPIView):
