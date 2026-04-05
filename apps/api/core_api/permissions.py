@@ -9,11 +9,3 @@ class IsAdminRole(permissions.BasePermission):
         if not u or not u.is_authenticated:
             return False
         return getattr(u, 'role', None) == 'admin' or u.is_staff
-
-
-class IsVendorRole(permissions.BasePermission):
-    def has_permission(self, request, view):
-        u = request.user
-        if not u or not u.is_authenticated:
-            return False
-        return getattr(u, 'role', None) == 'vendor'
