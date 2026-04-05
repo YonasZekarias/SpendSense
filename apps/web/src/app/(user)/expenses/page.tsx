@@ -1,36 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Button } from "@repo/ui/components/button";
-import { 
-  Plus, 
-  Receipt, 
-  Calendar as CalendarIcon, 
-  Tag, 
+import {
   ArrowRight,
+  Calendar as CalendarIcon,
+  Plus,
+  Receipt,
+  Tag,
   TrendingDown
 } from "lucide-react";
-import { getExpenses, type Expense } from "./expenseService";
+import Link from "next/link";
+import { useEffect } from "react";
+import { useExpenseStore, type ExpenseStoreState } from "./expenseStore";
+import type { Expense } from "./expenseService";
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const expenses = useExpenseStore((state: ExpenseStoreState) => state.expenses);
+  const isLoading = useExpenseStore((state: ExpenseStoreState) => state.isLoading);
+  const loadExpenses = useExpenseStore((state: ExpenseStoreState) => state.loadExpenses);
 
   // Load expenses on mount
   useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await getExpenses();
-        setExpenses(data);
-      } catch (error) {
-        console.error("Failed to load expenses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+    void loadExpenses();
+  }, [loadExpenses]);
 
   // Format currency helper
   const formatCurrency = (amount: number) => {
@@ -83,7 +75,7 @@ export default function ExpensesPage() {
       ) : (
         /* Expenses List */
         <div className="grid gap-4">
-          {expenses.map((expense) => (
+          {expenses.map((expense: Expense) => (
             <div 
               key={expense.id}
               className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-center"

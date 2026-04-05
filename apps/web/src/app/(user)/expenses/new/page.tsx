@@ -16,7 +16,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v3";
-import { createExpense, EXPENSE_CATEGORIES } from "../expenseService";
+import { EXPENSE_CATEGORIES } from "../expenseService";
+import { useExpenseStore } from "../expenseStore";
 
 const createExpenseSchema = z.object({
   title: z.string().trim().min(2, "Description is required."),
@@ -33,6 +34,7 @@ type CreateExpenseSchema = z.infer<typeof createExpenseSchema>;
 
 export default function NewExpensePage() {
   const router = useRouter();
+  const addExpense = useExpenseStore((state) => state.addExpense);
 
   const form = useForm<CreateExpenseSchema>({
     resolver: zodResolver(createExpenseSchema),
@@ -47,7 +49,7 @@ export default function NewExpensePage() {
 
   const onSubmit = async (values: CreateExpenseSchema) => {
     try {
-      await createExpense(values);
+      await addExpense(values);
       router.push("/expenses");
       router.refresh();
     } catch (error) {
