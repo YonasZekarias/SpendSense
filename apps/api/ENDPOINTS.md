@@ -85,9 +85,44 @@ Configure the link target for emails (defaults suit local Next.js):
 
 ---
 
-## Finance & E-commerce
+## Finance
 
-Currently no routes; app URLs are empty. Will be added in later weeks.
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET/POST | `/api/finance/budgets/` | Yes | List/create user budgets. |
+| GET/PATCH/DELETE | `/api/finance/budgets/<id>/` | Yes | Read/update/delete budget. |
+| GET | `/api/finance/budgets/suggestions/` | Yes | Suggested monthly split. |
+| GET | `/api/finance/budgets/<id>/summary/` | Yes | Budget vs actual summary and warning flags. |
+| GET/POST | `/api/finance/expenses/` | Yes | List/log expenses. |
+| GET/PATCH/DELETE | `/api/finance/expenses/<id>/` | Yes | Read/update/delete expense. |
+| GET | `/api/finance/export/?format=csv` | Yes | CSV export. |
+| GET | `/api/finance/export/?format=pdf` | Yes | PDF export. |
+
+## E-commerce
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/ecommerce/vendors/` | Yes | Register current user as vendor. |
+| GET | `/api/ecommerce/vendors/<id>/` | No | Public vendor profile. |
+| GET/POST | `/api/ecommerce/vendors/<vendor_id>/listings/` | Yes | Vendor listing management. |
+| PATCH | `/api/ecommerce/listings/<id>/` | Yes | Update listing. |
+| GET | `/api/ecommerce/recommendations/` | Yes | Vendor recommendations by item/location. |
+| GET/POST | `/api/ecommerce/purchases/` | Yes | List purchases / create purchase checkout session. |
+| GET | `/api/ecommerce/purchases/<id>/` | Yes | Purchase detail. |
+| PATCH | `/api/ecommerce/purchases/<id>/status/` | Yes (vendor/admin) | Delivery state update (`shipped`, `delivered`, `cancelled`). |
+| POST | `/api/ecommerce/webhooks/payment/` | No (gateway + secret) | Payment callback updates transaction status. |
+| GET | `/api/ecommerce/admin/vendors/` | Admin | Vendor verification queue. |
+| POST | `/api/ecommerce/admin/vendors/<id>/verify/` | Admin | Verify vendor. |
+| POST | `/api/ecommerce/admin/vendors/<id>/reject/` | Admin | Reject vendor (if no purchases). |
+
+## Admin and ML (Week 4)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET/PATCH | `/api/admin/settings/` | Admin | Read/update system settings keys. |
+| GET | `/api/admin/audit/` | Admin | Audit stream of admin/system actions. |
+| POST | `/api/admin/ml/retrain/` | Admin | Run forecast generation job and persist `Forecast` rows. |
+| GET | `/api/admin/ml/status/` | Admin | Last ML run metadata. |
 
 ---
 
@@ -129,5 +164,8 @@ Then restart the server: `python manage.py runserver`.
 ## Automated checks
 
 ```bash
-cd apps/api && python manage.py test tests.test_week3_users -v 2
+cd apps/api
+python manage.py test tests.test_week2_endpoints -v 2
+python manage.py test tests.test_week3_users -v 2
+python manage.py test tests.test_week4_backend -v 2
 ```
