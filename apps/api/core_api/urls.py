@@ -8,6 +8,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 from users.views import EmailTokenObtainPairView
+from market.views import AdminMLRetrainView, AdminMLStatusView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -31,6 +32,9 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # API apps
     path('api/users/', include('users.urls')),
+    path('api/admin/', include('users.admin_urls')),
+    path('api/admin/ml/retrain/', AdminMLRetrainView.as_view(), name='admin-ml-retrain'),
+    path('api/admin/ml/status/', AdminMLStatusView.as_view(), name='admin-ml-status'),
     path('api/market/', include('market.urls')),
     path('api/finance/', include('finance.urls')),
     path('api/ecommerce/', include('ecommerce.urls')),

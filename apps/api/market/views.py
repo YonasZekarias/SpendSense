@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.db.models import Avg, Count, Q
 from drf_yasg import openapi
@@ -10,7 +11,9 @@ from rest_framework.views import APIView
 
 from core_api.permissions import IsAdminRole
 
-from .models import Forecast, Item, NationalPrice, PriceSubmission
+from users.models import AuditLog
+
+from .models import Forecast, ForecastRun, Item, NationalPrice, PriceSubmission
 from .serializers import (
     AdminSubmissionListSerializer,
     AdminSubmissionUpdateSerializer,
@@ -148,6 +151,12 @@ class AdminSubmissionApproveView(APIView):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         sub.status = 'approved'
         sub.save(update_fields=['status'])
+        AuditLog.objects.create(
+            actor=request.user,
+            action='submission_approve',
+            resource='price_submission',
+            resource_id=str(sub.id),
+        )
         return Response(AdminSubmissionListSerializer(sub).data)
 
 
@@ -161,6 +170,12 @@ class AdminSubmissionRejectView(APIView):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         sub.status = 'rejected'
         sub.save(update_fields=['status'])
+        AuditLog.objects.create(
+            actor=request.user,
+            action='submission_reject',
+            resource='price_submission',
+            resource_id=str(sub.id),
+        )
         return Response(AdminSubmissionListSerializer(sub).data)
 
 
@@ -335,3 +350,74 @@ class NationalPriceListView(APIView):
             }
             for r in qs
         ])
+
+
+class AdminMLRetrainView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def post(self, request):
+        weeks = int(request.data.get('forecast_weeks', 4))
+        rows_created = 0
+        item_count = 0
+        for item in Item.objects.all():
+            hist = list(
+                PriceSubmission.objects.filter(item=item, status='approved')
+                .order_by('-date_observed')
+                .values_list('price_value', flat=True)[:8]
+            )
+            if not hist:
+                continue
+            item_count += 1
+            avg = sum([Decimal(str(x)) for x in hist]) / Decimal(len(hist))
+            base = avg.quantize(Decimal('0.01'))
+            Forecast.objects.filter(item=item).delete()
+            for i in range(1, weeks + 1):
+                drift = Decimal('1.00') + (Decimal('0.01') * Decimal(i - 1))
+                pred = (base * drift).quantize(Decimal('0.01'))
+                low = (pred * Decimal('0.96')).quantize(Decimal('0.01'))
+                high = (pred * Decimal('1.04')).quantize(Decimal('0.01'))
+                Forecast.objects.create(
+                    item=item,
+                    forecast_date=date.today() + timedelta(weeks=i),
+                    predicted_price=pred,
+                    confidence_low=low,
+                    confidence_high=high,
+                    model_used='moving_average_v1',
+                )
+                rows_created += 1
+        run = ForecastRun.objects.create(
+            model_used='moving_average_v1',
+            status='success',
+            item_count=item_count,
+            detail={'rows_created': rows_created, 'forecast_weeks': weeks},
+        )
+        AuditLog.objects.create(
+            actor=request.user,
+            action='ml_retrain',
+            resource='forecast',
+            resource_id=str(run.id),
+            detail=run.detail,
+        )
+        return Response(
+            {'detail': 'Forecast retraining completed.', 'rows_created': rows_created, 'item_count': item_count},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminMLStatusView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        run = ForecastRun.objects.order_by('-created_at').first()
+        if not run:
+            return Response({'detail': 'No ML run yet.'}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                'id': run.id,
+                'model_used': run.model_used,
+                'status': run.status,
+                'item_count': run.item_count,
+                'detail': run.detail,
+                'created_at': run.created_at,
+            }
+        )

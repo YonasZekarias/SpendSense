@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from core_api.permissions import IsAdminRole
 
-from .models import User
+from .models import AuditLog, User
 from .serializers import (
     AdminUserBriefSerializer,
     AdminUserUpdateSerializer,
@@ -179,6 +179,16 @@ class AdminUserDetailView(generics.RetrieveUpdateAPIView):
         if self.request.method in ('PATCH', 'PUT'):
             return AdminUserUpdateSerializer
         return AdminUserBriefSerializer
+
+    def perform_update(self, serializer):
+        user = serializer.save()
+        AuditLog.objects.create(
+            actor=self.request.user,
+            action='admin_user_update',
+            resource='user',
+            resource_id=str(user.id),
+            detail={'is_active': user.is_active},
+        )
 
 
 class NotificationListView(generics.ListAPIView):
