@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Avg
+from django.conf import settings
 from rest_framework import serializers
 
 from market.models import VendorPrice
@@ -54,7 +55,8 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = (
             'id', 'vendor', 'vendor_price', 'quantity', 'amount', 'currency',
-            'status', 'reference', 'payment_url', 'created_at',
+            'status', 'reference', 'payment_method', 'payment_reference',
+            'payment_url', 'paid_at', 'created_at', 'updated_at',
         )
         read_only_fields = fields
 
@@ -92,9 +94,18 @@ class PurchaseCreateSerializer(serializers.Serializer):
             amount=amount,
             status='pending',
             reference=ref,
+            payment_method=validated_data.get('payment_method') or 'chapa',
             payment_url='',
         )
+        rec.payment_url = (
+            f"{settings.FRONTEND_URL.rstrip('/')}/shop/payment/return?reference={rec.reference}"
+        )
+        rec.save(update_fields=['payment_url'])
         return rec
+
+
+class PurchaseStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=['shipped', 'delivered', 'cancelled'])
 
 
 class VendorReviewSerializer(serializers.ModelSerializer):

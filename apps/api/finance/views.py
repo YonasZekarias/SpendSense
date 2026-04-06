@@ -2,7 +2,7 @@ import csv
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from io import StringIO
+from io import BytesIO, StringIO
 
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -10,6 +10,8 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from users.models import Notification
 
 from .models import Budget, Expense
 from .serializers import BudgetSerializer, ExpenseSerializer
@@ -136,6 +138,54 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(date__lte=dt)
         return qs
 
+    def perform_create(self, serializer):
+        expense = serializer.save()
+        budget = Budget.objects.filter(
+            user=self.request.user,
+            year=expense.date.year,
+            month=expense.date.month,
+        ).first()
+        if not budget:
+            return
+
+        month_qs = Expense.objects.filter(
+            user=self.request.user,
+            date__year=expense.date.year,
+            date__month=expense.date.month,
+        )
+        total_spent = month_qs.aggregate(s=Sum('amount'))['s'] or Decimal('0')
+        if budget.total_limit > 0:
+            pct_total = total_spent / budget.total_limit * 100
+            if pct_total >= 100:
+                Notification.objects.create(
+                    user=self.request.user,
+                    type='budget_warning',
+                    message=f'You have exceeded your {budget.month}/{budget.year} budget.',
+                )
+            elif pct_total >= 80:
+                Notification.objects.create(
+                    user=self.request.user,
+                    type='budget_warning',
+                    message=f'You reached {round(pct_total, 1)}% of your monthly budget.',
+                )
+
+        cat = budget.categories.filter(category_name__iexact=expense.category).first()
+        if cat and cat.limit_amount > 0:
+            spent_cat = month_qs.filter(category__iexact=expense.category).aggregate(s=Sum('amount'))['s'] or Decimal('0')
+            pct_cat = spent_cat / cat.limit_amount * 100
+            if pct_cat >= 100:
+                Notification.objects.create(
+                    user=self.request.user,
+                    type='budget_warning',
+                    message=f'You exceeded {expense.category} budget limit.',
+                )
+            elif pct_cat >= 80:
+                Notification.objects.create(
+                    user=self.request.user,
+                    type='budget_warning',
+                    message=f'{expense.category} spending reached {round(pct_cat, 1)}% of its budget.',
+                )
+
 
 class ExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -158,10 +208,21 @@ class FinanceExportView(APIView):
             qs = qs.filter(date__month=month, date__year=year)
 
         if fmt == 'pdf':
-            return Response(
-                {'detail': 'PDF export is not implemented yet. Use format=csv.'},
-                status=status.HTTP_501_NOT_IMPLEMENTED,
+            lines = [
+                'SpendSense Finance Export',
+                f'User: {request.user.email}',
+                f'Period: {month or "all"}/{year or "all"}',
+                '',
+                'Date | Category | Amount | Note',
+            ]
+            for e in qs:
+                lines.append(f'{e.date.isoformat()} | {e.category} | {e.amount} | {(e.note or "")[:60]}')
+            pdf_bytes = self._simple_pdf('\n'.join(lines))
+            resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+            resp['Content-Disposition'] = (
+                f'attachment; filename="spendsense_expenses_{year or "all"}_{month or "all"}.pdf"'
             )
+            return resp
 
         buffer = StringIO()
         w = csv.writer(buffer)
@@ -172,3 +233,32 @@ class FinanceExportView(APIView):
         resp = HttpResponse(buffer.getvalue(), content_type='text/csv')
         resp['Content-Disposition'] = f'attachment; filename="spendsense_expenses_{year or "all"}_{month or "all"}.csv"'
         return resp
+
+    def _simple_pdf(self, text):
+        escaped = text.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+        content = 'BT /F1 10 Tf 40 780 Td 12 TL (' + escaped.replace('\n', ') Tj T* (') + ') Tj ET'
+        obj1 = b'1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n'
+        obj2 = b'2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n'
+        obj3 = (
+            b'3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] '
+            b'/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n'
+        )
+        obj4 = b'4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n'
+        stream = content.encode('latin-1', errors='ignore')
+        obj5 = b'5 0 obj << /Length ' + str(len(stream)).encode() + b' >> stream\n' + stream + b'\nendstream endobj\n'
+        objects = [obj1, obj2, obj3, obj4, obj5]
+        out = BytesIO()
+        out.write(b'%PDF-1.4\n')
+        offsets = [0]
+        for o in objects:
+            offsets.append(out.tell())
+            out.write(o)
+        xref_pos = out.tell()
+        out.write(f'xref\n0 {len(offsets)}\n'.encode())
+        out.write(b'0000000000 65535 f \n')
+        for off in offsets[1:]:
+            out.write(f'{off:010d} 00000 n \n'.encode())
+        out.write(
+            f'trailer << /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF'.encode()
+        )
+        return out.getvalue()

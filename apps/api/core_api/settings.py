@@ -147,6 +147,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # Allow business query params like ?format=pdf for export endpoints.
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 # drf-yasg — Swagger UI (session login disabled; use Bearer JWT in Authorize)
@@ -195,6 +197,7 @@ EMAIL_BACKEND = os.environ.get(
     if DEBUG
     else 'django.core.mail.backends.smtp.EmailBackend',
 )
+PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
