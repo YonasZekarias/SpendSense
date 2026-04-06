@@ -59,3 +59,59 @@ export async function submitPrice(accessToken: string, payload: SubmitPricePaylo
   return data;
 }
 
+export type PriceTrendPoint = {
+  date: string;
+  average_price: string;
+  count: number;
+};
+
+export type ForecastPoint = {
+  item_id: number;
+  forecast_date: string;
+  predicted_price: string;
+  confidence_low: string | null;
+  confidence_high: string | null;
+  model_used: string;
+  city: string | null;
+};
+
+export type InflationResponse = {
+  period: string;
+  city: string | null;
+  item_id: number | null;
+  current_avg: string | null;
+  previous_avg: string | null;
+  change_percent: number | null;
+};
+
+export async function getPriceTrends(params: {
+  item_id: number;
+  city?: string;
+  from_date?: string;
+  to_date?: string;
+}): Promise<PriceTrendPoint[]> {
+  const api = createApiClient();
+  const { data } = await api.get<PriceTrendPoint[]>("/api/market/trends/", { params });
+  return data;
+}
+
+export async function getForecasts(params: {
+  item_id: number;
+  city?: string;
+  forecast_weeks?: number;
+}): Promise<ForecastPoint[]> {
+  const api = createApiClient();
+  const { data } = await api.get<ForecastPoint[]>("/api/market/forecasts/", { params });
+  return data;
+}
+
+export async function getInflation(params?: {
+  period?: "week" | "month";
+  city?: string;
+  item_id?: number;
+}): Promise<InflationResponse> {
+  const api = createApiClient();
+  const { data } = await api.get<InflationResponse>("/api/market/inflation/", { params });
+  return data;
+}
+

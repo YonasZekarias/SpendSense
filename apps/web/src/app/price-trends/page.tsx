@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ShoppingBasket,
   TrendingUp,
@@ -12,8 +12,20 @@ import {
   TrendingDown,
   Minus,
   Bell,
+  Loader2,
 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { TrendForecastChart } from "@/components/price-trends/trend-forecast-chart";
+import {
+  getForecasts,
+  getInflation,
+  getItems,
+  getPriceTrends,
+  type ForecastPoint,
+  type InflationResponse,
+  type MarketItem,
+  type PriceTrendPoint,
+} from "@/services/marketService";
 
 const tableRows = [
   {
@@ -103,8 +115,86 @@ function TrendCell({ trend, pct }: { trend: "up" | "down" | "flat"; pct: string 
   );
 }
 
+function dateRangeLastYear() {
+  const to = new Date();
+  const from = new Date();
+  from.setFullYear(from.getFullYear() - 1);
+  return {
+    from_date: from.toISOString().slice(0, 10),
+    to_date: to.toISOString().slice(0, 10),
+  };
+}
+
 export default function PriceTrendsPage() {
   const [search, setSearch] = useState("");
+  const [items, setItems] = useState<MarketItem[]>([]);
+  const [itemsError, setItemsError] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [filterCity, setFilterCity] = useState("");
+  const [trends, setTrends] = useState<PriceTrendPoint[]>([]);
+  const [forecasts, setForecasts] = useState<ForecastPoint[]>([]);
+  const [inflation, setInflation] = useState<InflationResponse | null>(null);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await getItems();
+        if (cancelled) return;
+        setItems(list);
+        setItemsError(null);
+        if (list.length && selectedItemId == null) {
+          setSelectedItemId(list[0].id);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setItemsError(e instanceof Error ? e.message : "Could not load items.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed selection once
+  }, []);
+
+  useEffect(() => {
+    if (selectedItemId == null) return;
+    let cancelled = false;
+    const { from_date, to_date } = dateRangeLastYear();
+    const city = filterCity.trim() || undefined;
+    setSeriesLoading(true);
+    setSeriesError(null);
+    (async () => {
+      try {
+        const [t, f, inf] = await Promise.all([
+          getPriceTrends({ item_id: selectedItemId, city, from_date, to_date }),
+          getForecasts({ item_id: selectedItemId, city, forecast_weeks: 8 }),
+          getInflation({ period: "month", item_id: selectedItemId, city }),
+        ]);
+        if (cancelled) return;
+        setTrends(t);
+        setForecasts(f);
+        setInflation(inf);
+      } catch (e) {
+        if (!cancelled) {
+          setSeriesError(e instanceof Error ? e.message : "Could not load trends or forecasts.");
+          setTrends([]);
+          setForecasts([]);
+          setInflation(null);
+        }
+      } finally {
+        if (!cancelled) setSeriesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItemId, filterCity]);
+
+  const selectedItem = items.find((i) => i.id === selectedItemId);
 
   return (
     <DashboardShell>
@@ -168,6 +258,127 @@ export default function PriceTrendsPage() {
           </div>
           <p className="text-[#616f89] dark:text-gray-400 text-sm font-medium">Best Value Vendor</p>
           <p className="text-2xl font-bold text-[#111318] dark:text-white mt-1">Merkato Zone 3</p>
+        </div>
+      </div>
+
+      {/* Trends & forecast (API + Recharts) */}
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] bg-white dark:bg-[#1e2330] p-5 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-[#111318] dark:text-white">Price trend & forecast</h2>
+              <p className="text-sm text-[#616f89] dark:text-gray-400">
+                Daily averages from approved submissions; dashed line is the forecast from the API.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex flex-col gap-1 text-xs font-medium text-[#616f89] dark:text-gray-400">
+                Item
+                <select
+                  className="h-10 min-w-[200px] rounded-lg border-none bg-[#f0f2f4] dark:bg-[#2a3140] px-3 text-sm font-medium text-[#111318] dark:text-white focus:ring-2 focus:ring-[#135bec]"
+                  value={selectedItemId ?? ""}
+                  onChange={(e) => setSelectedItemId(e.target.value ? Number(e.target.value) : null)}
+                  disabled={!items.length}
+                >
+                  {!items.length && <option value="">No items</option>}
+                  {items.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-[#616f89] dark:text-gray-400">
+                City (optional)
+                <input
+                  type="text"
+                  placeholder="e.g. Addis Ababa"
+                  className="h-10 w-44 rounded-lg border-none bg-[#f0f2f4] dark:bg-[#2a3140] px-3 text-sm text-[#111318] dark:text-white placeholder:text-[#616f89] focus:ring-2 focus:ring-[#135bec]"
+                  value={filterCity}
+                  onChange={(e) => setFilterCity(e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+          {itemsError && (
+            <p className="mb-3 text-sm text-red-600 dark:text-red-400">{itemsError}</p>
+          )}
+          {seriesError && (
+            <p className="mb-3 text-sm text-red-600 dark:text-red-400">{seriesError}</p>
+          )}
+          {seriesLoading ? (
+            <div className="flex h-[320px] items-center justify-center gap-2 text-[#616f89] dark:text-gray-400">
+              <Loader2 className="size-6 animate-spin" />
+              <span className="text-sm">Loading chart data…</span>
+            </div>
+          ) : (
+            <TrendForecastChart
+              trends={trends}
+              forecasts={forecasts}
+              emptyMessage={
+                selectedItem
+                  ? `No submissions in the last year for “${selectedItem.name}”. Try another item or clear the city filter.`
+                  : "Select an item to see trends."
+              }
+            />
+          )}
+          {forecasts[0]?.model_used && (
+            <p className="mt-2 text-xs text-[#616f89] dark:text-gray-500">
+              Model: <span className="font-medium">{forecasts[0].model_used}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] bg-white dark:bg-[#1e2330] p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-[#111318] dark:text-white">Month-over-month</h3>
+            <p className="mt-1 text-xs text-[#616f89] dark:text-gray-400">
+              From <code className="rounded bg-[#f0f2f4] dark:bg-[#2a3140] px-1">/api/market/inflation/</code> for the selected item.
+            </p>
+            {inflation?.change_percent != null ? (
+              <div className="mt-4">
+                <p
+                  className={`text-3xl font-black tabular-nums ${
+                    inflation.change_percent > 0
+                      ? "text-red-600 dark:text-red-400"
+                      : inflation.change_percent < 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-[#111318] dark:text-white"
+                  }`}
+                >
+                  {inflation.change_percent > 0 ? "+" : ""}
+                  {inflation.change_percent}%
+                </p>
+                <p className="mt-2 text-xs text-[#616f89] dark:text-gray-400">
+                  Current avg: {inflation.current_avg ?? "—"} ETB · Prior: {inflation.previous_avg ?? "—"} ETB
+                </p>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-[#616f89] dark:text-gray-400">
+                Not enough data for this item in the last two months.
+              </p>
+            )}
+          </div>
+          <div className="rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] bg-white dark:bg-[#1e2330] p-5 shadow-sm flex-1 min-h-0">
+            <h3 className="text-sm font-semibold text-[#111318] dark:text-white">Forecast rows</h3>
+            <ul className="mt-3 max-h-[200px] space-y-2 overflow-y-auto text-sm">
+              {forecasts.length === 0 && !seriesLoading && (
+                <li className="text-[#616f89] dark:text-gray-400">No forecast rows returned.</li>
+              )}
+              {forecasts.map((f) => (
+                <li
+                  key={f.forecast_date}
+                  className="flex justify-between gap-2 border-b border-[#f0f2f4] dark:border-[#2a3140] pb-2 last:border-0"
+                >
+                  <span className="text-[#616f89] dark:text-gray-400">
+                    {new Date(f.forecast_date).toLocaleDateString()}
+                  </span>
+                  <span className="font-medium tabular-nums text-[#111318] dark:text-white">
+                    {Number(f.predicted_price).toLocaleString(undefined, { maximumFractionDigits: 2 })} ETB
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
