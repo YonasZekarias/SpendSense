@@ -3,11 +3,13 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Avg
+from django.conf import settings
 from rest_framework import serializers
 
 from market.models import VendorPrice
 from users.models import User, Vendor
 
+from .chapa import ChapaInitError, initialize_chapa_checkout
 from .models import Transaction, VendorReview
 
 
@@ -54,7 +56,8 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = (
             'id', 'vendor', 'vendor_price', 'quantity', 'amount', 'currency',
-            'status', 'reference', 'payment_url', 'created_at',
+            'status', 'reference', 'payment_method', 'payment_reference',
+            'payment_url', 'paid_at', 'created_at', 'updated_at',
         )
         read_only_fields = fields
 
@@ -64,7 +67,11 @@ class PurchaseCreateSerializer(serializers.Serializer):
     listing_id = serializers.IntegerField(help_text='VendorPrice id')
     quantity = serializers.IntegerField(min_value=1, default=1)
     delivery_address = serializers.CharField(required=False, allow_blank=True, default='')
-    payment_method = serializers.CharField(required=False, allow_blank=True, default='pending')
+    payment_method = serializers.ChoiceField(
+        choices=['chapa', 'telebirr', 'cash'],
+        required=False,
+        default='chapa',
+    )
 
     def create(self, validated_data):
         request = self.context['request']
@@ -84,6 +91,7 @@ class PurchaseCreateSerializer(serializers.Serializer):
         amount = (vp.price * Decimal(str(qty))).quantize(Decimal('0.01'))
         ref = uuid.uuid4().hex
 
+        payment_method = validated_data.get('payment_method') or 'chapa'
         rec = Transaction.objects.create(
             user=user,
             vendor=vp.vendor,
@@ -92,9 +100,33 @@ class PurchaseCreateSerializer(serializers.Serializer):
             amount=amount,
             status='pending',
             reference=ref,
+            payment_method=payment_method,
             payment_url='',
         )
+        if payment_method == 'chapa':
+            try:
+                full_name = (user.full_name or 'SpendSense User').split()
+                first_name = full_name[0]
+                last_name = ' '.join(full_name[1:]) if len(full_name) > 1 else 'User'
+                rec.payment_url = initialize_chapa_checkout(
+                    tx_ref=rec.reference,
+                    amount=rec.amount,
+                    email=user.email,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+            except ChapaInitError as exc:
+                raise serializers.ValidationError({'payment': str(exc)})
+        else:
+            rec.payment_url = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/shop/payment/return?reference={rec.reference}"
+            )
+        rec.save(update_fields=['payment_url'])
         return rec
+
+
+class PurchaseStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=['shipped', 'delivered', 'cancelled'])
 
 
 class VendorReviewSerializer(serializers.ModelSerializer):

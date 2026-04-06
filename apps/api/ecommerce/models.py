@@ -5,8 +5,11 @@ import uuid
 class Transaction(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
-        ('success', 'Success'),
+        ('paid', 'Paid'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
         ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -24,8 +27,13 @@ class Transaction(models.Model):
     currency = models.CharField(max_length=10, default='ETB')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     reference = models.CharField(max_length=120, unique=True)
+    payment_method = models.CharField(max_length=30, default='chapa')
+    payment_reference = models.CharField(max_length=120, blank=True, default='')
     payment_url = models.URLField(blank=True, default='')
+    webhook_payload = models.JSONField(default=dict, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class VendorReview(models.Model):

@@ -168,6 +168,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # Allow business query params like ?format=pdf for export endpoints.
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 # drf-yasg — Swagger UI (session login disabled; use Bearer JWT in Authorize)
@@ -216,6 +218,18 @@ EMAIL_BACKEND = os.environ.get(
     if DEBUG
     else 'django.core.mail.backends.smtp.EmailBackend',
 )
+PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
+CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY', '')
+CHAPA_INIT_URL = os.environ.get('CHAPA_INIT_URL', 'https://api.chapa.co/v1/transaction/initialize')
+CHAPA_RETURN_URL = os.environ.get(
+    'CHAPA_RETURN_URL',
+    f"{FRONTEND_URL.rstrip('/')}/shop/payment/return",
+)
+CHAPA_CALLBACK_URL = os.environ.get(
+    'CHAPA_CALLBACK_URL',
+    'http://127.0.0.1:8000/api/ecommerce/webhooks/payment/',
+)
+CHAPA_USE_MOCK = os.environ.get('CHAPA_USE_MOCK', 'true' if DEBUG else 'false').lower() in ('1', 'true', 'yes')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

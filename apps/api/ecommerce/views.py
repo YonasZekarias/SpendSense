@@ -1,7 +1,9 @@
 import math
 from decimal import Decimal
 
+from django.conf import settings
 from django.db.models import Avg
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,11 +12,12 @@ from rest_framework.views import APIView
 
 from core_api.permissions import IsAdminRole
 from market.models import VendorPrice
-from users.models import User, Vendor
+from users.models import AuditLog, Notification, User, Vendor
 
 from .models import Transaction, VendorReview
 from .serializers import (
     PurchaseCreateSerializer,
+    PurchaseStatusUpdateSerializer,
     TransactionSerializer,
     VendorPriceSerializer,
     VendorPublicSerializer,
@@ -171,6 +174,87 @@ class PurchaseDetailView(generics.RetrieveAPIView):
         return Transaction.objects.filter(user=self.request.user)
 
 
+class PurchaseStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        tx = get_object_or_404(Transaction, pk=pk)
+        is_admin = IsAdminRole().has_permission(request, self)
+        if tx.vendor.owner_id != request.user.id and not is_admin:
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = PurchaseStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_status = serializer.validated_data['status']
+        tx.status = new_status
+        tx.save(update_fields=['status', 'updated_at'])
+        Notification.objects.create(
+            user=tx.user,
+            type='delivery_update',
+            message=f'Order {tx.reference} status changed to {new_status}.',
+        )
+        AuditLog.objects.create(
+            actor=request.user,
+            action='purchase_status_update',
+            resource='transaction',
+            resource_id=str(tx.id),
+            detail={'status': new_status},
+        )
+        return Response(TransactionSerializer(tx).data)
+
+
+class PaymentWebhookView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        secret = request.headers.get('X-WEBHOOK-SECRET', '')
+        expected = getattr(settings, 'PAYMENT_WEBHOOK_SECRET', '')
+        if expected and secret != expected:
+            return Response({'detail': 'Invalid webhook signature.'}, status=status.HTTP_403_FORBIDDEN)
+        data = request.data.get('data', request.data)
+        reference = (
+            request.data.get('reference')
+            or request.data.get('tx_ref')
+            or data.get('reference')
+            or data.get('tx_ref')
+        )
+        result = str(
+            request.data.get('status')
+            or data.get('status')
+            or ''
+        ).lower()
+        gateway_ref = (
+            request.data.get('gateway_reference')
+            or request.data.get('chapa_reference')
+            or data.get('gateway_reference')
+            or data.get('reference')
+            or ''
+        )
+        if not reference:
+            return Response({'detail': 'reference is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        tx = get_object_or_404(Transaction, reference=reference)
+        if result in ('success', 'paid'):
+            tx.status = 'paid'
+            tx.paid_at = timezone.now()
+        elif result in ('failed', 'cancelled'):
+            tx.status = result
+        tx.payment_reference = gateway_ref or tx.payment_reference
+        tx.webhook_payload = request.data
+        tx.save(update_fields=['status', 'paid_at', 'payment_reference', 'webhook_payload', 'updated_at'])
+        Notification.objects.create(
+            user=tx.user,
+            type='payment_confirmation',
+            message=f'Payment update for order {tx.reference}: {tx.status}.',
+        )
+        AuditLog.objects.create(
+            actor=None,
+            action='payment_webhook',
+            resource='transaction',
+            resource_id=str(tx.id),
+            detail={'status': tx.status, 'reference': reference},
+        )
+        return Response({'detail': 'Webhook processed.', 'status': tx.status}, status=status.HTTP_200_OK)
+
+
 class VendorReviewListCreateView(generics.ListCreateAPIView):
     serializer_class = VendorReviewSerializer
 
@@ -209,6 +293,12 @@ class AdminVendorVerifyView(APIView):
         v = get_object_or_404(Vendor, pk=pk)
         v.is_verified = True
         v.save(update_fields=['is_verified'])
+        AuditLog.objects.create(
+            actor=request.user,
+            action='vendor_verify',
+            resource='vendor',
+            resource_id=str(v.id),
+        )
         return Response(VendorPublicSerializer(v).data)
 
 
@@ -225,4 +315,10 @@ class AdminVendorRejectView(APIView):
         owner_id = v.owner_id
         v.delete()
         User.objects.filter(pk=owner_id).update(role='user')
+        AuditLog.objects.create(
+            actor=request.user,
+            action='vendor_reject',
+            resource='vendor',
+            resource_id=str(pk),
+        )
         return Response({'detail': 'Vendor rejected and profile removed.'}, status=status.HTTP_200_OK)
