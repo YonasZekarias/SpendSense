@@ -9,7 +9,7 @@ from market.models import Forecast, Item, PriceSubmission, VendorPrice
 from users.models import AuditLog, Notification, User, Vendor
 
 
-@override_settings(PAYMENT_WEBHOOK_SECRET='test-secret')
+@override_settings(PAYMENT_WEBHOOK_SECRET='test-secret', CHAPA_USE_MOCK=True)
 class Week4BackendTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -56,7 +56,7 @@ class Week4BackendTests(TestCase):
         self.assertEqual(buy.status_code, status.HTTP_201_CREATED)
         tx_id = buy.data['id']
         ref = buy.data['reference']
-        self.assertIn('/shop/payment/return', buy.data['payment_url'])
+        self.assertIn('chapa', buy.data['payment_url'])
 
         webhook = self.client.post(
             '/api/ecommerce/webhooks/payment/',
