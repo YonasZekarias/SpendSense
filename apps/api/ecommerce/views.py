@@ -210,9 +210,25 @@ class PaymentWebhookView(APIView):
         expected = getattr(settings, 'PAYMENT_WEBHOOK_SECRET', '')
         if expected and secret != expected:
             return Response({'detail': 'Invalid webhook signature.'}, status=status.HTTP_403_FORBIDDEN)
-        reference = request.data.get('reference')
-        result = str(request.data.get('status', '')).lower()
-        gateway_ref = request.data.get('gateway_reference', '')
+        data = request.data.get('data', request.data)
+        reference = (
+            request.data.get('reference')
+            or request.data.get('tx_ref')
+            or data.get('reference')
+            or data.get('tx_ref')
+        )
+        result = str(
+            request.data.get('status')
+            or data.get('status')
+            or ''
+        ).lower()
+        gateway_ref = (
+            request.data.get('gateway_reference')
+            or request.data.get('chapa_reference')
+            or data.get('gateway_reference')
+            or data.get('reference')
+            or ''
+        )
         if not reference:
             return Response({'detail': 'reference is required.'}, status=status.HTTP_400_BAD_REQUEST)
         tx = get_object_or_404(Transaction, reference=reference)
