@@ -5,8 +5,7 @@ from . import views
 app_name = 'market'
 
 urlpatterns = [
-    path('items/', views.ItemListView.as_view(), name='item-list'),
-    path('items/<int:pk>/', views.ItemDetailView.as_view(), name='item-detail'),
+    path('items/', views.ItemsView.as_view(), name='items'),
     path('prices/submit/', views.SubmitPriceView.as_view(), name='price-submit'),
     path('prices/averages/', views.PriceAveragesView.as_view(), name='price-averages'),
     path('trends/', views.PriceTrendsView.as_view(), name='price-trends'),
