@@ -16,10 +16,10 @@ const AUTH_ROUTES = new Set([
 const ANY_AUTHENTICATED_ROLE = new Set(["user", "vendor", "admin", "analyst"]);
 
 const ROLE_PROTECTED_ROUTES = [
-  { prefix: "/ef", allowedRoles: new Set(["user"]) },
-  { prefix: "/ef", allowedRoles: new Set(["vendor"]) },
-  { prefix: "/ef", allowedRoles: new Set(["admin"]) },
-  { prefix: "/analytics", allowedRoles: new Set(["analyst"]) },
+  { prefix: "/dashboard", allowedRoles: new Set(["user"]) },
+  { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
+  { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
+  { prefix: "/admin", allowedRoles: new Set(["admin"]) },  { prefix: "/analytics", allowedRoles: new Set(["analyst"]) },
   { prefix: "/we", allowedRoles: ANY_AUTHENTICATED_ROLE },
 ];
 
