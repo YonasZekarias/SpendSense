@@ -8,7 +8,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from core_api.permissions import IsAdminRole
 from .models import Item, PriceSubmission
 from .serializers import ItemSerializer, PriceSubmissionSerializer
 
@@ -128,7 +128,7 @@ class PriceAveragesView(APIView):
 
 
 class AdminPendingSubmissionsView(generics.ListAPIView):
-    permission_classes = [IsAdminRole]
+    
     serializer_class = AdminSubmissionListSerializer
 
     def get_queryset(self):
