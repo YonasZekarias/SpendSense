@@ -60,3 +60,5 @@ Thumbs.db
 
 # --- Keys ---
 *.pem
+# --- Migrations and data ---
+**/migrations/
