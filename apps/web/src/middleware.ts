@@ -16,11 +16,11 @@ const AUTH_ROUTES = new Set([
 const ANY_AUTHENTICATED_ROLE = new Set(["user", "vendor", "admin", "analyst"]);
 
 const ROLE_PROTECTED_ROUTES = [
-  { prefix: "/dashboard", allowedRoles: new Set(["user"]) },
-  { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
-  { prefix: "/admin", allowedRoles: new Set(["admin"]) },
+  { prefix: "/ef", allowedRoles: new Set(["user"]) },
+  { prefix: "/ef", allowedRoles: new Set(["vendor"]) },
+  { prefix: "/ef", allowedRoles: new Set(["admin"]) },
   { prefix: "/analytics", allowedRoles: new Set(["analyst"]) },
-  { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
+  { prefix: "/we", allowedRoles: ANY_AUTHENTICATED_ROLE },
 ];
 
 function matchesPath(pathname: string, prefix: string) {
