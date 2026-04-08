@@ -62,7 +62,10 @@ export function Navbar() {
         </Link>
 
         {/* Profile Pill */}
-        <div className="flex shrink-0 items-center gap-3 rounded-full border border-slate-200/50 bg-white/50 py-1 pl-4 pr-1 backdrop-blur-sm transition-colors hover:border-slate-300/50 dark:border-slate-800/50 dark:bg-slate-900/50 dark:hover:border-slate-700/50">
+        <Link 
+          href="/profile"
+          className="flex shrink-0 items-center gap-3 rounded-full border border-slate-200/50 bg-white/50 py-1 pl-4 pr-1 backdrop-blur-sm transition-all hover:border-[#135bec]/30 hover:bg-white dark:border-slate-800/50 dark:bg-slate-900/50 dark:hover:border-[#135bec]/30 dark:hover:bg-slate-900"
+        >
           <div className="hidden text-right sm:block">
             <p className="text-xs font-bold leading-none text-slate-900 dark:text-white">
               {user?.full_name ?? "Abebe Kebede"}
@@ -75,7 +78,7 @@ export function Navbar() {
             className="size-8 rounded-full bg-slate-200 bg-cover bg-center shadow-sm ring-1 ring-slate-200/50 dark:bg-slate-800 dark:ring-slate-700/50"
             style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBbBNiUzh6h-w1FOiRq11HgEilm9CKLuP1xduf7FkBdPJP6ama6AiiN7nPK5VcoUwE0LyZoCBhQ8A2yiaCO6_fFd2ky8mZ861AVZnDoxM7c3cXl3GaJt14BdmPOgHs_KLeTeZlrm9MQhoXFenCdf2vXV1iEI_88woAVO3EPefcz0ixzq5Ml7-vOF7TgNJ7UqkX_qYCAOjfG_LzIEICLm2KhZGzafuEy_FXFzZHRC72FqnrETtI4m_fPc7xT57SrcKVqG_krPN0BJGI')" }}
           />
-        </div>
+        </Link>
       </div>
     </header>
   );

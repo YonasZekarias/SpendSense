@@ -11,6 +11,7 @@ export type UserProfile = {
   income_bracket?: string | null;
   notification_preferences?: unknown;
   onboarding_completed?: boolean;
+  avatar?: string | null;
   created_at?: string;
 };
 
@@ -28,6 +29,7 @@ export type UserProfileUpdate = {
   income_bracket?: string | null;
   notification_preferences?: Record<string, boolean>;
   onboarding_completed?: boolean;
+  avatar?: File | null;
 };
 
 export async function updateProfile(
@@ -35,6 +37,31 @@ export async function updateProfile(
   body: UserProfileUpdate
 ): Promise<UserProfile> {
   const api = createApiClient(() => accessToken);
+  
+  if (body.avatar) {
+    const formData = new FormData();
+    Object.entries(body).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (value === null) {
+          // Skip or send as empty string depending on backend preference
+          // Django typically prefers not sending the field or sending empty string for CharFields
+        } else if (key === 'avatar') {
+          formData.append(key, value as File);
+        } else if (typeof value === 'object' && key === 'notification_preferences') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+    const { data } = await api.patch<UserProfile>("/api/users/me/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return data;
+  }
+
   const { data } = await api.patch<UserProfile>("/api/users/me/", body);
   return data;
 }

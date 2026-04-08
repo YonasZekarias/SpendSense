@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Loader2, ShieldCheck, BadgeCheck } from "lucide-react";
+import { Loader2, ShieldCheck, BadgeCheck, Camera } from "lucide-react";
 import type { UserProfile } from "@/services/userService";
 
 export default function ProfileClient({
@@ -9,7 +9,7 @@ export default function ProfileClient({
   onSave,
 }: {
   initialUser?: UserProfile | null;
-  onSave: (body: Partial<UserProfile & { full_name: string }>) => Promise<UserProfile> | Promise<void>;
+  onSave: (formData: FormData) => Promise<UserProfile> | Promise<void>;
 }) {
   const [form, setForm] = useState<Partial<UserProfile & { full_name: string }>>(
     initialUser
@@ -19,9 +19,12 @@ export default function ProfileClient({
           phone: initialUser.phone ?? "",
           household_size: initialUser.household_size ?? undefined,
           income_bracket: initialUser.income_bracket ?? "",
+          avatar: initialUser.avatar ?? null,
         }
       : {}
   );
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialUser?.avatar || null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -29,15 +32,15 @@ export default function ProfileClient({
     setSaving(true);
     setMessage(null);
     try {
-      const body = {
-        full_name: form.full_name,
-        city: form.city || null,
-        phone: form.phone || null,
-        household_size: form.household_size ?? null,
-        income_bracket: form.income_bracket ?? null,
-      };
+      const formData = new FormData();
+      formData.append("full_name", form.full_name || "");
+      if (form.city) formData.append("city", form.city);
+      if (form.phone) formData.append("phone", form.phone);
+      if (form.household_size) formData.append("household_size", String(form.household_size));
+      if (form.income_bracket) formData.append("income_bracket", form.income_bracket);
+      if (avatarFile) formData.append("avatar", avatarFile);
 
-      const updated = await onSave(body as any);
+      const updated = await onSave(formData);
 
       if (updated && typeof updated === "object") {
         setForm({
@@ -46,7 +49,10 @@ export default function ProfileClient({
           phone: (updated as any).phone ?? "",
           household_size: (updated as any).household_size ?? undefined,
           income_bracket: (updated as any).income_bracket ?? "",
+          avatar: (updated as any).avatar ?? null,
         });
+        setPreviewUrl((updated as any).avatar ?? null);
+        setAvatarFile(null);
       }
 
       setMessage({ type: "success", text: "Profile updated successfully." });
@@ -64,14 +70,30 @@ export default function ProfileClient({
           <div className="flex flex-col gap-8 lg:flex-row">
             <div className="flex flex-col items-center rounded-xl bg-white p-8 shadow-sm text-center lg:w-1/3">
               <div className="relative mb-6">
-                <div className="h-32 w-32 rounded-full p-1 ring-4 ring-[#135bec]/10">
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#f0f2f4] text-3xl font-bold text-[#135bec]">
-                    {form.full_name?.split(" ").map((n) => n[0]).join("")}
-                  </div>
+                <div className="h-32 w-32 rounded-full p-1 ring-4 ring-[#135bec]/10 overflow-hidden">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Avatar" className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#f0f2f4] text-3xl font-bold text-[#135bec]">
+                      {form.full_name?.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                  )}
                 </div>
-                <div className="absolute bottom-1 right-1 flex items-center justify-center rounded-full border-2 border-white bg-[#135bec] p-1 text-white">
-                  <BadgeCheck size={16} />
-                </div>
+                <label className="absolute bottom-1 right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#135bec] text-white shadow-lg transition-transform hover:scale-110">
+                  <Camera size={16} />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setAvatarFile(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
               </div>
 
               <h2 className="text-2xl font-bold text-[#111318]">{form.full_name || "New User"}</h2>

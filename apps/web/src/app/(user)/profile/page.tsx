@@ -11,9 +11,9 @@ export default async function ProfilePage() {
     current = null;
   }
 
-  async function updateProfileAction(body: Partial<UserProfile & { full_name: string }>) {
+  async function updateProfileAction(formData: FormData) {
     "use server";
-    const updated = await apiClient<UserProfile>({ method: "PATCH", endpoint: "/api/users/me/", body });
+    const updated = await apiClient<UserProfile>({ method: "PATCH", endpoint: "/api/users/me/", body: formData });
     return updated;
   }
 

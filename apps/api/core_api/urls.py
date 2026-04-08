@@ -21,6 +21,9 @@ schema_view = get_schema_view(
     authentication_classes=(),  # schema endpoints work without JWT
 )
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     # Swagger / OpenAPI
@@ -40,3 +43,6 @@ urlpatterns = [
     path('api/finance/', include('finance.urls')),
     path('api/ecommerce/', include('ecommerce.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
