@@ -17,10 +17,15 @@ export type ChartRow = {
   date: string;
   historical: number | null;
   forecast: number | null;
+  confidenceLow: number | null;
+  confidenceHigh: number | null;
 };
 
 function mergeSeries(trends: PriceTrendPoint[], forecasts: ForecastPoint[]): ChartRow[] {
-  const byDate = new Map<string, { historical?: number; forecast?: number }>();
+  const byDate = new Map<
+    string,
+    { historical?: number; forecast?: number; confidenceLow?: number | null; confidenceHigh?: number | null }
+  >();
 
   for (const t of trends) {
     const prev = byDate.get(t.date) ?? {};
@@ -35,6 +40,8 @@ function mergeSeries(trends: PriceTrendPoint[], forecasts: ForecastPoint[]): Cha
     byDate.set(f.forecast_date, {
       ...prev,
       forecast: Number(f.predicted_price),
+      confidenceLow: f.confidence_low == null ? null : Number(f.confidence_low),
+      confidenceHigh: f.confidence_high == null ? null : Number(f.confidence_high),
     });
   }
 
@@ -44,6 +51,8 @@ function mergeSeries(trends: PriceTrendPoint[], forecasts: ForecastPoint[]): Cha
       date,
       historical: v.historical ?? null,
       forecast: v.forecast ?? null,
+      confidenceLow: v.confidenceLow ?? null,
+      confidenceHigh: v.confidenceHigh ?? null,
     }));
 }
 
@@ -107,6 +116,26 @@ export function TrendForecastChart({ trends, forecasts, emptyMessage }: Props) {
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Line
+            type="monotone"
+            dataKey="confidenceHigh"
+            name="Forecast high"
+            stroke="#fb923c"
+            strokeWidth={1}
+            strokeDasharray="2 4"
+            dot={false}
+            connectNulls
+          />
+          <Line
+            type="monotone"
+            dataKey="confidenceLow"
+            name="Forecast low"
+            stroke="#fdba74"
+            strokeWidth={1}
+            strokeDasharray="2 4"
+            dot={false}
+            connectNulls
+          />
           <Line
             type="monotone"
             dataKey="historical"

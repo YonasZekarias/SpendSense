@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import Link from "next/link";
 import { Button } from "@repo/ui/components/button";
@@ -7,14 +8,112 @@ import {
   Bell,
   CircleHelp,
   LayoutDashboard,
+  Loader2,
   PieChart,
   Settings,
   ShoppingBasket,
   TrendingUp,
 } from "lucide-react";
+import { TrendForecastChart } from "@/components/price-trends/trend-forecast-chart";
+import {
+  getForecasts,
+  getItems,
+  getPriceTrends,
+  type ForecastPoint,
+  type MarketItem,
+  type PriceTrendPoint,
+} from "@/services/marketService";
+
+function dateRangeLastMonths(months: number) {
+  const to = new Date();
+  const from = new Date();
+  from.setMonth(from.getMonth() - months);
+  return {
+    from_date: from.toISOString().slice(0, 10),
+    to_date: to.toISOString().slice(0, 10),
+  };
+}
 
 export default function UsersPage() {
   const { status, user, signOut } = useAuth();
+  const [items, setItems] = useState<MarketItem[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [cityFilter, setCityFilter] = useState("");
+  const [trends, setTrends] = useState<PriceTrendPoint[]>([]);
+  const [forecasts, setForecasts] = useState<ForecastPoint[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await getItems();
+        if (cancelled) return;
+        setItems(list);
+        if (list.length > 0) {
+          setSelectedItemId((current) => current ?? list[0].id);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setChartError(error instanceof Error ? error.message : "Could not load items.");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedItemId) return;
+    let cancelled = false;
+    const { from_date, to_date } = dateRangeLastMonths(6);
+    const city = cityFilter.trim() || undefined;
+
+    setChartLoading(true);
+    setChartError(null);
+
+    (async () => {
+      try {
+        const [trendRows, forecastRows] = await Promise.all([
+          getPriceTrends({
+            item_id: selectedItemId,
+            city,
+            from_date,
+            to_date,
+          }),
+          getForecasts({
+            item_id: selectedItemId,
+            city,
+            forecast_weeks: 6,
+          }),
+        ]);
+        if (cancelled) return;
+        setTrends(trendRows);
+        setForecasts(forecastRows);
+      } catch (error) {
+        if (cancelled) return;
+        setChartError(error instanceof Error ? error.message : "Could not load trend data.");
+        setTrends([]);
+        setForecasts([]);
+      } finally {
+        if (!cancelled) {
+          setChartLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cityFilter, selectedItemId]);
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === selectedItemId) ?? null,
+    [items, selectedItemId]
+  );
 
   if (status === "loading") {
     return <main className="p-6">Loading your profile...</main>;
@@ -150,42 +249,65 @@ export default function UsersPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-base font-bold">Staple Food Price Index</h3>
-                      <p className="text-sm text-muted-foreground">Tracking Teff, Oil, and Coffee prices</p>
+                      <p className="text-sm text-muted-foreground">
+                        Historical trends and forecast data from the market API
+                      </p>
                     </div>
-                    <select className="h-9 rounded-lg bg-muted px-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/40">
-                      <option>Last 30 Days</option>
-                      <option>Last 3 Months</option>
-                      <option>Last Year</option>
-                    </select>
                   </div>
 
-                  <div className="mt-6 min-h-56">
-                    <svg className="h-56 w-full" viewBox="0 0 478 150" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
-                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25 V 150 H 0 Z"
-                        fill="url(#chartGradient)"
+                  <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                      Item
+                      <select
+                        className="h-9 rounded-lg bg-muted px-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/40"
+                        value={selectedItemId ?? ""}
+                        onChange={(event) =>
+                          setSelectedItemId(event.target.value ? Number(event.target.value) : null)
+                        }
+                        disabled={items.length === 0}
+                      >
+                        {items.length === 0 && <option value="">No items available</option>}
+                        {items.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                      City (optional)
+                      <input
+                        className="h-9 rounded-lg bg-muted px-3 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/40"
+                        value={cityFilter}
+                        onChange={(event) => setCityFilter(event.target.value)}
+                        placeholder="Add city filter"
                       />
-                      <path
-                        d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25"
-                        fill="none"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    </label>
+                  </div>
+
+                  <div className="mt-5 min-h-56">
+                    {chartError && <p className="mb-3 text-sm text-rose-600">{chartError}</p>}
+                    {chartLoading ? (
+                      <div className="flex h-[320px] items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="size-5 animate-spin" />
+                        <span className="text-sm">Loading trend chart...</span>
+                      </div>
+                    ) : (
+                      <TrendForecastChart
+                        trends={trends}
+                        forecasts={forecasts}
+                        emptyMessage={
+                          selectedItem
+                            ? `No trend data yet for ${selectedItem.name}.`
+                            : "Select an item to view price trends."
+                        }
                       />
-                    </svg>
-                    <div className="mt-4 flex justify-between text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      <span>Week 1</span>
-                      <span>Week 2</span>
-                      <span>Week 3</span>
-                      <span>Week 4</span>
-                    </div>
+                    )}
+                    {forecasts[0]?.model_used && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Forecast model: <span className="font-medium">{forecasts[0].model_used}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

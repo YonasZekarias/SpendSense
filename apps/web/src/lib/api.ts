@@ -1,7 +1,7 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
+  "http://127.0.0.1:8000";
 
 type NextFetchOptions = {
   revalidate?: number | false;
@@ -70,10 +70,6 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
 
   const url = `${API_BASE_URL}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
-  console.log("Prepared url: ", url)
-  console.log("Method: ", method)
-  console.log("Body: ", JSON.stringify(body))
-
   const headers = normalizeHeaders(fetchOptions?.headers);
   let requestBody: BodyInit | undefined;
 
@@ -84,15 +80,27 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     requestBody = JSON.stringify(body);
   }
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: requestBody,
-    credentials: "include",
-    ...fetchOptions,
-    ...(next ? { next } : {}),
-    ...(cache ? { cache } : {}),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: requestBody,
+      credentials: "include",
+      ...fetchOptions,
+      ...(next ? { next } : {}),
+      ...(cache ? { cache } : {}),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const cause =
+      err instanceof Error && err.cause instanceof Error ? err.cause.message : "";
+    throw new ApiError(
+      `Cannot reach the API at ${API_BASE_URL}. Start Django (e.g. python manage.py runserver), check the port, and try http://127.0.0.1:8000 instead of localhost on Windows. ${msg}${cause ? ` (${cause})` : ""}`,
+      0,
+      null,
+    );
+  }
 
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";
