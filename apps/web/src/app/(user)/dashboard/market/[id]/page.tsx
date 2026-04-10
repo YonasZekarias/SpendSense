@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import {
     ArrowDown,
     ArrowRight,
@@ -17,6 +19,17 @@ import {
     ShoppingCart,
     TrendingUp
 } from "lucide-react";
+import { TrendForecastChart } from "@/components/price-trends/trend-forecast-chart";
+import {
+  getForecasts,
+  getInflation,
+  getItems,
+  getPriceTrends,
+  type ForecastPoint,
+  type InflationResponse,
+  type MarketItem,
+  type PriceTrendPoint,
+} from "@/services/marketService";
 
 // Monorepo Imports
 import { Badge } from "@repo/ui/components/badge";
@@ -32,7 +45,106 @@ import {
     TableRow,
 } from "@repo/ui/components/table";
 
+function dateRangeLastMonths(months: number) {
+  const to = new Date();
+  const from = new Date();
+  from.setMonth(from.getMonth() - months);
+  return {
+    from_date: from.toISOString().slice(0, 10),
+    to_date: to.toISOString().slice(0, 10),
+  };
+}
+
+function formatEtb(value?: number | string | null) {
+  if (value == null || value === "") return "—";
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return "—";
+  return `${parsed.toLocaleString(undefined, { maximumFractionDigits: 2 })} ETB`;
+}
+
 export default function ItemDetailsPage() {
+  const params = useParams<{ id?: string | string[] }>();
+  const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const itemId = Number(rawId);
+  const validItemId = Number.isFinite(itemId) ? itemId : null;
+
+  const [items, setItems] = useState<MarketItem[]>([]);
+  const [trends, setTrends] = useState<PriceTrendPoint[]>([]);
+  const [forecasts, setForecasts] = useState<ForecastPoint[]>([]);
+  const [inflation, setInflation] = useState<InflationResponse | null>(null);
+  const [seriesLoading, setSeriesLoading] = useState(true);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await getItems();
+        if (cancelled) return;
+        setItems(list);
+      } catch {
+        if (!cancelled) setItems([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!validItemId) {
+      setSeriesLoading(false);
+      setSeriesError("Invalid item id in URL.");
+      return;
+    }
+    let cancelled = false;
+    const { from_date, to_date } = dateRangeLastMonths(6);
+    setSeriesLoading(true);
+    setSeriesError(null);
+    (async () => {
+      try {
+        const [trendRows, forecastRows, inflationRow] = await Promise.all([
+          getPriceTrends({
+            item_id: validItemId,
+            from_date,
+            to_date,
+          }),
+          getForecasts({
+            item_id: validItemId,
+            forecast_weeks: 8,
+          }),
+          getInflation({ period: "month", item_id: validItemId }),
+        ]);
+        if (cancelled) return;
+        setTrends(trendRows);
+        setForecasts(forecastRows);
+        setInflation(inflationRow);
+      } catch (error) {
+        if (cancelled) return;
+        setSeriesError(error instanceof Error ? error.message : "Could not load trend data.");
+        setTrends([]);
+        setForecasts([]);
+        setInflation(null);
+      } finally {
+        if (!cancelled) setSeriesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [validItemId]);
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === validItemId) ?? null,
+    [items, validItemId]
+  );
+
+  const currentAvg = inflation?.current_avg ?? trends[trends.length - 1]?.average_price ?? null;
+  const predictedInflationText =
+    inflation?.change_percent == null
+      ? "—"
+      : `${inflation.change_percent > 0 ? "+" : ""}${inflation.change_percent}%`;
+
   return (
     <div className="min-h-screen bg-[#f6f6f8] dark:bg-[#101622] font-sans antialiased text-slate-900 dark:text-slate-100">
       {/* Top Navbar */}
@@ -78,7 +190,7 @@ export default function ItemDetailsPage() {
         {/* Breadcrumbs */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6 font-medium">
           <Home size={16} /> <ChevronRight size={14} /> Groceries <ChevronRight size={14} /> Staples <ChevronRight size={14} /> 
-          <span className="text-slate-900 dark:text-white font-bold">White Teff (Magna)</span>
+          <span className="text-slate-900 dark:text-white font-bold">{selectedItem?.name ?? "Item detail"}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -99,8 +211,10 @@ export default function ItemDetailsPage() {
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h1 className="text-2xl font-black tracking-tight">White Teff - Magna Grade</h1>
-                        <p className="text-sm text-slate-500 font-medium mt-1">Category: Staple Foods • Origin: East Gojjam</p>
+                        <h1 className="text-2xl font-black tracking-tight">{selectedItem?.name ?? "Market Item"}</h1>
+                        <p className="text-sm text-slate-500 font-medium mt-1">
+                          Category: {selectedItem?.category ?? "Staple Foods"} • Unit: {selectedItem?.unit ?? "kg"}
+                        </p>
                       </div>
                       <Button variant="outline" size="icon" className="rounded-full h-9 w-9"><Share2 size={16} /></Button>
                     </div>
@@ -108,8 +222,8 @@ export default function ItemDetailsPage() {
                       <div>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Current Average Price</p>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-black text-[#135bec]">120 ETB</span>
-                          <span className="text-lg text-slate-500 font-bold">/ kg</span>
+                          <span className="text-4xl font-black text-[#135bec]">{formatEtb(currentAvg)}</span>
+                          <span className="text-lg text-slate-500 font-bold">/ {selectedItem?.unit ?? "unit"}</span>
                         </div>
                       </div>
                       <Badge className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-none font-bold px-3 py-1.5 gap-1">
@@ -126,38 +240,53 @@ export default function ItemDetailsPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <QuickStat title="Lowest Found" value="110 ETB" sub="at Shola Market" type="positive" icon={<ArrowDown size={18}/>} />
-              <QuickStat title="Highest Found" value="135 ETB" sub="at Bole Supermarket" type="negative" icon={<ArrowUp size={18}/>} />
-              <QuickStat title="Predicted Inflation" value="+5%" sub="Expected next month" type="neutral" icon={<LineChart size={18}/>} />
+              <QuickStat
+                title="Lowest Found"
+                value={trends.length ? formatEtb(Math.min(...trends.map((row) => Number(row.average_price)))) : "—"}
+                sub="From recent trend points"
+                type="positive"
+                icon={<ArrowDown size={18}/>}
+              />
+              <QuickStat
+                title="Highest Found"
+                value={trends.length ? formatEtb(Math.max(...trends.map((row) => Number(row.average_price)))) : "—"}
+                sub="From recent trend points"
+                type="negative"
+                icon={<ArrowUp size={18}/>}
+              />
+              <QuickStat
+                title="Predicted Inflation"
+                value={predictedInflationText}
+                sub="Month-over-month (API)"
+                type="neutral"
+                icon={<LineChart size={18}/>}
+              />
             </div>
 
-            {/* Price Chart Placeholder (Visualized via Card) */}
+            {/* Price Chart */}
             <Card className="border-slate-100 dark:border-slate-800 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-bold">Price History & Forecast</CardTitle>
-                  <p className="text-sm text-slate-500">Analysis over the last 6 months</p>
-                </div>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg gap-1">
-                  {["6M", "1Y", "All"].map((t) => (
-                    <Button key={t} size="sm" variant={t === "6M" ? "secondary" : "ghost"} className={`h-7 px-3 text-[10px] font-bold ${t === "6M" ? "bg-white dark:bg-slate-700 shadow-sm" : ""}`}>
-                      {t}
-                    </Button>
-                  ))}
+                  <p className="text-sm text-slate-500">Historical trend with model forecast</p>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="h-[280px] w-full bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <LineChart size={48} className="text-[#135bec] mx-auto mb-2 opacity-20" />
-                    <p className="text-sm font-bold text-slate-400 tracking-tight">Interactive SVG Chart Visualization</p>
+                {seriesError && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{seriesError}</p>}
+                {seriesLoading ? (
+                  <div className="flex h-[280px] items-center justify-center text-sm text-slate-500">
+                    Loading trend data...
                   </div>
-                </div>
-                <div className="flex justify-between mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
-                  <span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span>
-                  <span className="text-[#135bec]">Today</span>
-                  <span className="opacity-50">Mar (Fcst)</span>
-                </div>
+                ) : (
+                  <TrendForecastChart
+                    trends={trends}
+                    forecasts={forecasts}
+                    emptyMessage="No trend or forecast rows were returned for this item."
+                  />
+                )}
+                {forecasts[0]?.model_used && (
+                  <p className="mt-2 text-xs text-slate-500">Forecast model: {forecasts[0].model_used}</p>
+                )}
               </CardContent>
             </Card>
 
