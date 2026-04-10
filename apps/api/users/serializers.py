@@ -50,10 +50,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
-            'city', 'household_size', 'income_bracket',
-            'notification_preferences', 'onboarding_completed', 'created_at',
+            'city', 'household_size', 'income_bracket', 'onboarding_completed', 'created_at',
         )
-        read_only_fields = ('id', 'email', 'role', 'created_at')
+        read_only_fields = ('id', 'email', 'role', 'created_at',
+            'notification_preferences')
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
