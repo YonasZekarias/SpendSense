@@ -84,7 +84,7 @@ export default function SubmitReview() {
                 </div>
                 <Textarea 
                   placeholder="Describe the quality of items and the service..." 
-                  className="min-h-[160px] rounded-2xl bg-slate-50 border-none focus-visible:ring-primary p-4"
+                  className="min-h-[160px] rounded-2xl border-none p-4"
                 />
               </div>
 
