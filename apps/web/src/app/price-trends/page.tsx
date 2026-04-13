@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ShoppingBasket,
   TrendingUp,
@@ -128,6 +128,7 @@ function dateRangeLastYear() {
 export default function PriceTrendsPage() {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<MarketItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [filterCity, setFilterCity] = useState("");
@@ -137,28 +138,33 @@ export default function PriceTrendsPage() {
   const [seriesLoading, setSeriesLoading] = useState(false);
   const [seriesError, setSeriesError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await getItems();
-        if (cancelled) return;
-        setItems(list);
-        setItemsError(null);
-        if (list.length && selectedItemId == null) {
-          setSelectedItemId(list[0].id);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setItemsError(e instanceof Error ? e.message : "Could not load items.");
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed selection once
+  const loadItems = useCallback(async () => {
+    setItemsLoading(true);
+    setItemsError(null);
+    try {
+      const list = await getItems();
+      setItems(list);
+      setSelectedItemId((prev) => {
+        if (list.length === 0) return null;
+        if (prev != null && list.some((i) => i.id === prev)) return prev;
+        return list[0].id;
+      });
+    } catch (e) {
+      setItems([]);
+      setSelectedItemId(null);
+      setItemsError(
+        e instanceof Error
+          ? e.message
+          : "Could not load items. Is Django running and CORS allowing this origin?",
+      );
+    } finally {
+      setItemsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadItems();
+  }, [loadItems]);
 
   useEffect(() => {
     if (selectedItemId == null) return;
@@ -275,12 +281,19 @@ export default function PriceTrendsPage() {
               <label className="flex flex-col gap-1 text-xs font-medium text-[#616f89] dark:text-gray-400">
                 Item
                 <select
-                  className="h-10 min-w-[200px] rounded-lg border-none bg-[#f0f2f4] dark:bg-[#2a3140] px-3 text-sm font-medium text-[#111318] dark:text-white focus:ring-2 focus:ring-[#135bec]"
+                  className="h-10 min-w-[200px] cursor-pointer rounded-lg border border-transparent bg-[#f0f2f4] dark:bg-[#2a3140] px-3 text-sm font-medium text-[#111318] dark:text-white focus:ring-2 focus:ring-[#135bec] disabled:cursor-not-allowed disabled:opacity-60"
                   value={selectedItemId ?? ""}
-                  onChange={(e) => setSelectedItemId(e.target.value ? Number(e.target.value) : null)}
-                  disabled={!items.length}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSelectedItemId(v === "" ? null : Number(v));
+                  }}
+                  disabled={itemsLoading || items.length === 0}
+                  aria-busy={itemsLoading}
                 >
-                  {!items.length && <option value="">No items</option>}
+                  {itemsLoading && <option value="">Loading items…</option>}
+                  {!itemsLoading && items.length === 0 && (
+                    <option value="">No items — seed the API database</option>
+                  )}
                   {items.map((i) => (
                     <option key={i.id} value={i.id}>
                       {i.name}
@@ -301,7 +314,22 @@ export default function PriceTrendsPage() {
             </div>
           </div>
           {itemsError && (
-            <p className="mb-3 text-sm text-red-600 dark:text-red-400">{itemsError}</p>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900/40 dark:bg-red-950/30">
+              <p className="text-sm text-red-700 dark:text-red-300">{itemsError}</p>
+              <button
+                type="button"
+                onClick={() => void loadItems()}
+                className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-red-800 ring-1 ring-red-200 hover:bg-red-50 dark:bg-[#1e2330] dark:text-red-200 dark:ring-red-800"
+              >
+                Retry loading items
+              </button>
+            </div>
+          )}
+          {!itemsLoading && !itemsError && items.length === 0 && (
+            <p className="mb-3 text-sm text-[#616f89] dark:text-gray-400">
+              The item list is empty. From <code className="rounded bg-[#f0f2f4] dark:bg-[#2a3140] px-1">apps/api</code> run:{" "}
+              <code className="rounded bg-[#f0f2f4] dark:bg-[#2a3140] px-1">python manage.py seed_items</code>
+            </p>
           )}
           {seriesError && (
             <p className="mb-3 text-sm text-red-600 dark:text-red-400">{seriesError}</p>

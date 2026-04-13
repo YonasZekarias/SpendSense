@@ -49,8 +49,19 @@ export async function getPriceAverages(params?: {
 
 export async function getItems(): Promise<MarketItem[]> {
   const api = createApiClient();
-  const { data } = await api.get<MarketItem[]>("/api/market/items/");
-  return data;
+  const { data } = await api.get<unknown>("/api/market/items/");
+  if (Array.isArray(data)) {
+    return data as MarketItem[];
+  }
+  if (
+    data &&
+    typeof data === "object" &&
+    "results" in data &&
+    Array.isArray((data as { results: unknown }).results)
+  ) {
+    return (data as { results: MarketItem[] }).results;
+  }
+  return [];
 }
 
 export async function submitPrice(accessToken: string, payload: SubmitPricePayload): Promise<PriceSubmissionResponse> {
