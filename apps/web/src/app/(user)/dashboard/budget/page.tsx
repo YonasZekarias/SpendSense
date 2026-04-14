@@ -1,217 +1,377 @@
 "use client";
 
-import Link from "next/link";
-import { useAuth } from "@/providers/auth-provider";
-import { Button } from "@repo/ui/components/button";
 import {
-  Calendar,
+  AlertTriangle,
+  Banknote,
+  BusFront,
+  CalendarDays,
+  Droplets,
   Home,
-  PieChart,
-  Settings,
+  Plus,
+  ShoppingBasket,
   TrendingUp,
-  Truck,
   Wallet,
+  Zap,
 } from "lucide-react";
+import { DashboardShell } from "@/components/dashboard-shell";
+
+type CategoryCard = {
+  name: string;
+  limit: string;
+  spent: string;
+  percentUsed: number;
+  status: "on-track" | "safe" | "over-budget" | "paid";
+  note: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconBg: string;
+  iconColor: string;
+  barColor: string;
+};
+
+const categories: CategoryCard[] = [
+  {
+    name: "Groceries",
+    limit: "ETB 6,000",
+    spent: "ETB 4,500",
+    percentUsed: 75,
+    status: "on-track",
+    note: "ETB 1,500 remaining",
+    icon: ShoppingBasket,
+    iconBg: "bg-green-100 dark:bg-green-900/30",
+    iconColor: "text-green-700 dark:text-green-300",
+    barColor: "bg-[#135bec]",
+  },
+  {
+    name: "Transport",
+    limit: "ETB 2,000",
+    spent: "ETB 2,100",
+    percentUsed: 105,
+    status: "over-budget",
+    note: "Exceeded by ETB 100",
+    icon: BusFront,
+    iconBg: "bg-red-100 dark:bg-red-900/30",
+    iconColor: "text-red-700 dark:text-red-300",
+    barColor: "bg-red-500",
+  },
+  {
+    name: "Utilities",
+    limit: "ETB 1,500",
+    spent: "ETB 800",
+    percentUsed: 53,
+    status: "safe",
+    note: "ETB 700 remaining",
+    icon: Droplets,
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-700 dark:text-blue-300",
+    barColor: "bg-[#135bec]",
+  },
+  {
+    name: "Housing",
+    limit: "ETB 5,000",
+    spent: "ETB 5,000",
+    percentUsed: 100,
+    status: "paid",
+    note: "Rent paid on Oct 1st",
+    icon: Home,
+    iconBg: "bg-purple-100 dark:bg-purple-900/30",
+    iconColor: "text-purple-700 dark:text-purple-300",
+    barColor: "bg-purple-500",
+  },
+];
+
+const spendingVelocity = [
+  { week: "W1", value: 40 },
+  { week: "W2", value: 65 },
+  { week: "W3", value: 30 },
+  { week: "W4", value: 80 },
+];
+
+const recentTransactions = [
+  {
+    title: "Ride Taxi",
+    category: "Transport",
+    amount: "- ETB 350",
+    icon: BusFront,
+    iconBg: "bg-orange-100 dark:bg-orange-900/30",
+    iconColor: "text-orange-600",
+  },
+  {
+    title: "Shoa Supermarket",
+    category: "Groceries",
+    amount: "- ETB 1,200",
+    icon: ShoppingBasket,
+    iconBg: "bg-green-100 dark:bg-green-900/30",
+    iconColor: "text-green-600",
+  },
+  {
+    title: "Electric Bill",
+    category: "Utilities",
+    amount: "- ETB 450",
+    icon: Zap,
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600",
+  },
+];
+
+function statusBadge(status: CategoryCard["status"]) {
+  if (status === "over-budget") {
+    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+  }
+  if (status === "safe") {
+    return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+  }
+  if (status === "paid") {
+    return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+  }
+  return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+}
+
+function statusLabel(status: CategoryCard["status"]) {
+  if (status === "over-budget") return "Over Budget";
+  if (status === "safe") return "Safe";
+  if (status === "paid") return "Paid";
+  return "On Track";
+}
 
 export default function BudgetManagementPage() {
-  const { status, user, signOut } = useAuth();
-
-  if (status === "loading") {
-    return <main className="p-6">Loading…</main>;
-  }
-
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background">
-        <div className="mx-auto flex max-w-360 items-center justify-between px-6 py-3 md:px-10 lg:px-16">
-          <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded bg-primary/10 text-primary">
-              <Wallet className="size-5" />
+    <DashboardShell>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-black tracking-tight text-[#111318] dark:text-white">
+          Monthly Budget
+        </h1>
+        <p className="text-base text-[#616f89] dark:text-gray-400">
+          Manage your spending limits and track expenses for optimal savings.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative min-w-[220px] max-w-[260px]">
+          <select className="h-10 w-full appearance-none rounded-lg border border-[#dbdfe6] bg-white pl-4 pr-10 text-sm font-medium text-[#111318] outline-none focus:ring-2 focus:ring-[#135bec]/30 dark:border-gray-700 dark:bg-[#1a2230] dark:text-white">
+            <option>October 2023</option>
+            <option>September 2023</option>
+            <option>August 2023</option>
+          </select>
+          <CalendarDays className="pointer-events-none absolute right-3 top-2.5 size-4 text-[#616f89] dark:text-gray-400" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#135bec] px-4 text-sm font-bold text-white hover:bg-blue-700"
+          >
+            <Plus className="size-4" />
+            Add Expense
+          </button>
+          <button
+            type="button"
+            className="h-10 rounded-lg border border-[#dbdfe6] bg-white px-4 text-sm font-bold text-[#111318] hover:bg-gray-50 dark:border-gray-700 dark:bg-[#1a2230] dark:text-white dark:hover:bg-gray-800"
+          >
+            Edit Total Budget
+          </button>
+        </div>
+      </div>
+
+      <section className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" />
+        <div className="flex-1">
+          <p className="text-sm font-bold text-red-800 dark:text-red-200">Budget Alert: Transport</p>
+          <p className="text-sm text-red-700 dark:text-red-300">
+            You have exceeded your Transport budget by <span className="font-bold">ETB 100</span>.
+            Consider adjusting your limits for next month.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-transparent bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1a2230]">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-[#616f89] dark:text-gray-400">Total Budget</p>
+            <div className="rounded-full bg-blue-50 p-2 dark:bg-blue-900/20">
+              <Banknote className="size-5 text-[#135bec]" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">SpendSense Ethiopia</h1>
           </div>
+          <p className="text-3xl font-bold tracking-tight text-[#111318] dark:text-white">ETB 15,000</p>
+          <p className="mt-1 text-xs font-medium text-[#07883b]">+0% vs last month</p>
+        </div>
 
-          <div className="hidden items-center gap-6 md:flex">
-            <Link className="text-sm font-medium text-muted-foreground hover:text-primary" href="/dashboard">
-              Dashboard
-            </Link>
-            <Link className="text-sm font-bold text-primary" href="/dashboard/budget">
-              Budget
-            </Link>
-            <Link className="text-sm font-medium text-muted-foreground hover:text-primary" href="/live-prices">
-              Smart Shopping
-            </Link>
+        <div className="relative overflow-hidden rounded-xl border border-transparent bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1a2230]">
+          <div className="absolute right-0 top-0 h-full w-1 bg-yellow-500" />
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-[#616f89] dark:text-gray-400">Total Spent</p>
+            <div className="rounded-full bg-yellow-50 p-2 dark:bg-yellow-900/20">
+              <TrendingUp className="size-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Button> Add Expense</Button>
-            <Button variant="outline" onClick={signOut}>
-              Log Out
-            </Button>
+          <p className="text-3xl font-bold tracking-tight text-[#111318] dark:text-white">ETB 8,450</p>
+          <p className="mt-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+            56% of budget used
+          </p>
+          <div className="mt-3 h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
+            <div className="h-1.5 w-[56%] rounded-full bg-yellow-500" />
           </div>
         </div>
-      </header>
 
-      <div className="mx-auto flex w-full max-w-360 gap-8 px-6 py-8 md:px-10 lg:px-16">
-        <aside className="hidden w-64 shrink-0 flex-col gap-6 rounded-xl border border-border/60 bg-background p-4 lg:flex">
-          <div className="flex items-center gap-3 rounded-lg p-2">
-            <div className="size-12 rounded-full bg-muted" />
-            <div>
-              <p className="text-sm font-semibold">{user?.full_name ?? "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.role ?? "user"}</p>
+        <div className="rounded-xl border border-transparent bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1a2230]">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-[#616f89] dark:text-gray-400">Remaining</p>
+            <div className="rounded-full bg-green-50 p-2 dark:bg-green-900/20">
+              <Wallet className="size-5 text-[#07883b]" />
             </div>
           </div>
+          <p className="text-3xl font-bold tracking-tight text-[#111318] dark:text-white">ETB 6,550</p>
+          <p className="mt-1 text-xs font-medium text-[#07883b]">On track to save ETB 2,000</p>
+        </div>
+      </section>
 
-          <nav className="flex flex-col gap-1 text-sm">
-            <Link className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/60" href="/dashboard">
-              <Home className="size-4 text-muted-foreground" />
-              Overview
-            </Link>
-            <Link className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 font-medium text-primary" href="/dashboard/budget">
-              <PieChart className="size-4" />
-              My Budgets
-            </Link>
-            <Link className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground" href="/live-prices">
-              <TrendingUp className="size-4" />
-              Price Trends
-            </Link>
-            <Link className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground" href="#">
-              <Settings className="size-4" />
-              Settings
-            </Link>
-          </nav>
+      <section className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-[#111318] dark:text-white">Budget Categories</h2>
+            <button type="button" className="text-sm font-medium text-[#135bec] hover:underline">
+              Manage Categories
+            </button>
+          </div>
 
-          <div className="mt-auto rounded-xl bg-muted/40 p-4">
-            <p className="text-sm font-bold text-primary">Smart Tip</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Teff prices have dropped by 5% in local markets this week. Great time to stock up!
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              return (
+                <div
+                  key={category.name}
+                  className={`rounded-xl border bg-white p-5 shadow-sm dark:bg-[#1a2230] ${
+                    category.status === "over-budget"
+                      ? "border-red-100 dark:border-red-900/30"
+                      : "border-[#f0f2f4] dark:border-gray-800"
+                  } ${category.status === "over-budget" ? "relative overflow-hidden" : ""}`}
+                >
+                  {category.status === "over-budget" && (
+                    <div className="absolute left-0 top-0 h-full w-1 bg-red-500" />
+                  )}
+
+                  <div className={`flex items-start justify-between ${category.status === "over-budget" ? "pl-2" : ""}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`rounded-lg p-2 ${category.iconBg}`}>
+                        <Icon className={`size-5 ${category.iconColor}`} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-[#111318] dark:text-white">{category.name}</p>
+                        <p className="text-xs text-[#616f89] dark:text-gray-400">
+                          Monthly Limit: {category.limit}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`rounded px-2 py-1 text-xs font-bold ${statusBadge(category.status)}`}
+                    >
+                      {statusLabel(category.status)}
+                    </span>
+                  </div>
+
+                  <div className={`mt-4 ${category.status === "over-budget" ? "pl-2" : ""}`}>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-semibold text-[#111318] dark:text-white">{category.spent}</span>
+                      <span
+                        className={
+                          category.status === "over-budget"
+                            ? "font-bold text-red-600"
+                            : "text-[#616f89] dark:text-gray-400"
+                        }
+                      >
+                        {category.percentUsed}%
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-[#f0f2f4] dark:bg-gray-700">
+                      <div
+                        className={`h-2 rounded-full ${category.barColor}`}
+                        style={{ width: `${Math.min(category.percentUsed, 100)}%` }}
+                      />
+                    </div>
+                    <p
+                      className={`mt-2 text-xs ${
+                        category.status === "over-budget"
+                          ? "text-red-500"
+                          : "text-[#616f89] dark:text-gray-400"
+                      }`}
+                    >
+                      {category.note}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              className="flex min-h-[160px] h-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#dbdfe6] p-5 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50"
+            >
+              <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-700">
+                <Plus className="size-5 text-gray-500 dark:text-gray-300" />
+              </div>
+              <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                Create New Category
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <aside className="flex flex-col gap-6">
+          <div className="rounded-xl border border-[#f0f2f4] bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1a2230]">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-base font-bold text-[#111318] dark:text-white">Spending Velocity</h3>
+              <button type="button" className="text-xs font-medium text-[#135bec]">
+                View Report
+              </button>
+            </div>
+            <div className="flex h-40 items-end justify-between gap-2">
+              {spendingVelocity.map((bucket) => (
+                <div key={bucket.week} className="flex w-full flex-col items-center gap-1">
+                  <div className="h-full w-full rounded-t-sm bg-blue-100 dark:bg-blue-900/20">
+                    <div
+                      className="mt-auto w-full rounded-t-sm bg-[#135bec]"
+                      style={{ height: `${bucket.value}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-gray-400">{bucket.week}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-xs text-[#616f89] dark:text-gray-400">
+              You&apos;re spending <span className="font-bold text-green-600">12% less</span> than last month at this time.
             </p>
           </div>
+
+          <div className="rounded-xl border border-[#f0f2f4] bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-[#1a2230]">
+            <h3 className="mb-4 text-base font-bold text-[#111318] dark:text-white">Recent Transactions</h3>
+            <div className="flex flex-col gap-4">
+              {recentTransactions.map((tx) => {
+                const Icon = tx.icon;
+                return (
+                  <div key={tx.title} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex size-8 items-center justify-center rounded-full ${tx.iconBg}`}>
+                        <Icon className={`size-4 ${tx.iconColor}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[#111318] dark:text-white">{tx.title}</p>
+                        <p className="text-xs text-[#616f89] dark:text-gray-400">{tx.category}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-[#111318] dark:text-white">{tx.amount}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="mt-6 w-full rounded-lg py-2 text-sm font-medium text-[#135bec] transition-colors hover:bg-[#135bec]/5"
+            >
+              View All Transactions
+            </button>
+          </div>
         </aside>
-
-        <main className="w-full flex-1 space-y-6">
-          <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black tracking-tight">Monthly Budget</h2>
-              <p className="text-muted-foreground">
-                Manage your spending limits and track expenses for optimal savings.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative min-w-48">
-                <select className="h-10 w-full appearance-none rounded-lg border border-border/60 bg-background pl-4 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30">
-                  <option>October 2023</option>
-                  <option>September 2023</option>
-                  <option>August 2023</option>
-                </select>
-                <Calendar className="pointer-events-none absolute right-3 top-2.5 size-4 text-muted-foreground" />
-              </div>
-              <Button variant="outline">Edit Total Budget</Button>
-            </div>
-          </header>
-
-          <section className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-900">
-            <Truck className="mt-0.5 size-5 text-rose-600" />
-            <div className="flex-1">
-              <p className="text-sm font-bold">Budget Alert: Transport</p>
-              <p className="text-sm">
-                You have exceeded your Transport budget by <span className="font-bold">ETB 100</span>.
-              </p>
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-              <p className="text-sm font-medium text-muted-foreground">Total Budget</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight">ETB 15,000</p>
-              <p className="mt-1 text-xs text-emerald-600">+0% vs last month</p>
-            </div>
-            <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-              <div className="absolute right-0 top-0 h-full w-1 bg-yellow-500" />
-              <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight">ETB 8,450</p>
-              <p className="mt-1 text-xs text-yellow-600">56% of budget used</p>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-muted">
-                <div className="h-1.5 w-[56%] rounded-full bg-yellow-500" />
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-              <p className="text-sm font-medium text-muted-foreground">Remaining</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight">ETB 6,550</p>
-              <p className="mt-1 text-xs text-emerald-600">On track to save ETB 2,000</p>
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 gap-8 xl:grid-cols-3">
-            <div className="space-y-4 xl:col-span-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">Budget Categories</h3>
-                <button className="text-sm font-medium text-primary hover:underline" type="button">
-                  Manage Categories
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-border/60 bg-background p-5 shadow-sm">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-bold">Groceries</p>
-                      <p className="text-xs text-muted-foreground">Monthly Limit: ETB 6,000</p>
-                    </div>
-                    <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">On Track</span>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-semibold">ETB 4,500</span>
-                      <span className="text-muted-foreground">75%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-muted">
-                      <div className="h-2 w-[75%] rounded-full bg-primary" />
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">ETB 1,500 remaining</p>
-                  </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-xl border border-rose-200 bg-background p-5 shadow-sm">
-                  <div className="absolute left-0 top-0 h-full w-1 bg-rose-500" />
-                  <div className="flex items-start justify-between pl-2">
-                    <div>
-                      <p className="font-bold">Transport</p>
-                      <p className="text-xs text-muted-foreground">Monthly Limit: ETB 2,000</p>
-                    </div>
-                    <span className="rounded bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">Over Budget</span>
-                  </div>
-                  <div className="mt-4 pl-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-semibold">ETB 2,100</span>
-                      <span className="font-bold text-rose-600">105%</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-muted">
-                      <div className="h-2 w-full rounded-full bg-rose-500" />
-                    </div>
-                    <p className="mt-2 text-xs text-rose-600">Exceeded by ETB 100</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <aside className="space-y-4">
-              <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-                <h3 className="text-base font-bold">Spending Velocity</h3>
-                <p className="text-sm text-muted-foreground">You’re spending 12% less than last month.</p>
-                <div className="mt-4 flex h-32 items-end justify-between gap-2">
-                  <div className="h-[40%] w-full rounded bg-primary/20" />
-                  <div className="h-[65%] w-full rounded bg-primary/20" />
-                  <div className="h-[30%] w-full rounded bg-primary/20" />
-                  <div className="h-[80%] w-full rounded bg-muted" />
-                </div>
-              </div>
-            </aside>
-          </section>
-        </main>
-      </div>
-    </div>
+      </section>
+    </DashboardShell>
   );
 }
 
