@@ -59,3 +59,29 @@ export async function submitPrice(accessToken: string, payload: SubmitPricePaylo
   return data;
 }
 
+export type MarketCategory = {
+  id?: number;
+  name: string;
+};
+
+export async function getMarketCategories(): Promise<string[]> {
+  const api = createApiClient();
+
+  try {
+    const { data } = await api.get<MarketCategory[]>("/api/market/categories/");
+    if (Array.isArray(data)) {
+      return data
+        .map((row) => row.name?.trim())
+        .filter((name): name is string => Boolean(name))
+        .sort((a, b) => a.localeCompare(b));
+    }
+  } catch {
+    // Fallback for backend versions without /categories.
+  }
+
+  const items = await getItems();
+  return Array.from(new Set(items.map((item) => item.category).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+}
+

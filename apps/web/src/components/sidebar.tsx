@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Store,
   Wallet,
   ClipboardList,
   TrendingUp,
@@ -14,6 +15,7 @@ import {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Store, label: "Market", href: "/market" },
   { icon: Wallet, label: "Budget", href: "/budget" },
   { icon: ClipboardList, label: "Shopping List", href: "/shopping-list" },
   { icon: TrendingUp, label: "Price Trends", href: "/price-trends" },

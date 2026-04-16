@@ -19,6 +19,7 @@ const ROLE_PROTECTED_ROUTES = [
   { prefix: "/dashboard", allowedRoles: new Set(["user"]) },
   { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
   { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
+  { prefix: "/market", allowedRoles: ANY_AUTHENTICATED_ROLE },
   { prefix: "/admin", allowedRoles: new Set(["admin"]) },  { prefix: "/analytics", allowedRoles: new Set(["analyst"]) },
   { prefix: "/we", allowedRoles: ANY_AUTHENTICATED_ROLE },
 ];
@@ -130,6 +131,7 @@ export const config = {
     "/admin/:path*",
     "/analytics/:path*",
     "/live-prices/:path*",
+    "/market/:path*",
     "/login",
     "/register",
     "/forgot-password",
