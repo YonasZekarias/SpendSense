@@ -21,5 +21,6 @@ statsmodels>=0.14.0
 numpy>=1.26.0
 
 # Production Server (Optional but recommended for deployment)
-gunicorn>=21.2.0django-filter==23.5
+gunicorn>=21.2.0
+django-filter==23.5
 Pillow

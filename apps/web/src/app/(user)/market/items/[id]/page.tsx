@@ -46,7 +46,7 @@ export default function MarketItemDetailPage() {
       </p>
       <div className="flex flex-wrap gap-3 text-sm">
         <Link
-          href={`/market/trends?item_id=${item.id}`}
+          href={`/market?item_id=${item.id}`}
           className="rounded-lg bg-slate-900 px-4 py-2 text-white"
         >
           View trends

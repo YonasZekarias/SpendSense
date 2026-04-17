@@ -42,22 +42,41 @@ export default function MarketSubmitPage() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!accessToken || itemId === "") return;
+    if (status === "unauthenticated") {
+      setMsg({ type: 'error', text: "You must be signed in to submit data." });
+      return;
+    }
+    if (itemId === "") {
+      setMsg({ type: 'error', text: "Please select an item from the list." });
+      return;
+    }
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+      setMsg({ type: 'error', text: "Please enter a valid price." });
+      return;
+    }
+    if (!marketLocation.trim()) {
+      setMsg({ type: 'error', text: "Please enter a specific market or store location." });
+      return;
+    }
+
     setSaving(true);
     setMsg(null);
     setWarn(null);
     try {
-      const res = await submitPrice(accessToken, {
-        item_id: itemId,
-        price_value: price,
+      const res = await submitPrice(accessToken || "", {
+        item_id: Number(itemId),
+        price_value: Number(price),
         market_location: marketLocation,
         city,
         date_observed: dateObserved,
       });
       if (res.outlier_warning) setWarn(res.outlier_warning);
       setMsg({ type: 'success', text: "Submitted for review. Thank you!" });
-    } catch {
-      setMsg({ type: 'error', text: "Submission failed. Check your connection." });
+      setPrice("");
+      setMarketLocation("");
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || "Submission failed. Check your connection or inputs.";
+      setMsg({ type: 'error', text: errorMsg });
     } finally {
       setSaving(false);
     }
@@ -151,7 +170,7 @@ export default function MarketSubmitPage() {
                   <MapPin className="text-[#135bec]" size={20} />
                   Market Location
                 </h3>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
                   <div>
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#616f89]">City</label>
                     <input 
@@ -171,6 +190,19 @@ export default function MarketSubmitPage() {
                       onChange={(e) => setMarketLocation(e.target.value)}
                     />
                   </div>
+                </div>
+
+                {/* Google Map Embed */}
+                <div className="w-full h-64 rounded-xl overflow-hidden border border-[#cbd5e1]/50 shadow-sm bg-white">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent((marketLocation ? marketLocation + ", " : "") + city)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                  ></iframe>
                 </div>
               </div>
 
@@ -194,13 +226,13 @@ export default function MarketSubmitPage() {
 
               {/* Footer Actions */}
               <div className="flex justify-end gap-4 border-t border-[#cbd5e1]/30 bg-white p-8">
-                <Link href="/market/trends" className="flex items-center px-6 py-2.5 font-semibold text-[#616f89] hover:text-[#135bec] transition-colors text-sm">
+                <Link href="/market" className="flex items-center px-6 py-2.5 font-semibold text-[#616f89] hover:text-[#135bec] transition-colors text-sm">
                   Cancel
                 </Link>
                 <Button
-                  disabled={saving || !accessToken || itemId === ""}
+                  disabled={saving}
                   onClick={handleSubmit}
-                  className="bg-[#135bec] px-8 py-2.5 font-bold text-white shadow-sm hover:opacity-90 active:scale-95 transition-all rounded-lg"
+                  className="bg-[#135bec] px-8 py-2.5 font-bold text-white shadow-sm hover:opacity-90 active:scale-95 transition-all rounded-lg disabled:opacity-50"
                 >
                   {saving ? "Submitting..." : "Submit Price"}
                 </Button>

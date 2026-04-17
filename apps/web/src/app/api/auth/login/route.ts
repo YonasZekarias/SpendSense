@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const tokens = body as { access: string; refresh: string };
     const secure = process.env.NODE_ENV === "production";
 
-    const res = NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true, accessToken: tokens.access });
 
     res.cookies.set({
       name: AUTH_COOKIE_NAME,

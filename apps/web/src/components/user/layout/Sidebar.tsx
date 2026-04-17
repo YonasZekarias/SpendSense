@@ -17,7 +17,7 @@ export default function Sidebar() {
           <span className="material-symbols-outlined">dashboard</span>
           <span>Dashboard</span>
         </Link>
-        <Link href="/market/trends" className="flex items-center gap-3 px-4 py-3 text-slate-500 font-medium hover:bg-[#f0f2f4] transition-colors rounded-xl">
+        <Link href="/market" className="flex items-center gap-3 px-4 py-3 text-slate-500 font-medium hover:bg-[#f0f2f4] transition-colors rounded-xl">
           <span className="material-symbols-outlined">storefront</span>
           <span>Market</span>
         </Link>
