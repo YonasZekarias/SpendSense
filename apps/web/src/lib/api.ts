@@ -70,6 +70,10 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
 
   const url = `${API_BASE_URL}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
+  console.log("Prepared url: ", url)
+  console.log("Method: ", method)
+  console.log("Body: ", JSON.stringify(body))
+  
   const headers = normalizeHeaders(fetchOptions?.headers);
   let requestBody: BodyInit | undefined;
 
