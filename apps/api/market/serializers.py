@@ -9,6 +9,25 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'category', 'unit')
 
 
+class AdminItemCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+        fields = ('id', 'name', 'category', 'unit')
+        read_only_fields = ('id',)
+
+    def validate_name(self, value):
+        normalized = value.strip()
+        if Item.objects.filter(name__iexact=normalized).exists():
+            raise serializers.ValidationError('An item with this name already exists.')
+        return normalized
+
+    def validate_category(self, value):
+        return value.strip()
+
+    def validate_unit(self, value):
+        return value.strip()
+
+
 class PriceSubmissionSerializer(serializers.ModelSerializer):
     item_id = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), source='item')
     outlier_warning = serializers.SerializerMethodField()
