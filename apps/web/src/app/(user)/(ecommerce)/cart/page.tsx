@@ -78,44 +78,12 @@ export default function CartPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar - Hidden on Mobile */}
-      {/* <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r bg-sidebar py-6 lg:flex z-50">
-        <div className="mb-10 flex items-center gap-3 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-            <ShoppingCart className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-primary">SpendSense</h1>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ethiopia</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 px-4">
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" />
-          <NavItem icon={<Store size={20} />} label="Market" />
-          <NavItem icon={<Wallet size={20} />} label="Finance" />
-          <NavItem icon={<ShoppingCart size={20} />} label="Shopping" active />
-          <NavItem icon={<MoreHorizontal size={20} />} label="Other" />
-        </nav>
-
-        <div className="px-4 mb-4">
-          <Button className="w-full gap-2 rounded-xl font-bold py-6 shadow-md">
-            <Plus size={18} /> New Transaction
-          </Button>
-        </div>
-
-        <div className="px-4 space-y-1">
-          <NavItem icon={<Settings size={18} />} label="Settings" />
-          <NavItem icon={<LogOut size={18} />} label="Logout" variant="destructive" />
-        </div>
-      </aside> */}
-
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1">
 
 
         {/* Content */}
-        <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
+        <main className=" max-w-7xl mx-auto pb-24 lg:pb-8">
           <div className="mb-10">
             <h2 className="text-3xl font-extrabold tracking-tight mb-2">Shopping Cart</h2>
             <nav className="flex items-center text-sm font-medium text-muted-foreground">
