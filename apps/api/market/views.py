@@ -24,6 +24,7 @@ from users.models import AuditLog
 
 from .models import Forecast, ForecastRun, Item, NationalPrice, PriceSubmission
 from .serializers import (
+    AdminItemCreateSerializer,
     AdminSubmissionListSerializer,
     AdminSubmissionUpdateSerializer,
     ItemSerializer,
@@ -51,6 +52,21 @@ class ItemDetailView(generics.RetrieveAPIView):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
     permission_classes = [AllowAny]
+
+
+class AdminItemCreateView(generics.CreateAPIView):
+    permission_classes = [IsAdminRole]
+    serializer_class = AdminItemCreateSerializer
+
+    def perform_create(self, serializer):
+        item = serializer.save()
+        AuditLog.objects.create(
+            actor=self.request.user,
+            action='item_create',
+            resource='item',
+            resource_id=str(item.id),
+            detail={'name': item.name, 'category': item.category, 'unit': item.unit},
+        )
 
 
 class SubmitPriceView(generics.CreateAPIView):

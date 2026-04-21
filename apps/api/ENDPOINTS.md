@@ -80,6 +80,7 @@ Configure the link target for emails (defaults suit local Next.js):
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/market/items/` | No | List tracked items. Query: `?category=Food`, `?search=teff`. |
+| POST | `/api/market/admin/items/` | Admin | Create a tracked item. Body: `name`, `category`, `unit`. |
 | POST | `/api/market/prices/submit/` | Yes | Submit a price. Body: `item_id`, `price_value`, `market_location`, `city`, `date_observed`. |
 | GET | `/api/market/prices/averages/` | No | Aggregated averages from approved submissions. Query: `?item_id=`, `?city=`, `?from_date=`, `?to_date=`. |
 
@@ -104,7 +105,7 @@ Configure the link target for emails (defaults suit local Next.js):
 |--------|----------|------|-------------|
 | POST | `/api/ecommerce/vendors/` | Yes | Register current user as vendor. |
 | GET | `/api/ecommerce/vendors/<id>/` | No | Public vendor profile. |
-| GET/POST | `/api/ecommerce/vendors/<vendor_id>/listings/` | Yes | Vendor listing management. |
+| GET/POST | `/api/ecommerce/vendors/<vendor_id>/listings/` | Yes | Vendor listing management. POST body requires: `item` (Item id, int), `price` (decimal). |
 | PATCH | `/api/ecommerce/listings/<id>/` | Yes | Update listing. |
 | GET | `/api/ecommerce/recommendations/` | Yes | Vendor recommendations by item/location. |
 | GET/POST | `/api/ecommerce/purchases/` | Yes | List purchases / create purchase checkout session. |

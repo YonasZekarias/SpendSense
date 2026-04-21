@@ -1,26 +1,81 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { AlertCircle, CalendarDays, Loader2, Save, Wallet } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { useAuth } from "@/providers/auth-provider";
-import {
-  createBudget,
-  getBudgetSuggestions,
-  getBudgetSummary,
-  listBudgets,
-  listExpenses,
-  updateBudget,
-  type BudgetCategory,
-  type BudgetRecord,
-  type BudgetSummary,
-  type BudgetSummaryCategory,
-  type ExpenseRecord,
-} from "@/services/finance";
+
+
+export type BudgetCategory = {
+  id?: number;
+  category_name: string;
+  limit_amount: string;
+};
+
+export type BudgetRecord = {
+  id: number;
+  month: number;
+  year: number;
+  total_limit: string;
+  categories: BudgetCategory[];
+  created_at: string;
+};
+
+export type BudgetSuggestionResponse = {
+  month: number;
+  year: number;
+  suggested_total: string;
+  categories: BudgetCategory[];
+};
+
+export type BudgetSummaryCategory = {
+  category_name: string;
+  limit_amount: string;
+  spent: string;
+  remaining: string;
+  percent_used: number;
+  warning_80: boolean;
+  warning_100: boolean;
+};
+
+export type BudgetSummary = {
+  budget_id: number;
+  month: number;
+  year: number;
+  total_limit: string;
+  total_spent: string;
+  remaining: string;
+  percent_total_used: number;
+  warning_total_80: boolean;
+  warning_total_100: boolean;
+  by_category: BudgetSummaryCategory[];
+};
+
+export type ExpenseRecord = {
+  id: number;
+  category: string;
+  amount: string;
+  date: string;
+  description?: string;
+  payment_method?: string;
+};
 
 type EditableCategory = {
   category_name: string;
   limit_amount: string;
+};
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+// Modular Axios Factory: Creates an instance with the token pre-attached
+const createApiClient = (token: string) => {
+  return axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000",
+    headers: { Authorization: `Bearer ${token}` },
+  });
 };
 
 function money(value: string | number) {
@@ -33,8 +88,12 @@ function monthLabel(month: number, year: number) {
   return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
+// ============================================================================
+// Main Component
+// ============================================================================
 export function BudgetPlannerPage() {
   const { status, accessToken } = useAuth();
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,49 +106,58 @@ export function BudgetPlannerPage() {
 
   const bootstrap = useCallback(async () => {
     if (!accessToken) {
+      setLoading(false); // Drop loading if no token is found (middleware handles kicking them out)
       return;
     }
 
     setLoading(true);
     setError(null);
 
+    const api = createApiClient(accessToken);
+
     try {
-      const [budgets, expensesResult] = await Promise.all([
-        listBudgets(accessToken),
-        listExpenses(accessToken),
+      // 1. Fetch basic data using Promise.all for speed
+      const [budgetsRes, expensesRes] = await Promise.all([
+        api.get<BudgetRecord[]>("/api/finance/budgets/"),
+        api.get<ExpenseRecord[]>("/api/finance/expenses/"),
       ]);
 
-      setExpenses(expensesResult.slice(0, 6));
+      const budgets = budgetsRes.data;
+      setExpenses(expensesRes.data.slice(0, 6));
 
       if (budgets.length > 0) {
+        // --- EXISTING BUDGET FOUND ---
         const latestBudget = budgets[0];
         setBudget(latestBudget);
         setSuggestedMonth(null);
 
-        const detail = await getBudgetSummary(accessToken, latestBudget.id);
+        const summaryRes = await api.get<BudgetSummary>(`/api/finance/budgets/${latestBudget.id}/summary/`);
+        const detail = summaryRes.data;
+        
         setSummary(detail);
         setDraftCategories(
           detail.by_category.map((c) => ({
             category_name: c.category_name,
             limit_amount: c.limit_amount,
-          })),
+          }))
         );
       } else {
+        // --- NO BUDGET: FETCH SUGGESTIONS ---
         setBudget(null);
         setSummary(null);
 
         const now = new Date();
-        const suggestion = await getBudgetSuggestions(accessToken, {
-          month: now.getMonth() + 1,
-          year: now.getFullYear(),
+        const suggestionRes = await api.get<BudgetSuggestionResponse>("/api/finance/budgets/suggestions/", {
+          params: { month: now.getMonth() + 1, year: now.getFullYear() },
         });
+        const suggestion = suggestionRes.data;
 
         setSuggestedMonth({ month: suggestion.month, year: suggestion.year });
         setDraftCategories(
           suggestion.categories.map((c) => ({
             category_name: c.category_name,
             limit_amount: c.limit_amount,
-          })),
+          }))
         );
       }
     } catch {
@@ -108,7 +176,7 @@ export function BudgetPlannerPage() {
   const totals = useMemo(() => {
     const totalLimit = draftCategories.reduce(
       (sum, category) => sum + Number.parseFloat(category.limit_amount || "0"),
-      0,
+      0
     );
     const totalSpent = Number.parseFloat(summary?.total_spent ?? "0");
     const remaining = Math.max(totalLimit - totalSpent, 0);
@@ -128,20 +196,17 @@ export function BudgetPlannerPage() {
   const onLimitChange = (categoryName: string, nextValue: string) => {
     setDraftCategories((current) =>
       current.map((item) =>
-        item.category_name === categoryName
-          ? { ...item, limit_amount: nextValue }
-          : item,
-      ),
+        item.category_name === categoryName ? { ...item, limit_amount: nextValue } : item
+      )
     );
   };
 
   const onSave = async () => {
-    if (!accessToken || draftCategories.length === 0) {
-      return;
-    }
+    if (!accessToken || draftCategories.length === 0) return;
 
     setSaving(true);
     setError(null);
+    const api = createApiClient(accessToken);
 
     try {
       const totalLimit = draftCategories
@@ -155,27 +220,32 @@ export function BudgetPlannerPage() {
         categories: draftCategories.map((item) => ({
           category_name: item.category_name,
           limit_amount: Number.parseFloat(item.limit_amount || "0").toFixed(2),
-        })) as BudgetCategory[],
+        })),
       };
 
       let savedBudget = budget;
 
       if (savedBudget) {
-        savedBudget = await updateBudget(accessToken, savedBudget.id, payload);
+        const patchRes = await api.patch<BudgetRecord>(`/api/finance/budgets/${savedBudget.id}/`, payload);
+        savedBudget = patchRes.data;
       } else {
-        savedBudget = await createBudget(accessToken, payload);
+        const postRes = await api.post<BudgetRecord>("/api/finance/budgets/", payload);
+        savedBudget = postRes.data;
       }
 
       setBudget(savedBudget);
       setSuggestedMonth(null);
 
-      const freshSummary = await getBudgetSummary(accessToken, savedBudget.id);
+      // Fetch fresh summary after save
+      const summaryRes = await api.get<BudgetSummary>(`/api/finance/budgets/${savedBudget.id}/summary/`);
+      const freshSummary = summaryRes.data;
+      
       setSummary(freshSummary);
       setDraftCategories(
         freshSummary.by_category.map((item) => ({
           category_name: item.category_name,
           limit_amount: item.limit_amount,
-        })),
+        }))
       );
     } catch {
       setError("Unable to save budget changes.");
@@ -184,6 +254,7 @@ export function BudgetPlannerPage() {
     }
   };
 
+  // We only need one combined loading check since unauthenticated users are handled by middleware
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-80 items-center justify-center text-slate-500">
@@ -191,10 +262,6 @@ export function BudgetPlannerPage() {
         Loading budget data...
       </div>
     );
-  }
-
-  if (status !== "authenticated") {
-    return <div className="p-6 text-slate-500">Please sign in to view your budget planner.</div>;
   }
 
   return (
@@ -317,7 +384,7 @@ export function BudgetPlannerPage() {
               <p className="text-sm font-semibold">Budget Scope</p>
             </div>
             <p className="text-sm text-slate-500">
-              This page only shows data backed by finance endpoints: budgets, category limits, summary metrics, and recent expenses.
+              This page directly fetches data backed by finance endpoints: budgets, category limits, summary metrics, and recent expenses.
             </p>
           </div>
         </aside>
