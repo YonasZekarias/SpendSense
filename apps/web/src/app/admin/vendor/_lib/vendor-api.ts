@@ -28,6 +28,13 @@ export interface VendorProduct {
   updated_at?: string;
 }
 
+export interface MarketItem {
+  id: number;
+  name: string;
+  category: string;
+  unit: string;
+}
+
 export interface VendorOrder {
   id: string;
   listing_id?: string;
@@ -63,7 +70,17 @@ function getAccessToken(): string | null {
     return null;
   }
 
+  const cookieToken = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("spendsense_access_token="))
+    ?.split("=")
+    .slice(1)
+    .join("=");
+
   return (
+    cookieToken ||
+    window.localStorage.getItem("spendsense_access_token") ||
     window.localStorage.getItem("access") ||
     window.localStorage.getItem("access_token") ||
     window.localStorage.getItem("accessToken") ||
@@ -102,7 +119,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
-    credentials: "include",
+    credentials: "same-origin",
   });
 
   if (!response.ok) {
@@ -114,10 +131,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
       payload = await response.text();
     }
 
-    const message =
-      typeof payload === "object" && payload && "detail" in payload
-        ? String((payload as Record<string, unknown>).detail)
-        : `Request failed with ${response.status}`;
+    const message = extractApiErrorMessage(payload, response.status);
 
     throw new VendorApiError(message, response.status, payload);
   }
@@ -127,6 +141,33 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
   }
 
   return (await response.json()) as T;
+}
+
+function extractApiErrorMessage(payload: unknown, status: number): string {
+  if (typeof payload === "object" && payload) {
+    const data = payload as Record<string, unknown>;
+
+    if (typeof data.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+
+    const firstKey = Object.keys(data)[0];
+    if (firstKey) {
+      const value = data[firstKey];
+      if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+        return String(value[0]);
+      }
+      if (typeof value === "string" && value.trim()) {
+        return value;
+      }
+    }
+  }
+
+  if (typeof payload === "string" && payload.trim()) {
+    return payload;
+  }
+
+  return `Request failed with ${status}`;
 }
 
 function normalizeProduct(item: Record<string, unknown>): VendorProduct {
@@ -217,23 +258,80 @@ export async function getVendorProducts(vendorId: string): Promise<VendorProduct
   return data.map((item) => normalizeProduct((item as Record<string, unknown>) || {}));
 }
 
+export async function getMarketItems(): Promise<MarketItem[]> {
+  const data = await requestJson<unknown>("/api/market/items/", {
+    method: "GET",
+  });
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data
+    .map((item) => {
+      const source = (item as Record<string, unknown>) || {};
+      return {
+        id: Number(source.id),
+        name: String(source.name ?? ""),
+        category: String(source.category ?? ""),
+        unit: String(source.unit ?? ""),
+      };
+    })
+    .filter((item) => Number.isFinite(item.id) && item.id > 0);
+}
+
 export async function createVendorProduct(
   vendorId: string,
-  payload: { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
+  payload:
+    | { item: number; price: number }
+    | { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
 ): Promise<Record<string, unknown>> {
+  const body =
+    "item" in payload
+      ? { item: payload.item, price: payload.price }
+      : {
+          item_name: payload.item_name,
+          category: payload.category,
+          unit: payload.unit,
+          price_value: payload.price_value,
+          availability: payload.availability,
+        };
+
   return requestJson<Record<string, unknown>>(`/api/ecommerce/vendors/${vendorId}/listings/`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 
 export async function updateVendorProduct(
   listingId: string,
-  payload: Partial<{ item_name: string; category: string; unit: string; price_value: number; availability: boolean }>,
+  payload: Partial<{
+    item: number;
+    price: number;
+    item_name: string;
+    category: string;
+    unit: string;
+    price_value: number;
+    availability: boolean;
+  }>,
 ): Promise<Record<string, unknown>> {
+  const normalized: Record<string, unknown> = {};
+
+  if (typeof payload.item === "number") {
+    normalized.item = payload.item;
+  }
+
+  if (typeof payload.price === "number") {
+    normalized.price = payload.price;
+  } else if (typeof payload.price_value === "number") {
+    normalized.price = payload.price_value;
+  }
+
+  const body = Object.keys(normalized).length > 0 ? normalized : payload;
+
   return requestJson<Record<string, unknown>>(`/api/ecommerce/listings/${listingId}/`, {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 

@@ -1,11 +1,18 @@
 "use client";
 
+import {
+    Building2,
+    CheckCircle2,
+    Lightbulb,
+    MapPin,
+    Pencil,
+    Search,
     Star,
     Store,
     Verified,
 } from "lucide-react";
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { VendorSidebar } from "../_components/vendor-shell";
 import {
     getCurrentUserProfile,
     getStoredVendorId,
@@ -13,7 +20,6 @@ import {
     VendorApiError,
     VendorProfile,
 } from "../_lib/vendor-api";
-import { VendorSidebar } from "../_components/vendor-shell";
 
 export default function VendorProfilePage() {
   const [profile, setProfile] = useState<VendorProfile | null>(null);
@@ -61,11 +67,11 @@ export default function VendorProfilePage() {
       });
       setProfile(updated);
       setMessage("Profile updated successfully.");
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof VendorApiError) {
         setError(err.message);
       } else {
-        setError("Unable to save profile.");
+        setError(err instanceof Error ? err.message : "Unable to save profile.");
       }
     } finally {
       setSaving(false);
@@ -77,19 +83,20 @@ export default function VendorProfilePage() {
       <VendorSidebar />
 
       <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-        <div className="flex flex-1 items-center gap-4">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-            </main>
-          </div>
-        );
-      }
-            <img
-              alt="Vendor profile"
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-[#135bec]/10"
-              src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=120&h=120&fit=crop"
-            />
-          </div>
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+          <input
+            className="w-full rounded-xl border-none bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#135bec]/20"
+            placeholder="Search profile, branches, or reviews..."
+            type="text"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <img
+            alt="Vendor profile"
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-[#135bec]/10"
+            src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=120&h=120&fit=crop"
+          />
         </div>
       </header>
 
@@ -343,23 +350,6 @@ export default function VendorProfilePage() {
         </form>
       </main>
     </div>
-  );
-}
-
-function NavItem({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={[
-        "flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200",
-        active
-          ? "bg-white font-bold text-[#135bec] shadow-sm"
-          : "text-slate-500 hover:bg-[#f0f2f4] hover:text-[#135bec]",
-      ].join(" ")}
-    >
-      {icon}
-      <span className="text-sm font-medium">{label}</span>
-    </Link>
   );
 }
 

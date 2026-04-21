@@ -73,7 +73,7 @@ export default function VendorDashboardPage() {
     () =>
       orders.filter((order) => {
         const status = normalizeStatus(order.status);
-        return status.includes("pending") || status.includes("processing");
+        return statusHas(status, "pending") || statusHas(status, "processing");
       }).length,
     [orders],
   );
@@ -305,9 +305,9 @@ export default function VendorDashboardPage() {
                     const customer = ["Dawit Alemu", "Sara Lensa", "Yonas Mulu"][idx] || "Customer";
                     const productName = products[idx]?.title || "Store Product";
                     const status = normalizeStatus(order.status) || "processing";
-                    const badgeClass = status.includes("deliver")
+                    const badgeClass = statusHas(status, "deliver")
                       ? "bg-emerald-100 text-emerald-700"
-                      : status.includes("ship")
+                      : statusHas(status, "ship")
                         ? "bg-emerald-100 text-emerald-700"
                         : "bg-amber-100 text-amber-700";
 
@@ -389,6 +389,10 @@ function normalizeStatus(value: unknown): string {
   }
 
   return String(value).toLowerCase();
+}
+
+function statusHas(value: unknown, needle: string): boolean {
+  return typeof value === "string" && value.includes(needle);
 }
 
 function MetricCard({

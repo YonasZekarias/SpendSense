@@ -16,7 +16,7 @@ export default function VendorOrdersPage() {
   const [error, setError] = useState("");
 
   const deliveredCount = useMemo(
-    () => orders.filter((order) => normalizeStatus(order.status).includes("deliver")).length,
+    () => orders.filter((order) => statusHas(normalizeStatus(order.status), "deliver")).length,
     [orders],
   );
 
@@ -24,7 +24,7 @@ export default function VendorOrdersPage() {
     () =>
       orders.filter((order) => {
         const status = normalizeStatus(order.status);
-        return status.includes("pending") || status.includes("processing");
+        return statusHas(status, "pending") || statusHas(status, "processing");
       }).length,
     [orders],
   );
@@ -161,9 +161,13 @@ function normalizeStatus(value: unknown): string {
   return String(value).toLowerCase();
 }
 
+function statusHas(value: unknown, needle: string): boolean {
+  return typeof value === "string" && value.includes(needle);
+}
+
 function statusTone(status: string): "green" | "amber" | "red" {
-  if (status.includes("deliver") || status.includes("ship") || status.includes("paid")) return "green";
-  if (status.includes("cancel") || status.includes("fail")) return "red";
+  if (statusHas(status, "deliver") || statusHas(status, "ship") || statusHas(status, "paid")) return "green";
+  if (statusHas(status, "cancel") || statusHas(status, "fail")) return "red";
   return "amber";
 }
 
