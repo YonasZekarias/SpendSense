@@ -1,12 +1,13 @@
 "use client";
 
+import { useAuth } from "@/providers/auth-provider";
 import {
-  ClipboardList,
   LayoutDashboard,
   LogOut,
-  Settings,
-  TrendingUp,
-  Wallet,
+  Package,
+  ShoppingCart,
+  Star,
+  Store,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,40 +18,33 @@ const navItems = [
   {
     icon: LayoutDashboard,
     label: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     matchPaths: ["/", "/dashboard"],
     exact: true,
   },
   {
-    icon: Wallet,
-    label: "Budget",
-    href: "/dashboard/budget",
-    matchPaths: ["/dashboard/budget", "/budget"],
-  },
-  {
-    icon: ClipboardList,
-    label: "Shopping List",
+    icon: Store,
+    label: "Shop",
     href: "/shop",
-    matchPaths: ["/shop", "/dashboard/shop", "/shopping-list"],
+    matchPaths: ["/shop"],
   },
   {
-    icon: TrendingUp,
-    label: "Price Trends",
-    href: "/dashboard/prices",
-    matchPaths: [
-      "/dashboard/prices",
-      "/dashboard/market",
-      "/market",
-      "/prices",
-      "/price-trends",
-      "/live-prices",
-    ],
+    icon: ShoppingCart,
+    label: "Cart",
+    href: "/cart",
+    matchPaths: ["/cart", "/checkout"],
   },
   {
-    icon: Settings,
-    label: "Settings",
-    href: "/dashboard/alerts",
-    matchPaths: ["/dashboard/alerts", "/settings", "/settings/alerts"],
+    icon: Package,
+    label: "Orders",
+    href: "/orders",
+    matchPaths: ["/orders"],
+  },
+  {
+    icon: Star,
+    label: "Reviews",
+    href: "/reviews",
+    matchPaths: ["/reviews"],
   },
 ];
 
@@ -62,7 +56,8 @@ interface SidebarProps {
 
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
-
+  const { status, user, signOut } = useAuth();
+  
   const isPathActive = useCallback(
     (currentPath: string, candidatePaths: string[], exact?: boolean) => {
       return candidatePaths.some((path) => {
@@ -101,7 +96,25 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
             </button>
           )}
         </div>
-
+{/* function NavItem({ icon, label, active = false, variant = "default" }: { 
+  icon: React.ReactNode, 
+  label: string, 
+  active?: boolean,
+  variant?: "default" | "destructive"
+}) {
+  return (
+    <div className={`
+      group flex items-center px-4 py-3 cursor-pointer transition-all duration-200
+      ${active 
+        ? "text-primary font-bold border-r-4 border-primary bg-primary/10" 
+        : "text-muted-foreground font-medium hover:bg-secondary"}
+      ${variant === "destructive" ? "hover:text-destructive" : ""}
+    `}>
+      <span className="mr-3">{icon}</span>
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+} */}
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = isPathActive(pathname, item.matchPaths, item.exact);
@@ -110,13 +123,21 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 onClick={mobile ? onClose : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-[#f0f2f4] dark:bg-gray-700 text-[#111318] dark:text-white"
-                    : "text-[#616f89] dark:text-gray-400 hover:bg-[#f0f2f4] dark:hover:bg-gray-800 hover:text-[#111318] dark:hover:text-white"
-                }`}
+                // className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                //   isActive
+                //     ? "bg-[#f0f2f4] dark:bg-gray-700 text-[#111318] dark:text-white"
+                //     : "text-[#616f89] dark:text-gray-400 hover:bg-[#f0f2f4] dark:hover:bg-gray-800 hover:text-[#111318] dark:hover:text-white"
+                // }`}
+                className={`
+                  group flex items-center px-4 py-3 cursor-pointer transition-all duration-200
+                  ${isActive 
+                    ? "text-primary font-bold border-r-4 border-primary bg-primary/10" 
+                    : "text-muted-foreground font-medium hover:bg-secondary"}
+                `}
               >
-                <item.icon className={`size-5 ${isActive ? "text-blue-600" : ""}`} />
+                <span className="mr-3">
+                  <item.icon  />
+                </span>
                 <span className="text-sm font-medium">{item.label}</span>
               </a>
             );
@@ -125,10 +146,12 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
       </div>
 
       <div className="p-4 border-t border-[#dbdfe6] dark:border-gray-800">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-[#616f89] dark:text-gray-400 hover:text-red-500">
+        <button onClick={signOut} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-[#616f89] dark:text-gray-400 hover:text-red-500">
           <LogOut className="size-5" />
           <span className="text-sm font-medium">Log Out</span>
         </button>
+        <p className="text-xs px-4 text-muted-foreground">Role: {user?.role ?? "user"}</p>
+
       </div>
     </aside>
   );

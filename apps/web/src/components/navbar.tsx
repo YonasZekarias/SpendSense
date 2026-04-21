@@ -20,14 +20,14 @@ export function Navbar({ avatarUrl }: NavbarProps) {
 
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e5e7eb] dark:border-b-gray-800 bg-white dark:bg-[#1a202c] px-4 sm:px-10 py-3 sticky top-0 z-50">
-      <Link href="/dashboard" className="flex items-center gap-4 text-[#111318] dark:text-white">
+      {/* <Link href="/dashboard" className="flex items-center gap-4 text-[#111318] dark:text-white">
         <div className="size-8 flex items-center justify-center rounded bg-[#135bec]/10 text-[#135bec]">
           <Wallet className="size-5" />
         </div>
         <h2 className="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
           SpendSense
         </h2>
-      </Link>
+      </Link> */}
 
       <nav className="hidden md:flex items-center gap-9">
         {navLinks.map((link) => {

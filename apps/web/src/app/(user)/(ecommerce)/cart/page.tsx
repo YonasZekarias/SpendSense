@@ -79,7 +79,7 @@ export default function CartPage() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar - Hidden on Mobile */}
-      <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r bg-sidebar py-6 lg:flex z-50">
+      {/* <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r bg-sidebar py-6 lg:flex z-50">
         <div className="mb-10 flex items-center gap-3 px-6">
           <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
             <ShoppingCart className="h-4 w-4 text-primary-foreground" />
@@ -108,36 +108,11 @@ export default function CartPage() {
           <NavItem icon={<Settings size={18} />} label="Settings" />
           <NavItem icon={<LogOut size={18} />} label="Logout" variant="destructive" />
         </div>
-      </aside>
+      </aside> */}
 
       {/* Main Content Area */}
       <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/80 px-4 md:px-8 backdrop-blur-md">
-          <div className="relative group flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <Input 
-              className="pl-10 bg-secondary/50 border-none focus-visible:ring-1" 
-              placeholder="Search resources..." 
-            />
-          </div>
 
-          <div className="flex items-center gap-4 md:gap-8">
-            <nav className="hidden md:flex gap-6">
-              <button className="text-sm font-semibold hover:text-primary transition-colors">Reports</button>
-              <button className="text-sm font-semibold hover:text-primary transition-colors">Notifications</button>
-            </nav>
-            <div className="flex items-center gap-4 border-l pl-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold">Abebe B.</p>
-                <p className="text-[10px] uppercase tracking-tighter text-muted-foreground">Pro Account</p>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-primary/10 border-2 border-background overflow-hidden relative">
-                 <Image src="/api/placeholder/40/40" alt="Profile" fill className="object-cover" />
-              </div>
-            </div>
-          </div>
-        </header>
 
         {/* Content */}
         <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">

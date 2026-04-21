@@ -45,7 +45,7 @@ export default function MarketplacePage() {
             <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-1.5 backdrop-blur-md uppercase tracking-tighter font-bold">
               B2B Marketplace
             </Badge>
-            <h2 className="text-6xl font-black leading-[1.1] tracking-tight">
+            <h2 className="text-5xl font-black leading-[1.1] tracking-tight">
               Sourcing Ethiopia's<br />Finest Commodities.
             </h2>
             <p className="text-lg text-white/80 max-w-lg font-medium">
