@@ -1,26 +1,20 @@
 "use client";
 
 import {
-    BarChart3,
     Bell,
     ChevronLeft,
     ChevronRight,
-    CircleUserRound,
     Filter,
-    LayoutDashboard,
     Lightbulb,
-    LogOut,
-    Package2,
     Pencil,
     Plus,
     Search,
-    ShoppingCart,
-    Trash2,
+    Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatMoney, getStoredVendorId, getVendorProducts, VendorProduct } from "../_lib/vendor-api";
 import { VendorSidebar } from "../_components/vendor-shell";
+import { formatMoney, getStoredVendorId, getVendorProducts, VendorProduct } from "../_lib/vendor-api";
 
 export default function VendorProductsPage() {
   const [vendorId, setVendorId] = useState("");

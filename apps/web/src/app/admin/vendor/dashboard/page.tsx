@@ -1,28 +1,27 @@
 "use client";
 
 import {
-    Activity,
-    AlertTriangle,
-    Bell,
-    CircleUserRound,
-    Package,
-    Plus,
-    Search,
-    Star,
-    Wallet,
+  Activity,
+  AlertTriangle,
+  Bell,
+  Package,
+  Plus,
+  Search,
+  Star,
+  Wallet
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-    formatMoney,
-    getCurrentUserProfile,
-    getStoredVendorId,
-    getVendorOrders,
-    getVendorProducts,
-    VendorOrder,
-    VendorProduct,
-} from "../_lib/vendor-api";
 import { VendorSidebar } from "../_components/vendor-shell";
+import {
+  formatMoney,
+  getCurrentUserProfile,
+  getStoredVendorId,
+  getVendorOrders,
+  getVendorProducts,
+  VendorOrder,
+  VendorProduct,
+} from "../_lib/vendor-api";
 
 export default function VendorDashboardPage() {
   const [vendorId, setVendorId] = useState("");

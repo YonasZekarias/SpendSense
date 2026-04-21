@@ -6,16 +6,13 @@ import {
     CalendarDays,
     CircleUserRound,
     Download,
-    LayoutDashboard,
     Lightbulb,
-    LogOut,
     Package2,
     Search,
-    ShoppingCart,
-    TrendingUp,
+    TrendingUp
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { VendorSidebar } from "../_components/vendor-shell";
 import {
     formatMoney,
     getStoredVendorId,
@@ -25,7 +22,6 @@ import {
     VendorOrder,
     VendorProduct,
 } from "../_lib/vendor-api";
-import { VendorSidebar } from "../_components/vendor-shell";
 
 export default function VendorAnalyticsPage() {
   const [vendorId, setVendorId] = useState("");

@@ -1,17 +1,17 @@
 "use client";
 
+import {
+    BarChart3,
+    CircleUserRound,
+    LayoutDashboard,
+    LogOut,
+    Package,
+    ShoppingCart,
+    Store,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import {
-  BarChart3,
-  CircleUserRound,
-  LayoutDashboard,
-  LogOut,
-  Package,
-  ShoppingCart,
-  Store,
-} from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/admin/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },

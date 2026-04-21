@@ -2,21 +2,15 @@
 
 import {
     ArrowLeft,
-    BarChart3,
     Bell,
     ChevronRight,
-    CircleUserRound,
-    LayoutDashboard,
-    LogOut,
-    Package2,
-    Search,
-    ShoppingCart,
+    Search
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { formatMoney, getVendorOrderDetail, VendorOrder } from "../../_lib/vendor-api";
 import { VendorSidebar } from "../../_components/vendor-shell";
+import { formatMoney, getVendorOrderDetail, VendorOrder } from "../../_lib/vendor-api";
 
 export default function VendorOrderDetailPage() {
   const params = useParams<{ id: string }>();
