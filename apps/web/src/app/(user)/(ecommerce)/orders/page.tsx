@@ -1,51 +1,153 @@
 "use client";
 
-import React from "react";
-import { 
-  ChevronRight, 
-  Filter, 
-  Download, 
-  ArrowUpIcon, 
-  Lightbulb, 
-  Search,
-  Printer,
-  Cloud,
-  Construction,
-  Utensils,
-  Zap,
-  Eye,
+import React, { useEffect, useState } from "react";
+import {
+  ArrowUpIcon,
   ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Filter,
+  Lightbulb,
   Plus,
+  TrendingUp,
   Verified,
-  TrendingUp
 } from "lucide-react";
 
+import { getOrders } from "@/actions/ecommerce";
+import type { Purchase } from "@/lib/ecommerce-types";
 import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
 import { Badge } from "@repo/ui/components/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@repo/ui/components/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
 import { Progress } from "@repo/ui/components/progress";
 
+function parseAmount(amount: string | number) {
+  if (typeof amount === "number") {
+    return amount;
+  }
+
+  const parsed = Number(String(amount).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-ET", {
+    style: "currency",
+    currency: "ETB",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function getStatusVariant(status: Purchase["status"]) {
+  switch (status) {
+    case "delivered":
+      return "secondary" as const;
+    case "failed":
+    case "cancelled":
+      return "destructive" as const;
+    case "shipped":
+      return "default" as const;
+    case "paid":
+      return "outline" as const;
+    case "pending":
+    default:
+      return "outline" as const;
+  }
+}
+
+function getStatusLabel(status: Purchase["status"]) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 export default function OrderHistoryPage() {
-  const orders = [
-    { id: "#ORD-90124", date: "Oct 24, 2023", vendor: "Modern Prints PLC", icon: <Printer size={16} />, amount: "ETB 12,450.00", status: "Delivered", variant: "success" },
-    { id: "#ORD-89956", date: "Oct 22, 2023", vendor: "Ethio Telecom", icon: <Cloud size={16} />, amount: "ETB 4,200.00", status: "Processing", variant: "info" },
-    { id: "#ORD-89421", date: "Oct 18, 2023", vendor: "Abay Logistics", icon: <Construction size={16} />, amount: "ETB 85,000.00", status: "On Hold", variant: "warning" },
-    { id: "#ORD-88732", date: "Oct 15, 2023", vendor: "Fresh Foods Ethiopia", icon: <Utensils size={16} />, amount: "ETB 2,400.00", status: "Cancelled", variant: "destructive" },
-    { id: "#ORD-88110", date: "Oct 12, 2023", vendor: "E Electric", icon: <Zap size={16} />, amount: "ETB 1,850.00", status: "Delivered", variant: "success" },
-  ];
+  const [orders, setOrders] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadOrders() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getOrders();
+        if (!active) {
+          return;
+        }
+
+        setOrders(response);
+      } catch {
+        if (active) {
+          setError("Unable to load order history.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadOrders();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <div className="p-4 md:p-8 max-w-7xl mx-auto text-sm text-muted-foreground">Loading order history...</div>;
+  }
+
+  if (error) {
+    return <div className="p-4 md:p-8 max-w-7xl mx-auto text-sm text-destructive">{error}</div>;
+  }
+
+  const totalRevenue = orders.reduce((sum, order) => sum + parseAmount(order.amount), 0);
+  const pendingOrders = orders.filter((order) => order.status === "pending").length;
+  const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  const topVendors = Object.values(
+    orders.reduce<Record<string, { name: string; orders: number; amount: number }>>((accumulator, order) => {
+      const current = accumulator[order.vendor] ?? {
+        name: order.vendor,
+        orders: 0,
+        amount: 0,
+      };
+
+      current.orders += 1;
+      current.amount += parseAmount(order.amount);
+      accumulator[order.vendor] = current;
+      return accumulator;
+    }, {}),
+  )
+    .sort((left, right) => right.amount - left.amount)
+    .slice(0, 2);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10">
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <nav className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
@@ -66,7 +168,6 @@ export default function OrderHistoryPage() {
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <Card className="md:col-span-8 relative overflow-hidden bg-card border-none shadow-sm">
           <div className="absolute -right-4 -top-4 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
@@ -74,16 +175,16 @@ export default function OrderHistoryPage() {
             <div>
               <span className="text-xs font-bold text-primary uppercase tracking-widest">Monthly Summary</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <h3 className="text-4xl font-extrabold">ETB 142,500.00</h3>
+                <h3 className="text-4xl font-extrabold">{formatCurrency(totalRevenue)}</h3>
                 <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-none gap-1 py-1">
-                  <ArrowUpIcon size={14} /> 12.5%
+                  <ArrowUpIcon size={14} /> {orders.length > 0 ? "Live" : "0"}
                 </Badge>
               </div>
             </div>
             <div className="mt-8 flex flex-wrap gap-8">
-              <StatItem label="Total Orders" value="48" />
-              <StatItem label="Pending Processing" value="03" border />
-              <StatItem label="Avg. Order Value" value="ETB 2,968" border />
+              <StatItem label="Total Orders" value={String(orders.length).padStart(2, "0")} />
+              <StatItem label="Pending Processing" value={String(pendingOrders).padStart(2, "0")} border />
+              <StatItem label="Avg. Order Value" value={formatCurrency(averageOrderValue)} border />
             </div>
           </CardContent>
         </Card>
@@ -106,13 +207,12 @@ export default function OrderHistoryPage() {
         </Card>
       </div>
 
-      {/* Main Table Section */}
       <Card className="border-none shadow-sm overflow-hidden bg-card">
         <div className="p-4 border-b flex items-center justify-between bg-muted/30">
           <div className="flex items-center gap-4">
             <span className="text-sm font-bold">Recent Transactions</span>
             <div className="h-4 w-px bg-border" />
-            <span className="text-xs font-medium text-muted-foreground">Showing 5 of 1,240 records</span>
+            <span className="text-xs font-medium text-muted-foreground">Showing {orders.length} records</span>
           </div>
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronLeft size={16} /></Button>
@@ -134,22 +234,19 @@ export default function OrderHistoryPage() {
             {orders.map((order) => (
               <TableRow key={order.id} className="group hover:bg-muted/30 transition-colors">
                 <TableCell className="px-6 font-mono text-sm text-muted-foreground">{order.id}</TableCell>
-                <TableCell className="px-6 text-sm text-muted-foreground">{order.date}</TableCell>
+                <TableCell className="px-6 text-sm text-muted-foreground">{formatDate(order.created_at)}</TableCell>
                 <TableCell className="px-6">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                      {order.icon}
+                      {order.vendor.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-sm font-semibold">{order.vendor}</span>
                   </div>
                 </TableCell>
-                <TableCell className="px-6 text-right font-bold">{order.amount}</TableCell>
+                <TableCell className="px-6 text-right font-bold">{formatCurrency(parseAmount(order.amount))}</TableCell>
                 <TableCell className="px-6">
-                  <Badge 
-                    className="rounded-full px-3 py-0.5 text-[10px] font-bold" 
-                    variant={order.variant as any}
-                  >
-                    {order.status}
+                  <Badge className="rounded-full px-3 py-0.5 text-[10px] font-bold" variant={getStatusVariant(order.status)}>
+                    {getStatusLabel(order.status)}
                   </Badge>
                 </TableCell>
                 <TableCell className="px-6 text-center">
@@ -163,12 +260,12 @@ export default function OrderHistoryPage() {
         </Table>
       </Card>
 
-      {/* Insights Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <InsightsCard title="Top Vendors" action="View All">
           <ul className="space-y-4">
-            <VendorItem name="Ethio Telecom" orders={12} amount="ETB 45k" />
-            <VendorItem name="Abay Logistics" orders={8} amount="ETB 112k" />
+            {topVendors.map((vendor) => (
+              <VendorItem key={vendor.name} name={vendor.name} orders={vendor.orders} amount={formatCurrency(vendor.amount)} />
+            ))}
           </ul>
         </InsightsCard>
 
@@ -196,9 +293,8 @@ export default function OrderHistoryPage() {
         </Card>
       </div>
 
-      {/* Quick Action FAB */}
-      <Button 
-        size="icon" 
+      <Button
+        size="icon"
         className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-50"
       >
         <Plus size={32} />

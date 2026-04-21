@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import { 
   LayoutDashboard, 
   Store, 
@@ -23,99 +22,107 @@ import {
   HeadphonesIcon 
 } from "lucide-react";
 
+import { getCart, addToCart } from "@/actions/ecommerce";
+import type { Cart, CartItem } from "@/lib/ecommerce-types";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { Separator } from "@repo/ui/components/separator";
 import { Card, CardContent } from "@repo/ui/components/card";
 
-// Mock Data for Cart Items
-const INITIAL_ITEMS = [
-  {
-    id: 1,
-    name: "Azure SQL Database",
-    price: 120.0,
-    details: "Gen5, 2 vCores, 10GB Storage, East US Region",
-    icon: "database",
-    quantity: 1,
-  },
-  {
-    id: 2,
-    name: "VM Series D-v3",
-    price: 85.5,
-    details: "Standard D2s v3 (2 vcpus, 8 GiB memory)",
-    icon: "cpu",
-    quantity: 3,
-  },
-  {
-    id: 3,
-    name: "Blob Storage",
-    price: 12.2,
-    details: "Hot Tier, LRS redundancy, 500GB capacity",
-    icon: "hard-drive",
-    quantity: 1,
-  },
-];
-
 export default function CartPage() {
-  const [items, setItems] = useState(INITIAL_ITEMS);
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCart() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getCart();
+        if (!active) {
+          return;
+        }
+
+        setCart(response);
+        setItems(response.items);
+      } catch {
+        if (active) {
+          setError("Unable to load cart.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadCart();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-sm text-muted-foreground">Loading cart...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-sm text-destructive">{error}</div>;
+  }
 
   const updateQuantity = (id: number, delta: number) => {
+    const current = items.find((item) => item.listing_id === id);
+    if (!current) {
+      return;
+    }
+
+    if (delta > 0) {
+      void addToCart({
+        listing_id: current.listing_id,
+        vendor_id: current.vendor_id,
+        item_name: current.item_name,
+        unit: current.unit,
+        quantity: delta,
+        unit_price: current.unit_price,
+      }).then((nextCart) => {
+        setCart(nextCart);
+        setItems(nextCart.items);
+      }).catch(() => {
+        setError("Unable to update cart quantity.");
+      });
+      return;
+    }
+
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-      )
+        item.listing_id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item,
+      ),
     );
   };
 
   const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) => prev.filter((item) => item.listing_id !== id));
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.unit_price * item.quantity, 0);
   const tax = subtotal * 0.08;
   const serviceFee = 5.0;
   const total = subtotal + tax + serviceFee;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar - Hidden on Mobile */}
-      {/* <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r bg-sidebar py-6 lg:flex z-50">
-        <div className="mb-10 flex items-center gap-3 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-            <ShoppingCart className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-primary">SpendSense</h1>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ethiopia</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 px-4">
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" />
-          <NavItem icon={<Store size={20} />} label="Market" />
-          <NavItem icon={<Wallet size={20} />} label="Finance" />
-          <NavItem icon={<ShoppingCart size={20} />} label="Shopping" active />
-          <NavItem icon={<MoreHorizontal size={20} />} label="Other" />
-        </nav>
-
-        <div className="px-4 mb-4">
-          <Button className="w-full gap-2 rounded-xl font-bold py-6 shadow-md">
-            <Plus size={18} /> New Transaction
-          </Button>
-        </div>
-
-        <div className="px-4 space-y-1">
-          <NavItem icon={<Settings size={18} />} label="Settings" />
-          <NavItem icon={<LogOut size={18} />} label="Logout" variant="destructive" />
-        </div>
-      </aside> */}
-
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1">
 
 
         {/* Content */}
-        <main className="p-4 md:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
+        <main className=" max-w-7xl mx-auto pb-24 lg:pb-8">
           <div className="mb-10">
             <h2 className="text-3xl font-extrabold tracking-tight mb-2">Shopping Cart</h2>
             <nav className="flex items-center text-sm font-medium text-muted-foreground">
@@ -129,41 +136,41 @@ export default function CartPage() {
             {/* Left Column: List */}
             <div className="col-span-12 lg:col-span-8 space-y-6">
               {items.map((item) => (
-                <Card key={item.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
+                <Card key={`${item.vendor_id}-${item.listing_id}`} className="border-none shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
                     <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-primary/5">
-                        {item.icon === 'database' && <LayoutDashboard className="text-primary" size={32} />}
-                        {item.icon === 'cpu' && <Store className="text-primary" size={32} />}
-                        {item.icon === 'hard-drive' && <Wallet className="text-primary" size={32} />}
+                        <LayoutDashboard className="text-primary" size={32} />
                     </div>
                     
                     <div className="flex-1 w-full">
                       <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-lg">{item.name}</h3>
+                        <h3 className="font-bold text-lg">{item.item_name}</h3>
                         <p className="font-bold text-primary">
-                          ${item.price.toFixed(2)} <span className="text-xs font-medium text-muted-foreground">/mo</span>
+                          ETB {item.unit_price.toFixed(2)} <span className="text-xs font-medium text-muted-foreground">/unit</span>
                         </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-4">{item.details}</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {item.unit ? item.unit : `Listing #${item.listing_id}`} • Vendor {item.vendor_id}
+                      </p>
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center bg-secondary rounded-lg p-1">
                           <button 
-                            onClick={() => updateQuantity(item.id, -1)}
+                            onClick={() => updateQuantity(item.listing_id, -1)}
                             className="w-8 h-8 flex items-center justify-center hover:bg-background rounded transition-all active:scale-90"
                           >
                             <Minus size={14} />
                           </button>
                           <span className="px-4 font-bold text-sm">{item.quantity.toString().padStart(2, '0')}</span>
                           <button 
-                            onClick={() => updateQuantity(item.id, 1)}
+                            onClick={() => updateQuantity(item.listing_id, 1)}
                             className="w-8 h-8 flex items-center justify-center hover:bg-background rounded transition-all active:scale-90"
                           >
                             <Plus size={14} />
                           </button>
                         </div>
                         <button 
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.listing_id)}
                           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-destructive transition-colors"
                         >
                           <Trash2 size={14} /> Remove
@@ -173,6 +180,14 @@ export default function CartPage() {
                   </CardContent>
                 </Card>
               ))}
+
+              {items.length === 0 && (
+                <Card className="border-none shadow-sm">
+                  <CardContent className="p-8 text-sm text-muted-foreground">
+                    Your cart is empty.
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Promo Code */}
               <div className="flex items-center gap-4 rounded-xl bg-secondary p-4">
@@ -191,15 +206,15 @@ export default function CartPage() {
                   <h4 className="font-extrabold text-lg">Order Summary</h4>
                 </div>
                 <CardContent className="p-6 space-y-4">
-                  <SummaryRow label={`Subtotal (${items.length} items)`} value={`$${subtotal.toFixed(2)}`} />
-                  <SummaryRow label="Infrastructure Tax" value={`$${tax.toFixed(2)}`} />
-                  <SummaryRow label="Service Fee" value={`$${serviceFee.toFixed(2)}`} />
+                  <SummaryRow label={`Subtotal (${items.length} items)`} value={`ETB ${subtotal.toFixed(2)}`} />
+                  <SummaryRow label="Infrastructure Tax" value={`ETB ${tax.toFixed(2)}`} />
+                  <SummaryRow label="Service Fee" value={`ETB ${serviceFee.toFixed(2)}`} />
                   
                   <Separator className="my-4 border-dashed" />
                   
                   <div className="flex justify-between items-center">
                     <span className="font-bold">Total Monthly</span>
-                    <span className="text-2xl font-extrabold text-primary">${total.toFixed(2)}</span>
+                    <span className="text-2xl font-extrabold text-primary">ETB {total.toFixed(2)}</span>
                   </div>
 
                   <Button className="w-full h-14 rounded-xl font-extrabold text-lg gap-2 mt-4 shadow-lg shadow-primary/20">
@@ -220,9 +235,9 @@ export default function CartPage() {
                     </div>
                     <span className="text-xs font-bold uppercase tracking-widest">SpendSense Tip</span>
                   </div>
-                  <h5 className="text-lg font-bold mb-2">Save up to $45/mo</h5>
+                  <h5 className="text-lg font-bold mb-2">Save up to ETB 45/mo</h5>
                   <p className="text-sm text-primary-foreground/80 leading-relaxed mb-6">
-                    Switching your Azure SQL Database to a Reserved Instance for 1 year could reduce your subtotal by 32%.
+                    Combining your items by vendor can reduce duplicate delivery costs and simplify procurement.
                   </p>
                   <Button variant="secondary" size="sm" className="font-bold text-primary">
                     Apply Recommendation

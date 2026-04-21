@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
   HelpCircle, 
@@ -28,12 +29,107 @@ import { RadioGroup, RadioGroupItem } from "@repo/ui/components/radio-group";
 import { Card, CardContent } from "@repo/ui/components/card";
 import { Label } from "@repo/ui/components/label";
 import { Separator } from "@repo/ui/components/separator";
+import { checkout as createCheckout, getCart } from "@/actions/ecommerce";
+import type { Cart } from "@/lib/ecommerce-types";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState("telebirr");
+  const [billingAddress, setBillingAddress] = useState("");
+  const [city, setCity] = useState("Addis Ababa");
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCart() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getCart();
+        if (!active) {
+          return;
+        }
+
+        setCart(response);
+      } catch {
+        if (active) {
+          setError("Unable to load checkout cart.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadCart();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedItem = cart?.items?.[0] ?? null;
+  const subtotal = selectedItem ? selectedItem.unit_price * selectedItem.quantity : 0;
+  const processingFee = 0;
+  const total = subtotal + processingFee;
+
+  const submitOrder = () => {
+    if (!selectedItem) {
+      setError("Your cart is empty.");
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      try {
+        const response = await createCheckout({
+          vendor_id: selectedItem.vendor_id,
+          listing_id: selectedItem.listing_id,
+          quantity: selectedItem.quantity,
+          delivery_address: billingAddress || city,
+          payment_method: paymentMethod as "chapa" | "telebirr" | "cash",
+        });
+
+        setSuccess("Purchase created successfully.");
+        if (response.payment_url) {
+          window.location.assign(response.payment_url);
+          return;
+        }
+
+        router.push(`/orders/${response.id}`);
+      } catch (submitError) {
+        setError(submitError instanceof Error ? submitError.message : "Unable to complete checkout.");
+      }
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background antialiased p-8">
+        <p className="text-sm text-muted-foreground">Loading checkout...</p>
+      </div>
+    );
+  }
+
+  if (error && !selectedItem) {
+    return (
+      <div className="min-h-screen bg-background antialiased p-8">
+        <p className="text-sm text-destructive">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
+
       {/* Focused Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <div className="flex justify-between items-center h-16 px-4 md:px-8 max-w-7xl mx-auto">
@@ -67,6 +163,8 @@ export default function CheckoutPage() {
 
       <main className="pt-24 pb-24 md:pb-12 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
+          {error && <p className="mb-6 text-sm text-destructive">{error}</p>}
+          {success && <p className="mb-6 text-sm text-emerald-600">{success}</p>}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             
             {/* Left Column: Form */}
@@ -101,11 +199,11 @@ export default function CheckoutPage() {
                     </div>
                     <div className="md:col-span-2 space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Billing Address</Label>
-                      <Input className="bg-secondary/50 border-none h-12" placeholder="Bole Sub-city, Woreda 03" />
+                      <Input className="bg-secondary/50 border-none h-12" placeholder="Bole Sub-city, Woreda 03" value={billingAddress} onChange={(event) => setBillingAddress(event.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">City</Label>
-                      <Input className="bg-secondary/50 border-none h-12" defaultValue="Addis Ababa" />
+                      <Input className="bg-secondary/50 border-none h-12" value={city} onChange={(event) => setCity(event.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Country</Label>
@@ -185,10 +283,10 @@ export default function CheckoutPage() {
                 <Card className="border-none shadow-sm overflow-hidden">
                   <div className="bg-primary px-6 py-8 text-primary-foreground relative overflow-hidden">
                     <div className="relative z-10">
-                      <h2 className="text-lg font-bold opacity-90 mb-1">Premium Annual</h2>
+                          <h2 className="text-lg font-bold opacity-90 mb-1">{selectedItem?.item_name ?? "Cart Summary"}</h2>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-extrabold tracking-tight">ETB 2,400</span>
-                        <span className="text-sm opacity-75">/year</span>
+                            <span className="text-4xl font-extrabold tracking-tight">ETB {total.toFixed(2)}</span>
+                            <span className="text-sm opacity-75">/checkout</span>
                       </div>
                     </div>
                     {/* Decorative SVG */}
@@ -199,13 +297,13 @@ export default function CheckoutPage() {
 
                   <CardContent className="p-6 space-y-6">
                     <div className="space-y-4">
-                      <SummaryItem label="Subscription Plan" value="Premium" />
-                      <SummaryItem label="Subtotal" value="ETB 2,400.00" />
-                      <SummaryItem label="Processing Fee" value="ETB 0.00" />
+                      <SummaryItem label="Listing" value={selectedItem ? selectedItem.item_name : "Unavailable"} />
+                      <SummaryItem label="Subtotal" value={`ETB ${subtotal.toFixed(2)}`} />
+                      <SummaryItem label="Processing Fee" value={`ETB ${processingFee.toFixed(2)}`} />
                       <Separator className="bg-border/50" />
                       <div className="flex justify-between items-center">
                         <span className="text-base font-bold">Total Due</span>
-                        <span className="text-xl font-extrabold text-primary">ETB 2,400.00</span>
+                        <span className="text-xl font-extrabold text-primary">ETB {total.toFixed(2)}</span>
                       </div>
                     </div>
 
@@ -214,7 +312,7 @@ export default function CheckoutPage() {
                       <TrustLine icon={<Verified size={14} className="text-green-500" />} text="14-day money-back guarantee" />
                     </div>
 
-                    <Button className="w-full h-14 rounded-xl font-bold text-lg gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                    <Button className="w-full h-14 rounded-xl font-bold text-lg gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all" onClick={submitOrder} disabled={isPending || !selectedItem}>
                       Complete Payment
                       <ArrowRight size={20} />
                     </Button>
@@ -254,8 +352,8 @@ export default function CheckoutPage() {
 
       {/* Mobile Sticky Footer */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background p-4 border-t z-50">
-        <Button className="w-full h-14 font-bold text-lg rounded-xl gap-2">
-          Pay ETB 2,400.00
+        <Button className="w-full h-14 font-bold text-lg rounded-xl gap-2" onClick={submitOrder} disabled={isPending || !selectedItem}>
+          Pay ETB {total.toFixed(2)}
           <ArrowRight size={20} />
         </Button>
       </div>

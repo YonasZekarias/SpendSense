@@ -1,9 +1,9 @@
 {
   "name": "backend-django",
   "scripts": {
-    "dev": "./venv/bin/python manage.py runserver",
-    "build": "./venv/bin/python -m pip install -r requirements.txt",
-    "test": "./venv/bin/python manage.py test",
-    "lint": "./venv/bin/python -m flake8 ."
+    "dev": "python manage.py runserver",
+    "build": "python -m pip install -r requirements.txt",
+    "test": "python manage.py test",
+    "lint": "python -m flake8 ."
   }
 }

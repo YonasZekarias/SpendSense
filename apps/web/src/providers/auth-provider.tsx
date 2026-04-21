@@ -37,7 +37,7 @@ type AuthContextValue = {
   status: AuthStatus;
   user: UserProfile | null;
   accessToken: string | null;
-  signIn: (payload: LoginPayload) => Promise<void>;
+  signIn: (payload: LoginPayload) => Promise<UserProfile>;
   signUp: (payload: RegisterPayload) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (token: string, newPassword: string) => Promise<void>;
@@ -65,10 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return refreshed.access;
   }, []);
 
-  const hydrateCurrentUser = useCallback(async (token: string) => {
+  const hydrateCurrentUser = useCallback(async (token: string): Promise<UserProfile> => {
     const currentUser = await getCurrentUser(token);
     setUser(currentUser);
     setStatus("authenticated");
+    return currentUser;
   }, []);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const tokenPair = await login(payload);
       setTokenPairCookies(tokenPair);
       setAccessToken(tokenPair.access);
-      await hydrateCurrentUser(tokenPair.access);
+      return hydrateCurrentUser(tokenPair.access);
     },
     [hydrateCurrentUser],
   );

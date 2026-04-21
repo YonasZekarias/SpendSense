@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import {
   AUTH_COOKIE_NAME,
   AUTH_REFRESH_COOKIE_NAME,
-  DEFAULT_AUTH_REDIRECT,
+  getDefaultRouteForRole,
+  normalizeRole,
 } from "@/lib/auth-constants";
 
 const AUTH_ROUTES = new Set([
@@ -16,16 +17,25 @@ const AUTH_ROUTES = new Set([
 const ANY_AUTHENTICATED_ROLE = new Set(["user", "vendor", "admin", "analyst"]);
 
 const ROLE_PROTECTED_ROUTES = [
+  { prefix: "/onboarding", allowedRoles: new Set(["user"]) },
   { prefix: "/dashboard", allowedRoles: new Set(["user"]) },
+  { prefix: "/notifications", allowedRoles: new Set(["user"]) },
+  { prefix: "/profile", allowedRoles: new Set(["user"]) },
+  { prefix: "/settings", allowedRoles: new Set(["user"]) },
+  { prefix: "/budget", allowedRoles: new Set(["user"]) },
+  { prefix: "/expenses", allowedRoles: new Set(["user"]) },
+  { prefix: "/reports", allowedRoles: new Set(["user"]) },
+  { prefix: "/market", allowedRoles: new Set(["user"]) },
+  { prefix: "/shop", allowedRoles: new Set(["user"]) },
+  { prefix: "/cart", allowedRoles: new Set(["user"]) },
+  { prefix: "/checkout", allowedRoles: new Set(["user"]) },
+  { prefix: "/orders", allowedRoles: new Set(["user"]) },
+  { prefix: "/reviews", allowedRoles: new Set(["user"]) },
   { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
+  { prefix: "/vendor/register", allowedRoles: new Set(["user", "vendor", "admin"]) },
+  { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
   { prefix: "/admin", allowedRoles: new Set(["admin"]) },
-  { prefix: "/analytics", allowedRoles: new Set(["analyst"]) },
-
-  // ✅ FIXED: merged ads rules (your old version was broken)
-  { prefix: "/ads", allowedRoles: ANY_AUTHENTICATED_ROLE },
-
-  // shared routes
-  { prefix: "/we", allowedRoles: ANY_AUTHENTICATED_ROLE },
+  { prefix: "/analytics", allowedRoles: new Set(["analyst", "admin"]) },
 ];
 
 function matchesPath(pathname: string, prefix: string) {
@@ -83,34 +93,20 @@ function extractRoleFromAccessToken(token?: string): string | null {
   return null;
 }
 
-// ================= ROLE ROUTING =================
-
-function getDefaultRouteForRole(role: string | null) {
-  switch (role) {
-    case "vendor":
-      return "/vendor/dashboard";
-    case "admin":
-      return "/admin/dashboard";
-    case "analyst":
-      return "/analytics";
-    case "user":
-      return "/dashboard";
-    default:
-      return DEFAULT_AUTH_REDIRECT;
-  }
-}
-
-// ================= MIDDLEWARE =================
-
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-
   const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const hasAccessCookie = Boolean(accessToken);
+  const hasRefreshCookie = Boolean(request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value);
+  const hasSessionCookie = hasAccessCookie || hasRefreshCookie;
+  const role = normalizeRole(extractRoleFromAccessToken(accessToken));
+  // const effectiveRole = role ?? (hasSessionCookie ? "user" : null);
+  const matchedProtectedRoute = findProtectedRoute(pathname);
+
   const refreshToken = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value;
 
   const hasSession = Boolean(accessToken || refreshToken);
 
-  const role = extractRoleFromAccessToken(accessToken);
   const effectiveRole = role || null;
 
   const matchedRoute = findProtectedRoute(pathname);
@@ -128,7 +124,7 @@ export function middleware(request: NextRequest) {
     hasSession &&
     (!effectiveRole || !matchedRoute.allowedRoles.has(effectiveRole))
   ) {
-    return NextResponse.redirect(new URL("/forbidden", request.url));
+    return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
   }
 
   // ================= AUTH PAGES REDIRECT =================
@@ -152,8 +148,20 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
+    "/onboarding",
     "/dashboard/:path*",
+    "/notifications/:path*",
+    "/profile/:path*",
+    "/settings/:path*",
+    "/budget/:path*",
+    "/expenses/:path*",
+    "/reports/:path*",
+    "/market/:path*",
+    "/shop/:path*",
+    "/cart/:path*",
+    "/checkout/:path*",
+    "/orders/:path*",
+    "/reviews/:path*",
     "/vendor/:path*",
     "/admin/:path*",
     "/analytics/:path*",

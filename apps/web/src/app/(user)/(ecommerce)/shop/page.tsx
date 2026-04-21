@@ -35,11 +35,12 @@ export default function MarketplacePage() {
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto p-8 space-y-12">
+    <div className="max-w-400 mx-auto p-8 space-y-12">
+      
       
       {/* Hero Bento Section */}
       <section className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-primary min-h-[440px] flex flex-col justify-end p-12 text-white shadow-2xl shadow-primary/20">
+        <div className="col-span-12 lg:col-span-8 relative rounded-[2.5rem] overflow-hidden bg-primary min-h-110 flex flex-col justify-end p-12 text-white shadow-2xl shadow-primary/20">
           <div className="absolute inset-0 bg-[url('/warehouse-bg.jpg')] bg-cover bg-center mix-blend-overlay opacity-30" />
           <div className="relative z-10 space-y-6">
             <Badge className="bg-white/20 hover:bg-white/30 text-white border-none px-4 py-1.5 backdrop-blur-md uppercase tracking-tighter font-bold">

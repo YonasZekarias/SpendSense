@@ -70,10 +70,6 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
 
   const url = `${API_BASE_URL}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
-  console.log("Prepared url: ", url)
-  console.log("Method: ", method)
-  console.log("Body: ", JSON.stringify(body))
-
   const headers = normalizeHeaders(fetchOptions?.headers);
   let requestBody: BodyInit | undefined;
 
@@ -93,6 +89,10 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     ...(next ? { next } : {}),
     ...(cache ? { cache } : {}),
   });
+
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
 
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";
@@ -128,6 +128,9 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     case "text":
       return (await response.text()) as T;
     default:
+      if (!response.headers.get("content-type")?.includes("application/json")) {
+        return undefined as T;
+      }
       return (await response.json()) as T;
   }
 }
