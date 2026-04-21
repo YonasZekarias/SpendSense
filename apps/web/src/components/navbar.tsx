@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Budget", href: "/budget" },
   { label: "Live Prices", href: "/live-prices" },
-  { label: "Expenses", href: "/dashboard/expenses" },
+  { label: "Expenses", href: "/expenses" },
 ];
 
 export function Navbar() {
@@ -42,7 +42,7 @@ export function Navbar() {
                 {link.label}
                 {/* Premium Active Bottom Border Indicator */}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 h-[3px] w-full rounded-t-full bg-[#135bec]" />
+                  <span className="absolute bottom-0 left-0 h-0.75 w-full rounded-t-full bg-[#135bec]" />
                 )}
               </Link>
             );
@@ -50,7 +50,7 @@ export function Navbar() {
         </nav>
 
         {/* Vertical Divider */}
-        <div className="hidden h-6 w-[1px] bg-slate-200 dark:bg-slate-800 lg:block" />
+        <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 lg:block" />
 
         {/* Notification Bell */}
         <Link
