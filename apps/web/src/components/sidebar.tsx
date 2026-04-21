@@ -58,10 +58,22 @@ const navItems = [
     matchPaths: ["/shop"],
   },
   {
+    icon: Store,
+    label: "Vendor Directory",
+    href: "/shop/vendors",
+    matchPaths: ["/shop/vendors"],
+  },
+  {
     icon: ShoppingCart,
     label: "Cart",
     href: "/cart",
-    matchPaths: ["/cart", "/checkout"],
+    matchPaths: ["/cart"],
+  },
+  {
+    icon: Wallet,
+    label: "Checkout",
+    href: "/checkout",
+    matchPaths: ["/checkout"],
   },
   {
     icon: Package,
@@ -71,9 +83,9 @@ const navItems = [
   },
   {
     icon: Star,
-    label: "Reviews",
-    href: "/reviews",
-    matchPaths: ["/reviews"],
+    label: "Write Review",
+    href: "/reviews/new",
+    matchPaths: ["/reviews", "/reviews/new"],
   },
 ];
 

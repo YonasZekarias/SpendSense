@@ -8,7 +8,7 @@ import { LogIn, Mail, Wallet } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { AuthFeedback } from "@/components/auth/auth-feedback";
-import { sanitizeReturnTo } from "@/lib/auth-constants";
+import { getDefaultRouteForRole, sanitizeReturnTo } from "@/lib/auth-constants";
 import {
 	Form,
 	FormControl,
@@ -25,9 +25,10 @@ import { useAuth } from "@/providers/auth-provider";
 export default function LoginPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const rawReturnTo = searchParams.get("returnTo");
 	const returnTo = useMemo(
-		() => sanitizeReturnTo(searchParams.get("returnTo")),
-		[searchParams],
+		() => sanitizeReturnTo(rawReturnTo),
+		[rawReturnTo],
 	);
 	const { signIn } = useAuth();
 	const form = useForm<LoginSchema>({
@@ -41,8 +42,10 @@ export default function LoginPage() {
 		setError(null);
 
 		try {
-			await signIn({ email: values.email.trim(), password: values.password });
-			router.replace(returnTo);
+			const currentUser = await signIn({ email: values.email.trim(), password: values.password });
+			const fallbackRoute = getDefaultRouteForRole(currentUser.role);
+			const nextRoute = rawReturnTo ? returnTo : fallbackRoute;
+			router.replace(nextRoute);
 		} catch (err) {
 			if (getAuthErrorStatus(err) === 401) {
 				setError("Incorrect email or password.");
