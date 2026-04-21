@@ -42,14 +42,14 @@ const navItems = [
   {
     icon: ReceiptText,
     label: "Expenses",
-    href: "/dashboard/expenses",
-    matchPaths: ["/dashboard/expenses"],
+    href: "/expenses",
+    matchPaths: ["/expenses"],
   },
   {
     icon: Bell,
     label: "Alerts",
-    href: "/dashboard/alerts",
-    matchPaths: ["/dashboard/alerts"],
+    href: "/alerts",
+    matchPaths: ["/alerts"],
   },
   {
     icon: Store,
