@@ -1,9 +1,11 @@
 import axios, { type AxiosInstance } from "axios";
 
-const API_BASE_URL =
+const RAW_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
+  "http://127.0.0.1:8000";
+
+const API_BASE_URL = RAW_API_BASE_URL.replace("://localhost", "://127.0.0.1");
 
 export function createApiClient(getAccessToken?: () => string | null): AxiosInstance {
   const instance = axios.create({

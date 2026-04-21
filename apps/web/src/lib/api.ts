@@ -1,7 +1,9 @@
-const API_BASE_URL =
+const RAW_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000";
+  "http://127.0.0.1:8000";
+
+const API_BASE_URL = RAW_API_BASE_URL.replace("://localhost", "://127.0.0.1");
 
 type NextFetchOptions = {
   revalidate?: number | false;
@@ -70,10 +72,6 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
 
   const url = `${API_BASE_URL}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
-  console.log("Prepared url: ", url)
-  console.log("Method: ", method)
-  console.log("Body: ", JSON.stringify(body))
-
   const headers = normalizeHeaders(fetchOptions?.headers);
   let requestBody: BodyInit | undefined;
 
@@ -84,15 +82,25 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     requestBody = JSON.stringify(body);
   }
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: requestBody,
-    credentials: "include",
-    ...fetchOptions,
-    ...(next ? { next } : {}),
-    ...(cache ? { cache } : {}),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: requestBody,
+      credentials: "include",
+      ...fetchOptions,
+      ...(next ? { next } : {}),
+      ...(cache ? { cache } : {}),
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Network request failed";
+    throw new ApiError(
+      `Cannot reach API at ${API_BASE_URL}. Ensure Django is running on 127.0.0.1:8000. ${detail}`,
+      0,
+      null,
+    );
+  }
 
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";

@@ -7,6 +7,12 @@ export type MarketItem = {
   unit: string;
 };
 
+export type MarketTrendRow = {
+  date: string;
+  average_price: string;
+  count: number;
+};
+
 export type PriceAverageRow = {
   item_id: number;
   item_name: string;
@@ -50,6 +56,32 @@ export async function getPriceAverages(params?: {
 export async function getItems(): Promise<MarketItem[]> {
   const api = createApiClient();
   const { data } = await api.get<MarketItem[]>("/api/market/items/");
+  return data;
+}
+
+export async function getItemById(itemId: number): Promise<MarketItem> {
+  const api = createApiClient();
+  try {
+    const { data } = await api.get<MarketItem>(`/api/market/items/${itemId}/`);
+    return data;
+  } catch {
+    const items = await getItems();
+    const item = items.find((row) => row.id === itemId);
+    if (!item) {
+      throw new Error("Item not found.");
+    }
+    return item;
+  }
+}
+
+export async function getPriceTrends(params: {
+  item_id: number;
+  city?: string;
+  from_date?: string;
+  to_date?: string;
+}): Promise<MarketTrendRow[]> {
+  const api = createApiClient();
+  const { data } = await api.get<MarketTrendRow[]>("/api/market/trends/", { params });
   return data;
 }
 
