@@ -49,3 +49,11 @@ class Forecast(models.Model):
     confidence_low = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) 
     confidence_high = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) 
     generated_at = models.DateTimeField(auto_now_add=True)
+
+
+class ForecastRun(models.Model):
+    model_used = models.CharField(max_length=50, default='moving_average')
+    status = models.CharField(max_length=20, default='success')
+    item_count = models.PositiveIntegerField(default=0)
+    detail = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
