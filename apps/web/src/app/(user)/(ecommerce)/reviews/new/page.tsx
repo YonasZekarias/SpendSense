@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
   Star, 
   ChevronRight, 
@@ -10,9 +11,9 @@ import {
   Receipt, 
   CheckCircle, 
   AlertCircle,
-  ShieldIcon
 } from "lucide-react";
 
+import { createReview } from "@/actions/ecommerce";
 import { Button } from "@repo/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
 import { Textarea } from "@repo/ui/components/textarea";
@@ -26,8 +27,37 @@ const QUICK_TAGS = [
 ];
 
 export default function SubmitReview() {
+  const searchParams = useSearchParams();
+  const vendorId = searchParams.get("vendorId") ?? "";
+  const vendorName = searchParams.get("vendorName") ?? "Bole Electronics Hub";
   const [rating, setRating] = useState(4);
   const [selectedTags, setSelectedTags] = useState<string[]>(["Fast Delivery", "Fair Pricing"]);
+  const [comment, setComment] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const submitReview = () => {
+    if (!vendorId) {
+      setError("Missing vendor identifier in the review link.");
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      try {
+        await createReview({
+          vendor_id: vendorId,
+          rating,
+          comment,
+        });
+        setSuccess("Review submitted successfully.");
+      } catch (submitError) {
+        setError(submitError instanceof Error ? submitError.message : "Unable to submit review.");
+      }
+    });
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -35,7 +65,7 @@ export default function SubmitReview() {
       <nav className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <span className="hover:text-primary cursor-pointer transition-colors">Transactions</span>
         <ChevronRight size={14} />
-        <span className="hover:text-primary cursor-pointer transition-colors">Bole Electronics Hub</span>
+        <span className="hover:text-primary cursor-pointer transition-colors">{vendorName}</span>
         <ChevronRight size={14} />
         <span className="text-foreground">Write a Review</span>
       </nav>
@@ -45,9 +75,12 @@ export default function SubmitReview() {
         <h2 className="text-3xl font-black tracking-tight">Share Your Experience</h2>
         <p className="text-muted-foreground max-w-2xl">
           Your feedback helps the community make better decisions. Tell us about your purchase at 
-          <span className="font-bold text-foreground"> Bole Electronics Hub</span>.
+          <span className="font-bold text-foreground"> {vendorName}</span>.
         </p>
       </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {success && <p className="text-sm text-emerald-600">{success}</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Review Form */}
@@ -84,12 +117,15 @@ export default function SubmitReview() {
                 </div>
                 <Textarea 
                   placeholder="Describe the quality of items and the service..." 
-                  className="min-h-[160px] rounded-2xl border-none p-4"
+                  className="min-h-40 rounded-2xl border-none p-4"
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
                 />
               </div>
 
               {/* Tags Selector */}
               <div className="space-y-4">
+                
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">What stood out?</label>
                 <div className="flex flex-wrap gap-2">
                   {QUICK_TAGS.map((tag) => (
@@ -112,6 +148,7 @@ export default function SubmitReview() {
 
               {/* Media Upload Mock */}
               <div className="space-y-4">
+               
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Add Photos (Optional)</label>
                 <div className="grid grid-cols-4 gap-4">
                   <button className="aspect-square border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all bg-slate-50/50">
@@ -132,7 +169,11 @@ export default function SubmitReview() {
                   <Checkbox id="anon" />
                   <label htmlFor="anon" className="text-sm font-bold text-slate-500 cursor-pointer">Post anonymously</label>
                 </div>
-                <Button className="h-12 px-8 rounded-2xl font-black gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
+                <Button
+                  className="h-12 px-8 rounded-2xl font-black gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+                  onClick={submitReview}
+                  disabled={isPending || !vendorId}
+                >
                   Submit Review <Send size={16} />
                 </Button>
               </div>
@@ -152,7 +193,7 @@ export default function SubmitReview() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-xs font-bold text-slate-400">Vendor</span>
-                <span className="text-xs font-black">Bole Electronics Hub</span>
+                <span className="text-xs font-black">{vendorName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs font-bold text-slate-400">Date</span>

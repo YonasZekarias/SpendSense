@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { 
   ChevronRight, 
   Star, 
@@ -20,9 +21,61 @@ import { Button } from "@repo/ui/components/button";
 import { Badge } from "@repo/ui/components/badge";
 import { Card, CardContent } from "@repo/ui/components/card";
 import { Separator } from "@repo/ui/components/separator";
+import { getProductById } from "@/actions/ecommerce";
+import type { Recommendation } from "@/lib/ecommerce-types";
 
 export default function ProductDetailPage() {
+  const params = useParams<{ id: string }>();
   const [selectedFinish, setSelectedFinish] = useState("charcoal");
+  const [product, setProduct] = useState<Recommendation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProduct() {
+      if (!params?.id) {
+        setLoading(false);
+        setError("Missing product identifier.");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getProductById(params.id);
+        if (!active) {
+          return;
+        }
+
+        setProduct(response);
+      } catch {
+        if (active) {
+          setError("Unable to load product details.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadProduct();
+
+    return () => {
+      active = false;
+    };
+  }, [params?.id]);
+
+  if (loading) {
+    return <div className="max-w-7xl mx-auto p-8 text-sm text-muted-foreground">Loading product details...</div>;
+  }
+
+  if (error || !product) {
+    return <div className="max-w-7xl mx-auto p-8 text-sm text-destructive">{error ?? "Unable to load product details."}</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-12">
@@ -33,14 +86,14 @@ export default function ProductDetailPage() {
         <ChevronRight size={14} />
         <a href="#" className="hover:text-primary transition-colors">Electronics</a>
         <ChevronRight size={14} />
-        <span className="text-foreground">Azure-Tech Pro M3X</span>
+        <span className="text-foreground">{product.item_name}</span>
       </nav>
 
       <div className="grid grid-cols-12 gap-12">
         
         {/* Left: Product Visuals */}
         <div className="col-span-12 lg:col-span-7 space-y-8">
-          <div className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-sm border border-muted/50 group">
+          <div className="relative aspect-4/3 rounded-[2.5rem] overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-sm border border-muted/50 group">
             <Badge className="absolute top-8 left-8 z-10 bg-primary text-white font-black px-4 py-1.5 rounded-full uppercase tracking-tighter">
               New Arrival
             </Badge>
@@ -83,7 +136,7 @@ export default function ProductDetailPage() {
         <div className="col-span-12 lg:col-span-5 space-y-10">
           <div className="space-y-4">
             <h1 className="text-5xl font-black tracking-tighter leading-[1.1]">
-              Azure-Tech Pro M3X <br />
+              {product.item_name} <br />
               <span className="text-primary italic">Master Edition</span>
             </h1>
             <div className="flex items-center gap-4">
@@ -91,17 +144,17 @@ export default function ProductDetailPage() {
                 {[1, 2, 3, 4].map((s) => <Star key={s} size={18} fill="currentColor" />)}
                 <Star size={18} className="opacity-50" />
               </div>
-              <span className="text-sm font-bold text-muted-foreground">(128 Reviews)</span>
+              <span className="text-sm font-bold text-muted-foreground">({product.rating_count} Reviews)</span>
             </div>
           </div>
 
           <div className="bg-primary/5 rounded-[2rem] p-8 border border-primary/10 space-y-2">
             <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-black text-primary tracking-tight">ETB 145,900.00</span>
-              <span className="text-lg text-muted-foreground line-through font-medium opacity-50">ETB 162k</span>
+              <span className="text-4xl font-black text-primary tracking-tight">ETB {Number(product.price).toFixed(2)}</span>
+              <span className="text-lg text-muted-foreground line-through font-medium opacity-50">{product.city ?? "Market price"}</span>
             </div>
             <p className="text-xs font-black text-primary flex items-center gap-2 uppercase tracking-widest">
-              <TrendingDown size={14} /> Exclusive 10% Member Discount Applied
+              <TrendingDown size={14} /> {product.percent_vs_market_avg != null ? `${Math.abs(product.percent_vs_market_avg)}% vs market avg` : "Market price data available"}
             </p>
           </div>
 
@@ -127,15 +180,15 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-1 gap-3">
                 <Button variant="outline" className="h-20 justify-between px-6 rounded-2xl border-2 border-primary bg-primary/5 hover:bg-primary/10">
                   <div className="text-left">
-                    <p className="font-black">32GB RAM / 1TB SSD</p>
-                    <p className="text-[10px] font-bold text-primary/70 uppercase">Standard Configuration</p>
+                    <p className="font-black">{product.unit} configuration</p>
+                    <p className="text-[10px] font-bold text-primary/70 uppercase">Vendor: {product.shop_name}</p>
                   </div>
                   <Badge className="bg-primary text-white">Selected</Badge>
                 </Button>
                 <Button variant="outline" className="h-20 justify-between px-6 rounded-2xl border-muted hover:border-primary/50 transition-all">
                   <div className="text-left">
-                    <p className="font-black">64GB RAM / 2TB SSD</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">+ ETB 28,500</p>
+                    <p className="font-black">Compare nearby vendors</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{product.distance_km != null ? `${product.distance_km} km away` : "Distance unavailable"}</p>
                   </div>
                 </Button>
               </div>
@@ -145,7 +198,7 @@ export default function ProductDetailPage() {
           {/* Action Area */}
           <div className="space-y-6 pt-4">
             <div className="flex gap-4">
-              <Button className="flex-[4] h-16 rounded-2xl text-lg font-black shadow-2xl shadow-primary/20 gap-3">
+              <Button className="flex-4 h-16 rounded-2xl text-lg font-black shadow-2xl shadow-primary/20 gap-3">
                 <ShoppingBag size={22} /> Add to Order
               </Button>
               <Button variant="outline" className="h-16 w-16 rounded-2xl border-muted hover:bg-slate-50">
