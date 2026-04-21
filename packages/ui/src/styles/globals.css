@@ -28,10 +28,6 @@
   }
 }
 
-@import "tailwindcss";
-
-@custom-variant dark (&:is(.dark *));
-
 :root {
   --background: oklch(0.9737 0.0026 286.3506);
   --foreground: oklch(0.1869 0.0107 268.1117);

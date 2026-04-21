@@ -18,6 +18,11 @@
       "cache": false,
       "persistent": true
     },
+    "api#dev": {
+      "dependsOn": ["@repo/logger#build"],
+      "cache": false,
+      "persistent": true
+    },
     "clean": {
       "cache": false
     }
