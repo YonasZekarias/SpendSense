@@ -3,6 +3,10 @@
 import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
+  Wallet,
+  TrendingUp,
+  ReceiptText,
+  Bell,
   LogOut,
   Package,
   ShoppingCart,
@@ -13,7 +17,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback } from "react";
-
 const navItems = [
   {
     icon: LayoutDashboard,
@@ -21,6 +24,30 @@ const navItems = [
     href: "/dashboard",
     matchPaths: ["/", "/dashboard"],
     exact: true,
+  },
+  {
+    icon: Wallet,
+    label: "Budget",
+    href: "/budget",
+    matchPaths: ["/budget"],
+  },
+  {
+    icon: TrendingUp,
+    label: "Live Prices",
+    href: "/live-prices",
+    matchPaths: ["/live-prices"],
+  },
+  {
+    icon: ReceiptText,
+    label: "Expenses",
+    href: "/dashboard/expenses",
+    matchPaths: ["/dashboard/expenses"],
+  },
+  {
+    icon: Bell,
+    label: "Alerts",
+    href: "/dashboard/alerts",
+    matchPaths: ["/dashboard/alerts"],
   },
   {
     icon: Store,
@@ -53,10 +80,9 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { status, user, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
   const isPathActive = useCallback(
     (currentPath: string, candidatePaths: string[], exact?: boolean) => {
@@ -72,7 +98,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
     <aside
       className={`${
         mobile
-          ? "fixed inset-y-0 left-0 z-[100] w-64 shadow-2xl"
+          ? "fixed inset-y-0 left-0 z-100 w-64 shadow-2xl"
           : "hidden md:flex w-64 shrink-0 sticky top-0"
       } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-screen transition-all duration-200`}
     >
@@ -83,7 +109,7 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
             className="flex items-center gap-3 px-2"
             onClick={mobile ? onClose : undefined}
           >
-            <div className="h-10 w-10 rounded-full bg-blue-500 flex-shrink-0" />
+            <div className="h-10 w-10 rounded-full bg-blue-500 shrink-0" />
             <div className="flex flex-col">
               <h1 className="text-[#111318] dark:text-white text-base font-bold">SpendSense</h1>
               <p className="text-[#616f89] dark:text-gray-400 text-xs">Ethiopia</p>
@@ -144,7 +170,6 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           })}
         </nav>
       </div>
-
       <div className="p-4 border-t border-[#dbdfe6] dark:border-gray-800">
         <button onClick={signOut} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-[#616f89] dark:text-gray-400 hover:text-red-500">
           <LogOut className="size-5" />
