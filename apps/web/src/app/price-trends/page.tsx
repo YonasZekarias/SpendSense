@@ -234,10 +234,10 @@ export default function PriceTrendsPage() {
       {/* Table */}
       <div className="bg-white dark:bg-[#1e2330] rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[900px]">
+          <table className="w-full text-left border-collapse min-w-225">
             <thead>
               <tr className="bg-[#f9fafb] dark:bg-[#252b38] border-b border-[#e5e7eb] dark:border-[#2a3140]">
-                <th className="py-4 pl-6 pr-4 text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-gray-400 w-[250px]">
+                <th className="py-4 pl-6 pr-4 text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-gray-400 w-62.5">
                   Item Name
                 </th>
                 <th className="py-4 px-4 text-xs font-semibold uppercase tracking-wider text-[#616f89] dark:text-gray-400">

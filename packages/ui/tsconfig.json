@@ -1,12 +1,12 @@
 {
   "extends": "@repo/typescript-config/react-library.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "dist",
     "strictNullChecks": true,
     "lib": ["ES2015", "DOM", "DOM.Iterable"],
-    "baseUrl": ".",
     "paths": {
-      "src/*": ["src/*"]
+      "src/*": ["./src/*"]
     }
   },
   "include": ["src"],

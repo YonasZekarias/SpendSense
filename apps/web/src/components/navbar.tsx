@@ -1,46 +1,39 @@
 "use client";
 
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet } from "lucide-react";
+import { useAuth } from "@/providers/auth-provider";
+import { Bell, Search, Wallet } from "lucide-react";
 
 const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Expenses", href: "/expenses" },
   { label: "Budget", href: "/budget" },
-  { label: "Shopping List", href: "/shopping-list" },
+  { label: "Live Prices", href: "/live-prices" },
+  { label: "Expenses", href: "/dashboard/expenses" },
 ];
 
-interface NavbarProps {
-  avatarUrl?: string;
-}
-
-export function Navbar({ avatarUrl }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e5e7eb] dark:border-b-gray-800 bg-white dark:bg-[#1a202c] px-4 sm:px-10 py-3 sticky top-0 z-50">
-      <Link href="/dashboard" className="flex items-center gap-4 text-[#111318] dark:text-white">
-        <div className="size-8 flex items-center justify-center rounded bg-[#135bec]/10 text-[#135bec]">
-          <Wallet className="size-5" />
-        </div>
-        <h2 className="text-[#111318] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-          SpendSense
-        </h2>
-      </Link>
+     
 
-      <nav className="hidden md:flex items-center gap-9">
+
+      <nav className="flex items-center gap-8 px-8">
         {navLinks.map((link) => {
-          const isActive = pathname === link.href;
+          const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={
-                isActive
-                  ? "text-[#135bec] text-sm font-bold leading-normal"
-                  : "text-[#111318] dark:text-gray-200 text-sm font-medium leading-normal hover:text-[#135bec] transition-colors"
-              }
+              className={[
+                "text-sm font-medium transition-colors",
+                isActive ? "text-[#135bec]" : "text-slate-600 hover:text-[#135bec] dark:text-slate-300",
+              ].join(" ")}
             >
               {link.label}
             </Link>
@@ -50,21 +43,31 @@ export function Navbar({ avatarUrl }: NavbarProps) {
 
       <div className="flex items-center gap-4">
         <Link
-          href="/expenses/new"
-          className="hidden md:flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-[#135bec] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-700 transition-colors shadow-sm"
+          href="/dashboard/alerts"
+          className="relative inline-flex size-10 items-center justify-center rounded-full border border-[#dbdfe6] bg-white text-slate-600 transition-colors hover:border-[#135bec]/30 hover:text-[#135bec] dark:border-slate-800 dark:bg-slate-900"
         >
-          <span className="truncate">Add Expense</span>
+          <Bell className="size-4" />
+          <span className="absolute right-2 top-2 size-2 rounded-full bg-[#e73908]" />
         </Link>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt="User profile"
-          className="rounded-full size-10 border-2 border-white dark:border-gray-700 shadow-sm object-cover"
-          src={
-            avatarUrl ??
-            "https://lh3.googleusercontent.com/aida-public/AB6AXuA7lDnp5BJ2ycXIpRHUjtvsAYsNEtPGJJlzz7yFAxI1D3XcFFZzRAxSV-j-LPtZqDpOWKFzfgCYNt777wy4ymmRbeHhLFofDSyz_YbANee7szCOy7RK4NbxEitq5eeq31OnEk-qWa3s5dvGTqgCIrFIt5mnWrP0kogOh9rjtwyG3VvPacjticvmvV9HFaNDY4zOxilTy0lcX5DP3yenqxAKBCBOMG-TCmSXeGI_hNgotKR8ZBwIdHvSASiebN9dLFTigY2BZLflKqM"
-          }
-        />
+
+        <Link
+          href="/dashboard/expenses/new"
+          className="inline-flex items-center justify-center rounded-full bg-[#135bec] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#135bec]/20 transition-opacity hover:opacity-95"
+        >
+          Add Expense
+        </Link>
+
+        <div className="flex items-center gap-3 rounded-full border border-[#dbdfe6] bg-white px-3 py-1.5 dark:border-slate-800 dark:bg-slate-900">
+          <div className="text-right">
+            <p className="text-xs font-bold leading-none text-slate-950 dark:text-white">
+              {user?.full_name ?? "Abebe Kebede"}
+            </p>
+            <p className="mt-1 text-[10px] text-slate-500">{user?.role ?? "Premium Plan"}</p>
+          </div>
+          <div className="size-10 rounded-full bg-[url('https://lh3.googleusercontent.com/aida-public/AB6AXuBbBNiUzh6h-w1FOiRq11HgEilm9CKLuP1xduf7FkBdPJP6ama6AiiN7nPK5VcoUwE0LyZoCBhQ8A2yiaCO6_fFd2ky8mZ861AVZnDoxM7c3cXl3GaJt14BdmPOgHs_KLeTeZlrm9MQhoXFenCdf2vXV1iEI_88woAVO3EPefcz0ixzq5Ml7-vOF7TgNJ7UqkX_qYCAOjfG_LzIEICLm2KhZGzafuEy_FXFzZHRC72FqnrETtI4m_fPc7xT57SrcKVqG_krPN0BJGI')] bg-cover bg-center shadow-sm" />
+        </div>
       </div>
+
     </header>
   );
 }

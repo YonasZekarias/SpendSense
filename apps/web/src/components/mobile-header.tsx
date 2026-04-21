@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
 interface MobileHeaderProps {
   onMenuOpen: () => void;
@@ -8,16 +8,25 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ onMenuOpen }: MobileHeaderProps) {
   return (
-    <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-[#1a202c] border-b border-[#dbdfe6] dark:border-gray-800 sticky top-0 z-10">
-      <h1 className="text-lg font-bold text-[#111318] dark:text-white">
-        SpendSense
-      </h1>
+    <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[#cbd5e1]/70 bg-white/90 px-4 py-3 backdrop-blur-xl lg:hidden dark:border-slate-800 dark:bg-slate-950/85">
       <button
-        className="p-2 text-[#111318] dark:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+        aria-label="Open navigation"
+        className="inline-flex size-11 items-center justify-center rounded-xl border border-[#dbdfe6] bg-[#f6f6f8] text-slate-600 transition-colors hover:text-[#135bec] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
         onClick={onMenuOpen}
+        type="button"
       >
         <Menu className="size-5" />
       </button>
-    </div>
+
+      <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#dbdfe6] bg-[#f6f6f8] px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+        <Search className="size-4 text-slate-500" />
+        <input
+          aria-label="Search"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-slate-500"
+          placeholder="Search analytics..."
+          type="text"
+        />
+      </div>
+    </header>
   );
 }

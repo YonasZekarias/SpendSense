@@ -72,7 +72,7 @@ export default function MarketPricesPage() {
         </div>
       </header>
 
-      <main className="max-w-[1440px] mx-auto px-4 md:px-10 lg:px-40 py-8">
+      <main className="max-w-360 mx-auto px-4 md:px-10 lg:px-40 py-8">
         {/* Page Title & Live Badge */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
@@ -242,7 +242,7 @@ function MarketStatCard({ title, value, subValue, badge, badgeType, icon }: any)
 function SelectDropdown({ placeholder, items }: { placeholder: string; items: string[] }) {
   return (
     <Select>
-      <SelectTrigger className="w-[160px] h-10 bg-slate-50 dark:bg-[#2a3140] border-none font-semibold text-xs focus:ring-2 focus:ring-[#135bec]">
+      <SelectTrigger className="w-40 h-10 bg-slate-50 dark:bg-[#2a3140] border-none font-semibold text-xs focus:ring-2 focus:ring-[#135bec]">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

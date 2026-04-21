@@ -36,70 +36,11 @@ export default function NotificationsPage() {
     <div className="flex h-screen overflow-hidden bg-[#f6f6f8] dark:bg-[#101622] font-sans text-slate-900 dark:text-white">
       
       {/* --- Sidebar --- */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shrink-0">
-        <div className="flex items-center gap-3 p-6">
-          <div className="flex size-8 items-center justify-center rounded bg-primary/10 text-primary">
-            <Building2 className="size-5" />
-          </div>
-          <h2 className="text-xl font-bold tracking-tight">BirrWise</h2>
-        </div>
 
-        <nav className="flex flex-1 flex-col gap-2 px-4">
-          <SidebarItem icon={<LayoutDashboard size={20} />} label="Dashboard" />
-          <SidebarItem icon={<Building2 size={20} />} label="My Budget" />
-          <SidebarItem icon={<Store size={20} />} label="Market Prices" />
-          <SidebarItem 
-            icon={<Bell size={20} />} 
-            label="Notifications" 
-            active 
-            badge="3" 
-          />
-          <SidebarItem icon={<Settings size={20} />} label="Settings" />
-        </nav>
-
-        <div className="border-t border-slate-200 p-4 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <Avatar className="size-10 border border-slate-200 dark:border-slate-700">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>AB</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col overflow-hidden">
-              <p className="truncate text-sm font-medium">Abebe B.</p>
-              <p className="truncate text-xs text-slate-500">Basic Plan</p>
-            </div>
-          </div>
-        </div>
-      </aside>
 
       {/* --- Main Content --- */}
       <main className="relative flex flex-1 flex-col overflow-hidden">
         
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900 z-10">
-          <div className="flex flex-1 items-center gap-4">
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu size={20} />
-            </Button>
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-              <Input 
-                placeholder="Search transactions, prices..." 
-                className="border-none bg-slate-100 pl-10 focus-visible:ring-primary/50 dark:bg-slate-800"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 ml-4">
-            <Button variant="ghost" size="icon" className="text-slate-500">
-              <HelpCircle size={20} />
-            </Button>
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
-            <Button className="gap-2 bg-primary shadow-lg shadow-primary/20">
-              <Plus size={18} />
-              <span className="hidden sm:inline">Add Expense</span>
-            </Button>
-          </div>
-        </header>
 
         {/* Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8">

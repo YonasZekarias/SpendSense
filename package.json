@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "clean": "turbo run clean",
+    "predev": "node scripts/clear-dev-ports.js",
     "dev": "turbo run dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
