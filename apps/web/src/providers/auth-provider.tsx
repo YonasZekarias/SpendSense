@@ -118,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (payload: LoginPayload) => {
       const tokenPair = await login(payload);
       setTokenPairCookies(tokenPair);
-      console.log(JSON.stringify(tokenPair.access));
       setAccessToken(tokenPair.access);
       await hydrateCurrentUser(tokenPair.access);
     },
