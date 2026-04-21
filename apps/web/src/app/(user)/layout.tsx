@@ -1,6 +1,9 @@
-import type { ReactNode } from "react";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { UserAppShell } from "@/components/user-app-shell";
 
-export default function UserLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell>{children}</DashboardShell>;
+type UserShellLayoutProps = {
+  children: React.ReactNode;
+};
+
+export default function UserShellLayout({ children }: UserShellLayoutProps) {
+  return <UserAppShell>{children}</UserAppShell>;
 }

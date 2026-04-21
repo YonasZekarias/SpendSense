@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
   Wallet,
@@ -9,16 +8,71 @@ import {
   ReceiptText,
   Bell,
   LogOut,
+  Package,
+  ShoppingCart,
+  Star,
+  Store,
   X,
-
 } from "lucide-react";
-import { useAuth } from "@/providers/auth-provider";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback } from "react";
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Wallet, label: "Budget", href: "/budget" },
-  { icon: TrendingUp, label: "Live Prices", href: "/live-prices" },
-  { icon: ReceiptText, label: "Expenses", href: "/dashboard/expenses" },
-  { icon: Bell, label: "Alerts", href: "/dashboard/alerts" },
+  {
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    href: "/dashboard",
+    matchPaths: ["/", "/dashboard"],
+    exact: true,
+  },
+  {
+    icon: Wallet,
+    label: "Budget",
+    href: "/budget",
+    matchPaths: ["/budget"],
+  },
+  {
+    icon: TrendingUp,
+    label: "Live Prices",
+    href: "/live-prices",
+    matchPaths: ["/live-prices"],
+  },
+  {
+    icon: ReceiptText,
+    label: "Expenses",
+    href: "/dashboard/expenses",
+    matchPaths: ["/dashboard/expenses"],
+  },
+  {
+    icon: Bell,
+    label: "Alerts",
+    href: "/dashboard/alerts",
+    matchPaths: ["/dashboard/alerts"],
+  },
+  {
+    icon: Store,
+    label: "Shop",
+    href: "/shop",
+    matchPaths: ["/shop"],
+  },
+  {
+    icon: ShoppingCart,
+    label: "Cart",
+    href: "/cart",
+    matchPaths: ["/cart", "/checkout"],
+  },
+  {
+    icon: Package,
+    label: "Orders",
+    href: "/orders",
+    matchPaths: ["/orders"],
+  },
+  {
+    icon: Star,
+    label: "Reviews",
+    href: "/reviews",
+    matchPaths: ["/reviews"],
+  },
 ];
 
 interface SidebarProps {
@@ -26,98 +80,104 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export function Sidebar({ mobile = false, onClose }: SidebarProps) {
+export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-    return (
-      <aside
-        className={[
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#dbdfe6] bg-[#f6f6f8] transition-transform duration-200 dark:border-slate-800 dark:bg-slate-950",
-          mobile ? "translate-x-0 shadow-2xl lg:hidden" : "-translate-x-full lg:translate-x-0",
-        ].join(" ")}
-      >
-        <div className="flex items-center justify-between px-6 py-6">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-[#135bec] text-white shadow-sm shadow-[#135bec]/20">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                account_balance_wallet
-              </span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold leading-none text-[#135bec]">SpendSense</h1>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                Ethiopia
-              </p>
+  
+  const isPathActive = useCallback(
+    (currentPath: string, candidatePaths: string[], exact?: boolean) => {
+      return candidatePaths.some((path) => {
+        if (exact) return currentPath === path;
+        return currentPath === path || currentPath.startsWith(`${path}/`);
+      });
+    },
+    []
+  );
+
+  return (
+    <aside
+      className={`${
+        mobile
+          ? "fixed inset-y-0 left-0 z-100 w-64 shadow-2xl"
+          : "hidden md:flex w-64 shrink-0 sticky top-0"
+      } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-screen transition-all duration-200`}
+    >
+      <div className="p-4 flex flex-col gap-6 overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <Link 
+            href="/" 
+            className="flex items-center gap-3 px-2"
+            onClick={mobile ? onClose : undefined}
+          >
+            <div className="h-10 w-10 rounded-full bg-blue-500 shrink-0" />
+            <div className="flex flex-col">
+              <h1 className="text-[#111318] dark:text-white text-base font-bold">SpendSense</h1>
+              <p className="text-[#616f89] dark:text-gray-400 text-xs">Ethiopia</p>
             </div>
           </Link>
 
-          {mobile ? (
-            <button
-              aria-label="Close navigation"
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-black/5 hover:text-slate-950 dark:hover:bg-white/10 dark:hover:text-white"
-              onClick={onClose}
-              type="button"
-            >
+          {mobile && (
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
               <X className="size-5" />
             </button>
-          ) : null}
+          )}
         </div>
-
-        <div className="px-4 pb-4">
-          <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Signed in as</p>
-            <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">
-              {user?.full_name ?? "Abebe Kebede"}
-            </p>
-            <p className="text-xs text-slate-500">{user?.role ?? "Premium Plan"}</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 px-3 pb-6">
+{/* function NavItem({ icon, label, active = false, variant = "default" }: { 
+  icon: React.ReactNode, 
+  label: string, 
+  active?: boolean,
+  variant?: "default" | "destructive"
+}) {
+  return (
+    <div className={`
+      group flex items-center px-4 py-3 cursor-pointer transition-all duration-200
+      ${active 
+        ? "text-primary font-bold border-r-4 border-primary bg-primary/10" 
+        : "text-muted-foreground font-medium hover:bg-secondary"}
+      ${variant === "destructive" ? "hover:text-destructive" : ""}
+    `}>
+      <span className="mr-3">{icon}</span>
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+} */}
+        <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-
+            const isActive = isPathActive(pathname, item.matchPaths, item.exact);
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
                 onClick={mobile ? onClose : undefined}
-                className={[
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all",
-                  isActive
-                    ? "border-r-4 border-[#135bec] bg-blue-50/70 text-[#135bec] dark:bg-blue-950/30"
-                    : "text-slate-500 hover:bg-[#f0f2f4] hover:text-slate-950 dark:hover:bg-slate-900 dark:hover:text-white",
-                ].join(" ")}
+                // className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                //   isActive
+                //     ? "bg-[#f0f2f4] dark:bg-gray-700 text-[#111318] dark:text-white"
+                //     : "text-[#616f89] dark:text-gray-400 hover:bg-[#f0f2f4] dark:hover:bg-gray-800 hover:text-[#111318] dark:hover:text-white"
+                // }`}
+                className={`
+                  group flex items-center px-4 py-3 cursor-pointer transition-all duration-200
+                  ${isActive 
+                    ? "text-primary font-bold border-r-4 border-primary bg-primary/10" 
+                    : "text-muted-foreground font-medium hover:bg-secondary"}
+                `}
               >
-                <Icon className="size-5 shrink-0" />
-                <span>{item.label}</span>
-              </Link>
+                <span className="mr-3">
+                  <item.icon  />
+                </span>
+                <span className="text-sm font-medium">{item.label}</span>
+              </a>
             );
           })}
         </nav>
+      </div>
+      <div className="p-4 border-t border-[#dbdfe6] dark:border-gray-800">
+        <button onClick={signOut} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-[#616f89] dark:text-gray-400 hover:text-red-500">
+          <LogOut className="size-5" />
+          <span className="text-sm font-medium">Log Out</span>
+        </button>
+        <p className="text-xs px-4 text-muted-foreground">Role: {user?.role ?? "user"}</p>
 
-        <div className="space-y-3 border-t border-[#dbdfe6] px-4 py-5 dark:border-slate-800">
-          <Link
-            href="/dashboard/expenses/new"
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#135bec] px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-[#135bec]/20 transition-transform hover:opacity-95 active:scale-[0.99]"
-            onClick={mobile ? onClose : undefined}
-          >
-            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-              add
-            </span>
-            New Transaction
-          </Link>
-
-          <button
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-[#f0f2f4] hover:text-slate-950 dark:hover:bg-slate-900 dark:hover:text-white"
-            onClick={signOut}
-            type="button"
-          >
-            <LogOut className="size-5" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-    );
+      </div>
+    </aside>
+  );
 }

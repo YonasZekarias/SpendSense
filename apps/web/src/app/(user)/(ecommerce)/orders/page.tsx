@@ -1,0 +1,259 @@
+"use client";
+
+import React from "react";
+import { 
+  ChevronRight, 
+  Filter, 
+  Download, 
+  ArrowUpIcon, 
+  Lightbulb, 
+  Search,
+  Printer,
+  Cloud,
+  Construction,
+  Utensils,
+  Zap,
+  Eye,
+  ChevronLeft,
+  Plus,
+  Verified,
+  TrendingUp
+} from "lucide-react";
+
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import { Badge } from "@repo/ui/components/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@repo/ui/components/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import { Progress } from "@repo/ui/components/progress";
+
+export default function OrderHistoryPage() {
+  const orders = [
+    { id: "#ORD-90124", date: "Oct 24, 2023", vendor: "Modern Prints PLC", icon: <Printer size={16} />, amount: "ETB 12,450.00", status: "Delivered", variant: "success" },
+    { id: "#ORD-89956", date: "Oct 22, 2023", vendor: "Ethio Telecom", icon: <Cloud size={16} />, amount: "ETB 4,200.00", status: "Processing", variant: "info" },
+    { id: "#ORD-89421", date: "Oct 18, 2023", vendor: "Abay Logistics", icon: <Construction size={16} />, amount: "ETB 85,000.00", status: "On Hold", variant: "warning" },
+    { id: "#ORD-88732", date: "Oct 15, 2023", vendor: "Fresh Foods Ethiopia", icon: <Utensils size={16} />, amount: "ETB 2,400.00", status: "Cancelled", variant: "destructive" },
+    { id: "#ORD-88110", date: "Oct 12, 2023", vendor: "E Electric", icon: <Zap size={16} />, amount: "ETB 1,850.00", status: "Delivered", variant: "success" },
+  ];
+
+  return (
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-10">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <nav className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+            <span>Shopping</span>
+            <ChevronRight size={10} />
+            <span className="text-primary">Order History</span>
+          </nav>
+          <h2 className="text-3xl font-bold tracking-tight">Order History</h2>
+          <p className="text-muted-foreground mt-1">Manage and track your procurement across all vendors.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2">
+            <Filter size={18} /> Filter
+          </Button>
+          <Button variant="outline" className="gap-2">
+            <Download size={18} /> Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <Card className="md:col-span-8 relative overflow-hidden bg-card border-none shadow-sm">
+          <div className="absolute -right-4 -top-4 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
+          <CardContent className="p-6 h-full flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-bold text-primary uppercase tracking-widest">Monthly Summary</span>
+              <div className="flex items-baseline gap-2 mt-2">
+                <h3 className="text-4xl font-extrabold">ETB 142,500.00</h3>
+                <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-none gap-1 py-1">
+                  <ArrowUpIcon size={14} /> 12.5%
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-8">
+              <StatItem label="Total Orders" value="48" />
+              <StatItem label="Pending Processing" value="03" border />
+              <StatItem label="Avg. Order Value" value="ETB 2,968" border />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-4 bg-primary text-primary-foreground border-none shadow-lg shadow-primary/20 relative overflow-hidden">
+          <CardContent className="p-6 h-full flex flex-col justify-between relative z-10">
+            <div>
+              <h4 className="font-bold text-lg flex items-center gap-2">
+                <Lightbulb size={20} className="text-primary-foreground" /> Smart Tip
+              </h4>
+              <p className="text-primary-foreground/80 text-sm mt-2 leading-relaxed">
+                Your spending on <span className="text-white font-bold">Office Supplies</span> has increased by 20% this month. Consider bulk buying.
+              </p>
+            </div>
+            <Button variant="secondary" className="mt-6 w-full font-bold bg-white/10 hover:bg-white/20 border-white/20 backdrop-blur-sm">
+              View Supplier Analysis
+            </Button>
+            <TrendingUp size={120} className="absolute bottom-0 right-0 opacity-10 translate-y-1/4 translate-x-1/4 pointer-events-none" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Table Section */}
+      <Card className="border-none shadow-sm overflow-hidden bg-card">
+        <div className="p-4 border-b flex items-center justify-between bg-muted/30">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-bold">Recent Transactions</span>
+            <div className="h-4 w-px bg-border" />
+            <span className="text-xs font-medium text-muted-foreground">Showing 5 of 1,240 records</span>
+          </div>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronLeft size={16} /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronRight size={16} /></Button>
+          </div>
+        </div>
+        <Table>
+          <TableHeader className="bg-muted/10 text-xs font-bold uppercase tracking-widest">
+            <TableRow>
+              <TableHead className="px-6">Order ID</TableHead>
+              <TableHead className="px-6">Date</TableHead>
+              <TableHead className="px-6">Vendor</TableHead>
+              <TableHead className="px-6 text-right">Amount</TableHead>
+              <TableHead className="px-6">Status</TableHead>
+              <TableHead className="px-6 text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id} className="group hover:bg-muted/30 transition-colors">
+                <TableCell className="px-6 font-mono text-sm text-muted-foreground">{order.id}</TableCell>
+                <TableCell className="px-6 text-sm text-muted-foreground">{order.date}</TableCell>
+                <TableCell className="px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      {order.icon}
+                    </div>
+                    <span className="text-sm font-semibold">{order.vendor}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="px-6 text-right font-bold">{order.amount}</TableCell>
+                <TableCell className="px-6">
+                  <Badge 
+                    className="rounded-full px-3 py-0.5 text-[10px] font-bold" 
+                    variant={order.variant as any}
+                  >
+                    {order.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="px-6 text-center">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye size={16} className="text-muted-foreground hover:text-primary" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {/* Insights Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <InsightsCard title="Top Vendors" action="View All">
+          <ul className="space-y-4">
+            <VendorItem name="Ethio Telecom" orders={12} amount="ETB 45k" />
+            <VendorItem name="Abay Logistics" orders={8} amount="ETB 112k" />
+          </ul>
+        </InsightsCard>
+
+        <InsightsCard title="Spend Distribution">
+          <div className="space-y-5 mt-2">
+            <DistributionItem label="Utilities" percentage={42} color="bg-primary" />
+            <DistributionItem label="Supplies" percentage={28} color="bg-secondary" />
+            <DistributionItem label="Logistics" percentage={30} color="bg-tertiary" />
+          </div>
+        </InsightsCard>
+
+        <Card className="bg-slate-950 text-white border-none shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-6 text-primary">
+              <Verified size={28} />
+              <h5 className="font-bold text-lg text-white">Vendor Audit</h5>
+            </div>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+              Your annual supplier audit is due in <span className="text-white font-bold">14 days</span>. Ensure all VAT registrations are current.
+            </p>
+            <Button className="w-full font-bold h-11 bg-primary hover:opacity-90 transition-opacity">
+              Start Audit Now
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Action FAB */}
+      <Button 
+        size="icon" 
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-50"
+      >
+        <Plus size={32} />
+      </Button>
+    </div>
+  );
+}
+
+// Mini Components
+function StatItem({ label, value, border }: { label: string; value: string; border?: boolean }) {
+  return (
+    <div className={`${border ? "border-l border-border pl-8" : ""}`}>
+      <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+      <p className="text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function InsightsCard({ title, children, action }: { title: string; children: React.ReactNode; action?: string }) {
+  return (
+    <Card className="border-none shadow-sm bg-card">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardTitle className="text-base font-bold">{title}</CardTitle>
+        {action && <Button variant="link" className="h-auto p-0 text-primary text-xs font-bold">{action}</Button>}
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+function VendorItem({ name, orders, amount }: { name: string; orders: number; amount: string }) {
+  return (
+    <li className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-xs uppercase">
+          {name.charAt(0)}
+        </div>
+        <div>
+          <p className="text-sm font-bold">{name}</p>
+          <p className="text-xs text-muted-foreground">{orders} orders</p>
+        </div>
+      </div>
+      <span className="text-sm font-bold">{amount}</span>
+    </li>
+  );
+}
+
+function DistributionItem({ label, percentage, color }: { label: string; percentage: number; color: string }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between text-xs font-bold uppercase tracking-wide">
+        <span className="text-muted-foreground">{label}</span>
+        <span>{percentage}%</span>
+      </div>
+      <Progress value={percentage} className={`h-2 ${color}`} />
+    </div>
+  );
+}

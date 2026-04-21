@@ -21,69 +21,11 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background">
-        <div className="mx-auto flex max-w-360 items-center justify-between px-6 py-3 md:px-10 lg:px-16">
-          <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded bg-primary/10 text-primary">
-              <ShoppingBasket className="size-5" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">SpendSense Ethiopia</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Help">
-              <CircleHelp className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" aria-label="Notifications">
-              <Bell className="size-4" />
-            </Button>
-            <Button asChild>
-              <Link href="/live-prices">Market</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen ">
 
-      <div className="mx-auto flex w-full max-w-360 px-6 py-8 md:px-10 lg:px-16">
-        <aside className="hidden w-64 shrink-0 flex-col justify-between rounded-xl border border-border/60 bg-background p-4 lg:flex">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-lg p-2">
-              <div className="size-10 rounded-full bg-muted" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{user?.full_name ?? "User"}</p>
-                <p className="truncate text-xs text-muted-foreground">Ethiopia</p>
-              </div>
-            </div>
 
-            <nav className="flex flex-col gap-1 text-sm">
-              <Link className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5 font-medium" href="/dashboard">
-                <LayoutDashboard className="size-4" />
-                Dashboard
-              </Link>
-              <Link className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground" href="/dashboard/budget">
-                <PieChart className="size-4" />
-                Budget
-              </Link>
-              <Link className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground" href="/live-prices">
-                <TrendingUp className="size-4" />
-                Price Trends
-              </Link>
-              <Link className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground" href="#">
-                <Settings className="size-4" />
-                Settings
-              </Link>
-            </nav>
-          </div>
-
-          <div className="space-y-3 border-t border-border/60 pt-4">
-            <Button variant="outline" onClick={signOut} className="w-full justify-start">
-              Log Out
-            </Button>
-            <p className="text-xs text-muted-foreground">Role: {user?.role ?? "user"}</p>
-          </div>
-        </aside>
-
-        <main className="w-full flex-1 lg:pl-8">
+      <div className="mx-auto flex w-full ">
+        <main className="w-full flex-1">
           <div className="mx-auto flex w-full max-w-350 flex-col gap-8">
             <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="space-y-2">

@@ -1,6 +1,5 @@
 "use client";
 
-"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,19 +18,9 @@ export function Navbar() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky pl-20 top-0 z-40 hidden h-20 items-center border-b border-[#cbd5e1]/70 bg-white/90 px-6 backdrop-blur-xl lg:flex lg:pl-72 dark:border-slate-800 dark:bg-slate-950/85">
-      <div className="flex pl-5 flex-1 items-center gap-6">
-        <Link href="/dashboard" className="flex items-center gap-3 text-[#111318] dark:text-white">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-[#135bec]/10 text-[#135bec]">
-            <Wallet className="size-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">SpendSense</h2>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">Ethiopia</p>
-          </div>
-        </Link>
+    <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e5e7eb] dark:border-b-gray-800 bg-white dark:bg-[#1a202c] px-4 sm:px-10 py-3 sticky top-0 z-50">
+     
 
-      </div>
 
       <nav className="flex items-center gap-8 px-8">
         {navLinks.map((link) => {
