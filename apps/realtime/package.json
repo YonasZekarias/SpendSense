@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "db:pull": "prisma db pull && npx prisma-case-format -f prisma/schema.prisma --table-case pascal --map-table-case snake && prisma generate",
     "build": "tsc",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit && eslint \"src/**/*.ts*\" --max-warnings 0",

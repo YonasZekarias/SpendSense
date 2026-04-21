@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   LayoutDashboard, 
   Store, 
@@ -99,6 +100,13 @@ export default function CartPage() {
       return;
     }
 
+    // TODO: API Needed: Decrease cart item quantity
+    // Method: PATCH
+    // Endpoint: /api/ecommerce/cart/items/{listing_id}/
+    // Purpose: persist quantity decrement to server-side cart state.
+    // Request: { quantity: number }
+    // Response: { items: Array<{ listing_id: number; vendor_id: string; item_name: string; unit?: string; quantity: number; unit_price: number }>; total: number; currency: string; updated_at: string }
+
     setItems((prev) =>
       prev.map((item) =>
         item.listing_id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item,
@@ -107,6 +115,12 @@ export default function CartPage() {
   };
 
   const removeItem = (id: number) => {
+    // TODO: API Needed: Remove cart item
+    // Method: DELETE
+    // Endpoint: /api/ecommerce/cart/items/{listing_id}/
+    // Purpose: delete a single cart line item from server-side cart state.
+    // Request: N/A
+    // Response: { items: Array<{ listing_id: number; vendor_id: string; item_name: string; unit?: string; quantity: number; unit_price: number }>; total: number; currency: string; updated_at: string }
     setItems((prev) => prev.filter((item) => item.listing_id !== id));
   };
 
@@ -217,9 +231,11 @@ export default function CartPage() {
                     <span className="text-2xl font-extrabold text-primary">ETB {total.toFixed(2)}</span>
                   </div>
 
-                  <Button className="w-full h-14 rounded-xl font-extrabold text-lg gap-2 mt-4 shadow-lg shadow-primary/20">
-                    Proceed to Checkout <ArrowRight size={20} />
-                  </Button>
+                  <Link href="/checkout">
+                    <Button className="w-full h-14 rounded-xl font-extrabold text-lg gap-2 mt-4 shadow-lg shadow-primary/20">
+                      Proceed to Checkout <ArrowRight size={20} />
+                    </Button>
+                  </Link>
                   <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold mt-4">
                     Secure Payment Powered by EthioPay
                   </p>

@@ -42,14 +42,14 @@ const navItems = [
   {
     icon: ReceiptText,
     label: "Expenses",
-    href: "/expenses",
-    matchPaths: ["/expenses"],
+    href: "/dashboard/expenses",
+    matchPaths: ["/dashboard/expenses"],
   },
   {
     icon: Bell,
     label: "Alerts",
-    href: "/alerts",
-    matchPaths: ["/alerts"],
+    href: "/dashboard/alerts",
+    matchPaths: ["/dashboard/alerts"],
   },
   {
     icon: Store,
@@ -111,8 +111,8 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
   return (
     <aside
       className={`
-        ${mobile ? "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl" : "hidden md:flex w-64 shrink-0 sticky top-0"} 
-        flex h-screen flex-col justify-between bg-background border-r border-border transition-all duration-200
+        ${mobile ? "fixed inset-y-0 left-0 z-50 w-72 shadow-2xl" : "hidden md:flex w-72 shrink-0 sticky top-0"} 
+        flex h-screen flex-col justify-between border-r border-[#dbdfe6] bg-[#f6f6f8] transition-all duration-200 dark:border-slate-800 dark:bg-slate-950
       `}
     >
       {/* Scrollable Navigation Area */}
@@ -125,19 +125,19 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
             className="flex items-center gap-3 transition-opacity hover:opacity-80"
             onClick={mobile ? onClose : undefined}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#135bec] text-white shadow-sm shadow-[#135bec]/20">
               <CreditCard className="size-5" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold leading-none text-foreground">SpendSense</h1>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ethiopia</p>
+              <h1 className="text-lg font-bold leading-none text-[#135bec] dark:text-white">SpendSense</h1>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">Ethiopia</p>
             </div>
           </Link>
 
           {mobile && (
             <button 
               onClick={onClose} 
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-black/5 hover:text-slate-950 dark:hover:bg-white/10 dark:hover:text-white"
               aria-label="Close sidebar"
             >
               <X className="size-5" />
@@ -145,8 +145,19 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           )}
         </div>
 
+        {/* Signed In Section */}
+        <div className="px-4">
+          <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Signed in as</p>
+            <p className="mt-2 truncate text-sm font-semibold text-slate-950 dark:text-white">
+              {user?.full_name ?? "User"}
+            </p>
+            <p className="text-xs capitalize text-slate-500">{user?.role ?? "Member"}</p>
+          </div>
+        </div>
+
         {/* Navigation Links */}
-        <nav className="flex flex-col">
+        <nav className="flex flex-col gap-1 px-3">
           {navItems.map((item) => {
             const isActive = isPathActive(pathname, item.matchPaths, item.exact);
             return (
@@ -155,19 +166,19 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={mobile ? onClose : undefined}
                 className={`
-                  group flex items-center py-3 pl-6 pr-4 cursor-pointer transition-all duration-200
+                  group flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
                   ${isActive 
-                    ? "text-primary font-bold border-r-4 border-primary bg-primary/10" 
-                    : "text-muted-foreground font-medium hover:bg-secondary hover:text-foreground"
+                    ? "border-r-4 border-[#135bec] bg-blue-50/70 text-[#135bec] dark:bg-blue-950/30" 
+                    : "text-slate-500 hover:bg-[#f0f2f4] hover:text-slate-950 dark:hover:bg-slate-900 dark:hover:text-white"
                   }
                 `}
               >
                 <item.icon 
-                  className={`mr-3 size-5 transition-colors ${
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  className={`size-5 shrink-0 transition-colors ${
+                    isActive ? "text-[#135bec]" : "text-slate-400 group-hover:text-slate-950 dark:group-hover:text-white"
                   }`} 
                 />
-                <span className="text-sm">{item.label}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { 
   Star, 
@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import { createReview } from "@/actions/ecommerce";
+import { createReview, getOrderById, getVendorById } from "@/actions/ecommerce";
 import { Button } from "@repo/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
 import { Textarea } from "@repo/ui/components/textarea";
@@ -29,13 +29,54 @@ const QUICK_TAGS = [
 export default function SubmitReview() {
   const searchParams = useSearchParams();
   const vendorId = searchParams.get("vendorId") ?? "";
+  const orderId = searchParams.get("orderId") ?? "";
   const vendorName = searchParams.get("vendorName") ?? "Bole Electronics Hub";
+  const [resolvedVendorName, setResolvedVendorName] = useState(vendorName);
+  const [orderTotal, setOrderTotal] = useState("ETB 14,250.00");
+  const [orderDate, setOrderDate] = useState("Oct 24, 2023");
   const [rating, setRating] = useState(4);
   const [selectedTags, setSelectedTags] = useState<string[]>(["Fast Delivery", "Fair Pricing"]);
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadContext() {
+      try {
+        if (vendorId) {
+          const vendor = await getVendorById(vendorId);
+          if (active) {
+            setResolvedVendorName(vendor.shop_name || vendorName);
+          }
+        }
+
+        if (orderId) {
+          const order = await getOrderById(orderId);
+          if (active) {
+            setOrderTotal(`ETB ${Number(order.amount).toFixed(2)}`);
+            setOrderDate(
+              new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              }).format(new Date(order.created_at)),
+            );
+          }
+        }
+      } catch {
+        // Keep default placeholder values when context fetch fails.
+      }
+    }
+
+    void loadContext();
+
+    return () => {
+      active = false;
+    };
+  }, [orderId, vendorId, vendorName]);
 
   const submitReview = () => {
     if (!vendorId) {
@@ -65,7 +106,7 @@ export default function SubmitReview() {
       <nav className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <span className="hover:text-primary cursor-pointer transition-colors">Transactions</span>
         <ChevronRight size={14} />
-        <span className="hover:text-primary cursor-pointer transition-colors">{vendorName}</span>
+        <span className="hover:text-primary cursor-pointer transition-colors">{resolvedVendorName}</span>
         <ChevronRight size={14} />
         <span className="text-foreground">Write a Review</span>
       </nav>
@@ -75,7 +116,7 @@ export default function SubmitReview() {
         <h2 className="text-3xl font-black tracking-tight">Share Your Experience</h2>
         <p className="text-muted-foreground max-w-2xl">
           Your feedback helps the community make better decisions. Tell us about your purchase at 
-          <span className="font-bold text-foreground"> {vendorName}</span>.
+          <span className="font-bold text-foreground"> {resolvedVendorName}</span>.
         </p>
       </div>
 
@@ -193,15 +234,15 @@ export default function SubmitReview() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-xs font-bold text-slate-400">Vendor</span>
-                <span className="text-xs font-black">{vendorName}</span>
+                <span className="text-xs font-black">{resolvedVendorName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-xs font-bold text-slate-400">Date</span>
-                <span className="text-xs font-black">Oct 24, 2023</span>
+                <span className="text-xs font-black">{orderDate}</span>
               </div>
               <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
                 <span className="text-sm font-black text-slate-600">Total</span>
-                <span className="text-xl font-black text-primary">ETB 14,250.00</span>
+                <span className="text-xl font-black text-primary">{orderTotal}</span>
               </div>
             </CardContent>
           </Card>

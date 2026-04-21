@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { ApiError, apiClient } from "@/lib/api";
 import {
+  type MarketItem,
   normalizeCollection,
   normalizeCart,
   type Cart,
@@ -118,6 +119,23 @@ export async function getRecommendations(input: RecommendationQuerySchema): Prom
 
 export async function getProducts(input: RecommendationQuerySchema): Promise<Recommendation[]> {
   return getRecommendations(input);
+}
+
+export async function getMarketItems(): Promise<MarketItem[]> {
+  try {
+    const response = await apiClient<MarketItem[]>({
+      method: "GET",
+      endpoint: "/api/market/items/",
+      cache: "force-cache",
+      next: {
+        revalidate: 300,
+      },
+    });
+
+    return normalizeCollection(response);
+  } catch (error) {
+    throw toEcommerceApiError(error);
+  }
 }
 
 export async function getProductById(id: string): Promise<Recommendation> {

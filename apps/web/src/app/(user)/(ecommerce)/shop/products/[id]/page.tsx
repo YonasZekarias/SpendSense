@@ -21,7 +21,7 @@ import { Button } from "@repo/ui/components/button";
 import { Badge } from "@repo/ui/components/badge";
 import { Card, CardContent } from "@repo/ui/components/card";
 import { Separator } from "@repo/ui/components/separator";
-import { getProductById } from "@/actions/ecommerce";
+import { addToCart, getProductById } from "@/actions/ecommerce";
 import type { Recommendation } from "@/lib/ecommerce-types";
 
 export default function ProductDetailPage() {
@@ -30,6 +30,8 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cartFeedback, setCartFeedback] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,6 +78,27 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return <div className="max-w-7xl mx-auto p-8 text-sm text-destructive">{error ?? "Unable to load product details."}</div>;
   }
+
+  const handleAddToCart = async () => {
+    setCartFeedback(null);
+    setIsAdding(true);
+
+    try {
+      await addToCart({
+        listing_id: product.listing_id,
+        vendor_id: product.vendor_id,
+        item_name: product.item_name,
+        unit: product.unit,
+        quantity: 1,
+        unit_price: Number(product.price),
+      });
+      setCartFeedback("Added to cart.");
+    } catch {
+      setCartFeedback("Unable to add to cart.");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-12">
@@ -198,13 +221,18 @@ export default function ProductDetailPage() {
           {/* Action Area */}
           <div className="space-y-6 pt-4">
             <div className="flex gap-4">
-              <Button className="flex-4 h-16 rounded-2xl text-lg font-black shadow-2xl shadow-primary/20 gap-3">
+              <Button className="flex-4 h-16 rounded-2xl text-lg font-black shadow-2xl shadow-primary/20 gap-3" onClick={handleAddToCart} disabled={isAdding}>
                 <ShoppingBag size={22} /> Add to Order
               </Button>
               <Button variant="outline" className="h-16 w-16 rounded-2xl border-muted hover:bg-slate-50">
                 <Heart size={22} />
               </Button>
             </div>
+            {cartFeedback && (
+              <p className={`text-sm ${cartFeedback.includes("Unable") ? "text-destructive" : "text-emerald-600"}`}>
+                {cartFeedback}
+              </p>
+            )}
             <div className="flex items-center justify-center gap-3 text-xs font-bold text-muted-foreground">
               <ShieldCheck size={16} className="text-green-600" />
               Free Insured Shipping to Addis Ababa & Regional Hubs

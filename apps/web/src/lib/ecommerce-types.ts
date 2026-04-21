@@ -39,6 +39,13 @@ export interface Recommendation {
   percent_vs_market_avg: number | null;
 }
 
+export interface MarketItem {
+  id: number;
+  name: string;
+  category: string;
+  unit: string;
+}
+
 export interface Purchase {
   id: string;
   vendor: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUpIcon,
   ChevronLeft,
@@ -14,8 +15,8 @@ import {
   Verified,
 } from "lucide-react";
 
-import { getOrders } from "@/actions/ecommerce";
-import type { Purchase } from "@/lib/ecommerce-types";
+import { getOrders, getVendorById } from "@/actions/ecommerce";
+import type { Purchase, Vendor } from "@/lib/ecommerce-types";
 import { Button } from "@repo/ui/components/button";
 import { Badge } from "@repo/ui/components/badge";
 import {
@@ -82,6 +83,7 @@ function getStatusLabel(status: Purchase["status"]) {
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Purchase[]>([]);
+  const [vendorMap, setVendorMap] = useState<Record<string, Vendor>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +101,20 @@ export default function OrderHistoryPage() {
         }
 
         setOrders(response);
+
+        const vendorIds = Array.from(new Set(response.map((order) => order.vendor).filter(Boolean)));
+        const vendorResults = await Promise.allSettled(vendorIds.map((id) => getVendorById(id)));
+        if (!active) {
+          return;
+        }
+
+        const nextVendorMap: Record<string, Vendor> = {};
+        vendorResults.forEach((result, index) => {
+          if (result.status === "fulfilled") {
+            nextVendorMap[vendorIds[index]] = result.value;
+          }
+        });
+        setVendorMap(nextVendorMap);
       } catch {
         if (active) {
           setError("Unable to load order history.");
@@ -131,15 +147,16 @@ export default function OrderHistoryPage() {
 
   const topVendors = Object.values(
     orders.reduce<Record<string, { name: string; orders: number; amount: number }>>((accumulator, order) => {
-      const current = accumulator[order.vendor] ?? {
-        name: order.vendor,
+      const vendorName = vendorMap[order.vendor]?.shop_name ?? order.vendor;
+      const current = accumulator[vendorName] ?? {
+        name: vendorName,
         orders: 0,
         amount: 0,
       };
 
       current.orders += 1;
       current.amount += parseAmount(order.amount);
-      accumulator[order.vendor] = current;
+      accumulator[vendorName] = current;
       return accumulator;
     }, {}),
   )
@@ -238,9 +255,9 @@ export default function OrderHistoryPage() {
                 <TableCell className="px-6">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                      {order.vendor.charAt(0).toUpperCase()}
+                      {(vendorMap[order.vendor]?.shop_name ?? order.vendor).charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-sm font-semibold">{order.vendor}</span>
+                    <span className="text-sm font-semibold">{vendorMap[order.vendor]?.shop_name ?? order.vendor}</span>
                   </div>
                 </TableCell>
                 <TableCell className="px-6 text-right font-bold">{formatCurrency(parseAmount(order.amount))}</TableCell>
@@ -250,9 +267,11 @@ export default function OrderHistoryPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="px-6 text-center">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Eye size={16} className="text-muted-foreground hover:text-primary" />
-                  </Button>
+                  <Link href={`/orders/${order.id}`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Eye size={16} className="text-muted-foreground hover:text-primary" />
+                    </Button>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}
