@@ -193,7 +193,7 @@ export default function PriceTrendsPage() {
               <option>Category: All</option>
               <option>Grains &amp; Cereals</option>
               <option>Vegetables</option>
-              <option>Household</option>
+              <option>Households</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-[#616f89]">
               <ChevronDown className="size-4" />
