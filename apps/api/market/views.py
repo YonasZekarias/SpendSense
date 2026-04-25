@@ -20,6 +20,22 @@ class ItemsView(generics.ListAPIView):
     serializer_class = ItemSerializer
     queryset = Item.objects.all().order_by('name')
 
+
+class CategoriesView(APIView):
+    """GET /api/market/categories/ — distinct item categories."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        categories = (
+            Item.objects.exclude(category__isnull=True)
+            .exclude(category__exact='')
+            .values_list('category', flat=True)
+            .distinct()
+            .order_by('category')
+        )
+        return Response([{'name': name} for name in categories])
+
 from users.models import AuditLog
 
 from .models import Forecast, ForecastRun, Item, NationalPrice, PriceSubmission

@@ -32,6 +32,9 @@ class Week2EndpointTests(TestCase):
         self.assertEqual(res.data[0]['name'], 'Teff')
         detail = self.client.get(f'/api/market/items/{self.item.id}/')
         self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        categories = self.client.get('/api/market/categories/')
+        self.assertEqual(categories.status_code, status.HTTP_200_OK)
+        self.assertTrue(any(row['name'] == 'Food' for row in categories.data))
 
     def test_register_login_me(self):
         reg = self.client.post(
