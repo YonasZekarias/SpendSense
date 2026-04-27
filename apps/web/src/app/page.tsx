@@ -13,9 +13,10 @@ export default function LandingPage() {
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="#" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">About</Link>
-            <Link href="#" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">Help</Link>
-            <Link href="#" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">Terms</Link>
+            <Link href="/about" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">About</Link>
+            <Link href="/help" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">Help</Link>
+            <Link href="/terms" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">Terms</Link>
+            <Link href="/privacy" className="text-slate-600 dark:text-slate-400 font-medium hover:text-[#135bec] transition-colors">Privacy</Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -26,7 +27,7 @@ export default function LandingPage() {
               Login
             </Link>
             <Link 
-              href="/signup" 
+              href="/register" 
               className="bg-[#135bec] text-white px-6 py-2 rounded-xl font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all"
             >
               Register

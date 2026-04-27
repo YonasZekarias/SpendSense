@@ -10,7 +10,7 @@ FROM base AS prepare
 WORKDIR /app
 RUN yarn global add turbo
 COPY . .
-RUN turbo prune api --docker
+RUN turbo prune realtime --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS builder

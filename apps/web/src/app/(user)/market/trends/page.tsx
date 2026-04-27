@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import {
   ShoppingBasket,
   TrendingUp,
@@ -13,7 +13,7 @@ import {
   Minus,
   Bell,
 } from "lucide-react";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { MarketTrendsChart } from "@/components/market/market-trends-chart";
 
 const tableRows = [
   {
@@ -170,6 +170,16 @@ export default function PriceTrendsPage() {
           <p className="text-2xl font-bold text-[#111318] dark:text-white mt-1">Merkato Zone 3</p>
         </div>
       </div>
+
+      <Suspense
+        fallback={
+          <div className="mb-8 flex h-40 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500">
+            Loading chart…
+          </div>
+        }
+      >
+        <MarketTrendsChart />
+      </Suspense>
 
       {/* Controls */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6 bg-white dark:bg-[#1e2330] p-4 rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm">

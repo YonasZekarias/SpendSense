@@ -31,9 +31,8 @@ const ROLE_PROTECTED_ROUTES = [
   { prefix: "/checkout", allowedRoles: new Set(["user"]) },
   { prefix: "/orders", allowedRoles: new Set(["user"]) },
   { prefix: "/reviews", allowedRoles: new Set(["user"]) },
-  { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
   { prefix: "/vendor/register", allowedRoles: new Set(["user", "vendor", "admin"]) },
-  { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
+  { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
   { prefix: "/admin", allowedRoles: new Set(["admin"]) },
   { prefix: "/analytics", allowedRoles: new Set(["analyst", "admin"]) },
 ];
@@ -43,12 +42,8 @@ function matchesPath(pathname: string, prefix: string) {
 }
 
 function findProtectedRoute(pathname: string) {
-  return ROLE_PROTECTED_ROUTES.find((route) =>
-    matchesPath(pathname, route.prefix)
-  );
+  return ROLE_PROTECTED_ROUTES.find((route) => matchesPath(pathname, route.prefix));
 }
-
-// ================= JWT HELPERS =================
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -96,29 +91,18 @@ function extractRoleFromAccessToken(token?: string): string | null {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const hasAccessCookie = Boolean(accessToken);
-  const hasRefreshCookie = Boolean(request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value);
-  const hasSessionCookie = hasAccessCookie || hasRefreshCookie;
-  const role = normalizeRole(extractRoleFromAccessToken(accessToken));
-  // const effectiveRole = role ?? (hasSessionCookie ? "user" : null);
-  const matchedProtectedRoute = findProtectedRoute(pathname);
-
   const refreshToken = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value;
-
   const hasSession = Boolean(accessToken || refreshToken);
-
+  const role = normalizeRole(extractRoleFromAccessToken(accessToken));
   const effectiveRole = role || null;
-
   const matchedRoute = findProtectedRoute(pathname);
 
-  // ================= NOT AUTHENTICATED =================
   if (matchedRoute && !hasSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("returnTo", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ================= UNAUTHORIZED ROLE =================
   if (
     matchedRoute &&
     hasSession &&
@@ -127,14 +111,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
   }
 
-  // ================= AUTH PAGES REDIRECT =================
   if (AUTH_ROUTES.has(pathname) && hasSession) {
     return NextResponse.redirect(
       new URL(getDefaultRouteForRole(effectiveRole), request.url)
     );
   }
 
-  // ================= ROOT REDIRECT =================
   if (pathname === "/" && hasSession) {
     return NextResponse.redirect(
       new URL(getDefaultRouteForRole(effectiveRole), request.url)
@@ -143,8 +125,6 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
-
-// ================= MATCHER =================
 
 export const config = {
   matcher: [

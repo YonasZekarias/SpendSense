@@ -33,19 +33,20 @@ export default function ResetPasswordPage() {
   });
 
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
+  const uid = useMemo(() => searchParams.get("uid") || "", [searchParams]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const onSubmit = async (values: ResetPasswordSchema) => {
     setError(null);
 
-    if (!token) {
-      setError("Reset link is missing a valid token.");
+    if (!token || !uid) {
+      setError("Reset link is missing uid or token. Open the link from your email again.");
       return;
     }
 
     try {
-      await confirmPasswordReset(token, values.password);
+      await confirmPasswordReset(uid, token, values.password);
       setIsSubmitted(true);
       router.push("/login");
     } catch {

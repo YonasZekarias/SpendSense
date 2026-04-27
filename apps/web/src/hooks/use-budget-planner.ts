@@ -140,7 +140,18 @@ export function useBudgetPlanner() {
   };
 
   return {
-    status, loading, saving, error, budget, suggestedMonth, draftCategories, 
-    expenses, totals, spentByCategory, handleLimitChange, handleSave
+    status,
+    loading,
+    saving,
+    error,
+    budget,
+    summary,
+    suggestedMonth,
+    draftCategories,
+    expenses,
+    totals,
+    spentByCategory,
+    handleLimitChange,
+    handleSave,
   };
 }

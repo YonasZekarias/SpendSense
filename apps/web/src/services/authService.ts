@@ -35,13 +35,17 @@ export async function register(payload: RegisterPayload): Promise<unknown> {
 
 export async function forgotPassword(email: string): Promise<{ detail?: string }> {
   const api = createApiClient();
-  const { data } = await api.post<{ detail?: string }>("/api/users/forgot-password/", { email });
+  const { data } = await api.post<{ detail?: string }>("/api/users/password/reset/request/", { email });
   return data;
 }
 
-export async function resetPassword(payload: { token: string; new_password: string }): Promise<{ detail?: string }> {
+export async function resetPassword(payload: {
+  uid: string;
+  token: string;
+  new_password: string;
+}): Promise<{ detail?: string }> {
   const api = createApiClient();
-  const { data } = await api.post<{ detail?: string }>("/api/users/reset-password/", payload);
+  const { data } = await api.post<{ detail?: string }>("/api/users/password/reset/confirm/", payload);
   return data;
 }
 

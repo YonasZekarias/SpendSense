@@ -215,6 +215,13 @@ EMAIL_BACKEND = os.environ.get(
     if DEBUG
     else 'django.core.mail.backends.smtp.EmailBackend',
 )
+# Real-time (Express + Socket.io) — optional bridge when Notification is saved
+REALTIME_INTERNAL_URL = os.environ.get(
+    'REALTIME_INTERNAL_URL',
+    'http://127.0.0.1:3001' if DEBUG else '',
+).rstrip('/')
+REALTIME_INTERNAL_TOKEN = os.environ.get('REALTIME_INTERNAL_TOKEN', 'dev-only-change-me')
+
 PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
 CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY', '')
 CHAPA_INIT_URL = os.environ.get('CHAPA_INIT_URL', 'https://api.chapa.co/v1/transaction/initialize')

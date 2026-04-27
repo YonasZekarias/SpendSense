@@ -17,6 +17,11 @@ import {
   Store,
   X,
   CreditCard,
+  UserCircle,
+  FileDown,
+  CirclePlus,
+  Settings,
+  MessageSquare,
 } from "lucide-react";
 
 const navItems = [
@@ -36,8 +41,8 @@ const navItems = [
   {
     icon: TrendingUp,
     label: "Live Prices",
-    href: "/live-prices",
-    matchPaths: ["/live-prices"],
+    href: "/market/trends",
+    matchPaths: ["/market/trends", "/market", "/live-prices", "/price-trends"],
   },
   {
     icon: ReceiptText,
@@ -50,6 +55,36 @@ const navItems = [
     label: "Alerts",
     href: "/alerts",
     matchPaths: ["/alerts"],
+  },
+  {
+    icon: MessageSquare,
+    label: "Notifications",
+    href: "/notifications",
+    matchPaths: ["/notifications"],
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    href: "/settings",
+    matchPaths: ["/settings"],
+  },
+  {
+    icon: UserCircle,
+    label: "Profile",
+    href: "/profile",
+    matchPaths: ["/profile"],
+  },
+  {
+    icon: CirclePlus,
+    label: "Submit price",
+    href: "/market/submit",
+    matchPaths: ["/market/submit"],
+  },
+  {
+    icon: FileDown,
+    label: "Export reports",
+    href: "/reports",
+    matchPaths: ["/reports"],
   },
   {
     icon: Store,

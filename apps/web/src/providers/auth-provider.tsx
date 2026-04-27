@@ -40,7 +40,7 @@ type AuthContextValue = {
   signIn: (payload: LoginPayload) => Promise<UserProfile>;
   signUp: (payload: RegisterPayload) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
-  confirmPasswordReset: (token: string, newPassword: string) => Promise<void>;
+  confirmPasswordReset: (uid: string, token: string, newPassword: string) => Promise<void>;
   signOut: () => void;
 };
 
@@ -133,11 +133,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await forgotPassword(email);
   }, []);
 
-  const confirmPasswordReset = useCallback(async (token: string, newPassword: string) => {
-    await resetPassword({ token, new_password: newPassword });
+  const confirmPasswordReset = useCallback(async (uid: string, token: string, newPassword: string) => {
+    await resetPassword({ uid, token, new_password: newPassword });
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    const access = getAccessTokenFromCookie();
+    if (access) {
+      try {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/auth/logout/`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+          },
+        );
+      } catch {
+        // best-effort
+      }
+    }
     resetSession();
   }, [resetSession]);
 

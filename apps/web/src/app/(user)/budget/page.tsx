@@ -7,6 +7,7 @@ import { BudgetErrorBanner } from "@/components/finance/budget/budget-error-bann
 import { BudgetHeader } from "@/components/finance/budget/budget-header";
 import { BudgetMetricsRow } from "@/components/finance/budget/budget-metrics-row";
 import { BudgetSidebar } from "@/components/finance/budget/budget-sidebar";
+import { BudgetSpendChart } from "@/components/finance/budget/budget-spend-chart";
 import { useBudgetPlanner } from "@/hooks/use-budget-planner";
 
 export default function BudgetPage() {
@@ -16,6 +17,7 @@ export default function BudgetPage() {
     saving,
     error,
     budget,
+    summary,
     suggestedMonth,
     draftCategories,
     expenses,
@@ -46,6 +48,8 @@ export default function BudgetPage() {
 
       <BudgetErrorBanner error={error} />
       <BudgetMetricsRow totals={totals} />
+
+      <BudgetSpendChart summary={summary} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <BudgetCategoriesSection

@@ -50,10 +50,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
-            'city', 'household_size', 'income_bracket', 'onboarding_completed', 'created_at',
+            'city', 'household_size', 'income_bracket', 'notification_preferences',
+            'onboarding_completed', 'created_at',
         )
-        read_only_fields = ('id', 'email', 'role', 'created_at',
-            'notification_preferences')
+        read_only_fields = ('id', 'email', 'role', 'created_at')
+
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+    """Aligned with task doc: GET/PATCH /api/users/preferences/."""
+
+    class Meta:
+        model = User
+        fields = ('notification_preferences', 'onboarding_completed')
+        extra_kwargs = {'onboarding_completed': {'required': False}}
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
