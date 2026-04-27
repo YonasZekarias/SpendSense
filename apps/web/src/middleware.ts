@@ -31,8 +31,9 @@ const ROLE_PROTECTED_ROUTES = [
   { prefix: "/checkout", allowedRoles: new Set(["user"]) },
   { prefix: "/orders", allowedRoles: new Set(["user"]) },
   { prefix: "/reviews", allowedRoles: new Set(["user"]) },
-  { prefix: "/vendor/register", allowedRoles: new Set(["user", "vendor", "admin"]) },
   { prefix: "/vendor", allowedRoles: new Set(["vendor"]) },
+  { prefix: "/vendor/register", allowedRoles: new Set(["user", "vendor", "admin"]) },
+  { prefix: "/live-prices", allowedRoles: ANY_AUTHENTICATED_ROLE },
   { prefix: "/admin", allowedRoles: new Set(["admin"]) },
   { prefix: "/analytics", allowedRoles: new Set(["analyst", "admin"]) },
 ];
@@ -46,42 +47,45 @@ function findProtectedRoute(pathname: string) {
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length < 2 || !parts[1]) {
+    return null;
+  }
+
   try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-
-    const base64 = parts[1]
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-
-    return JSON.parse(atob(base64));
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const payloadJson = atob(padded);
+    const payload = JSON.parse(payloadJson) as Record<string, unknown>;
+    return payload;
   } catch {
     return null;
   }
 }
 
-function extractRoleFromAccessToken(token?: string): string | null {
-  if (!token) return null;
+function extractRoleFromAccessToken(token: string | undefined): string | null {
+  if (!token) {
+    return null;
+  }
 
   const payload = decodeJwtPayload(token);
-  if (!payload) return null;
+  if (!payload) {
+    return null;
+  }
 
-  const keys = ["role", "user_role", "userRole"];
-
-  for (const key of keys) {
+  const directRoleKeys = ["role", "user_role", "userRole"];
+  for (const key of directRoleKeys) {
     const value = payload[key];
     if (typeof value === "string" && value.trim()) {
-      return value.toLowerCase();
+      return value.trim().toLowerCase();
     }
   }
 
-  if (Array.isArray(payload.roles)) {
-    const role = payload.roles.find(
-      (r) => typeof r === "string" && r.trim()
-    );
-    if (typeof role === "string") {
-      return role.toLowerCase();
+  const roles = payload.roles;
+  if (Array.isArray(roles)) {
+    const firstRole = roles.find((role) => typeof role === "string" && role.trim());
+    if (typeof firstRole === "string") {
+      return firstRole.trim().toLowerCase();
     }
   }
 
@@ -91,36 +95,29 @@ function extractRoleFromAccessToken(token?: string): string | null {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const refreshToken = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value;
-  const hasSession = Boolean(accessToken || refreshToken);
+  const hasAccessCookie = Boolean(accessToken);
+  const hasRefreshCookie = Boolean(request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value);
+  const hasSessionCookie = hasAccessCookie || hasRefreshCookie;
   const role = normalizeRole(extractRoleFromAccessToken(accessToken));
-  const effectiveRole = role || null;
-  const matchedRoute = findProtectedRoute(pathname);
+  const effectiveRole = role ?? (hasSessionCookie ? "user" : null);
+  const matchedProtectedRoute = findProtectedRoute(pathname);
 
-  if (matchedRoute && !hasSession) {
+  if (matchedProtectedRoute && !hasSessionCookie) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("returnTo", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);
   }
 
   if (
-    matchedRoute &&
-    hasSession &&
-    (!effectiveRole || !matchedRoute.allowedRoles.has(effectiveRole))
+    matchedProtectedRoute &&
+    hasSessionCookie &&
+    (!effectiveRole || !matchedProtectedRoute.allowedRoles.has(effectiveRole))
   ) {
     return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
   }
 
-  if (AUTH_ROUTES.has(pathname) && hasSession) {
-    return NextResponse.redirect(
-      new URL(getDefaultRouteForRole(effectiveRole), request.url)
-    );
-  }
-
-  if (pathname === "/" && hasSession) {
-    return NextResponse.redirect(
-      new URL(getDefaultRouteForRole(effectiveRole), request.url)
-    );
+  if (AUTH_ROUTES.has(pathname) && hasSessionCookie) {
+    return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
   }
 
   return NextResponse.next();
@@ -145,8 +142,7 @@ export const config = {
     "/vendor/:path*",
     "/admin/:path*",
     "/analytics/:path*",
-    "/ads/:path*",
-    "/we/:path*",
+    "/live-prices/:path*",
     "/login",
     "/register",
     "/forgot-password",
