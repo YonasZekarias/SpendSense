@@ -1,3 +1,6 @@
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME } from "./auth-constants";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -61,6 +64,13 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     responseType = "json",
   } = config;
 
+  
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(AUTH_COOKIE_NAME as any)?.value;
+  const authHeader: Record<string, string> | undefined = accessToken
+    ? { Authorization: `Bearer ${accessToken}` }
+    : undefined;
+
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== null && value !== "") {
@@ -86,7 +96,7 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
 
   const response = await fetch(url, {
     method,
-    headers,
+    headers:authHeader,
     body: requestBody,
     credentials: "include",
     ...fetchOptions,
