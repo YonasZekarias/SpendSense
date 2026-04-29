@@ -13,8 +13,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-export default function UsersPage() {
-  const { status, user, signOut } = useAuth();
+export default async function UsersPage() {
+  // Fetch budgets, expenses and notifications server-side (send access token from cookie)
+  const [budgets, expenses, notifications] = (await Promise.all([
+    apiClient({ method: "GET", endpoint: "/api/finance/budgets/" }).catch(() => []),
+    apiClient({ method: "GET", endpoint: "/api/finance/expenses/" }).catch(() => []),
+    apiClient({ method: "GET", endpoint: "/api/users/me/notifications/" }).catch(() => []),
+  ])) as [any[], any[], any[]];
 
   if (status === "loading") {
     return <main className="p-6">Loading your profile...</main>;
