@@ -6,18 +6,28 @@ import {
   BudgetSuggestionResponse, BudgetSummaryCategory 
 } from "@/types/finance";
 
-export function useBudgetPlanner() {
+type InitialBudgetData = {
+  budget?: BudgetRecord | null;
+  summary?: BudgetSummary | null;
+  suggestedMonth?: { month: number; year: number } | null;
+  draftCategories?: EditableCategory[];
+  expenses?: ExpenseRecord[];
+};
+
+export function useBudgetPlanner(initial?: InitialBudgetData) {
   const { status, accessToken } = useAuth();
   
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(initial ? false : true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [budget, setBudget] = useState<BudgetRecord | null>(null);
-  const [summary, setSummary] = useState<BudgetSummary | null>(null);
-  const [suggestedMonth, setSuggestedMonth] = useState<{ month: number; year: number } | null>(null);
-  const [draftCategories, setDraftCategories] = useState<EditableCategory[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [budget, setBudget] = useState<BudgetRecord | null>(initial?.budget ?? null);
+  const [summary, setSummary] = useState<BudgetSummary | null>(initial?.summary ?? null);
+  const [suggestedMonth, setSuggestedMonth] = useState<{ month: number; year: number } | null>(
+    initial?.suggestedMonth ?? null
+  );
+  const [draftCategories, setDraftCategories] = useState<EditableCategory[]>(initial?.draftCategories ?? []);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>(initial?.expenses ?? []);
 
   const bootstrap = useCallback(async () => {
     if (!accessToken) {
@@ -64,7 +74,14 @@ export function useBudgetPlanner() {
           suggestionRes.data.categories.map((c) => ({ category_name: c.category_name, limit_amount: c.limit_amount }))
         );
       }
-    } catch {
+    } catch (err) {
+      // Log the error for debugging (axios errors include response)
+      // eslint-disable-next-line no-console
+      console.error("useBudgetPlanner bootstrap error:", err);
+
+      // Try to surface a bit more detail to help debugging without leaking sensitive info
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const status = (err as any)?.response?.status ?? (err as any)?.status ?? null;
       setError("Unable to load your finance data right now.");
     } finally {
       setLoading(false);
@@ -72,8 +89,10 @@ export function useBudgetPlanner() {
   }, [accessToken]);
 
   useEffect(() => {
+    // If initial data was provided from the server, skip client bootstrap.
+    if (initial) return;
     if (status === "authenticated") void bootstrap();
-  }, [status, bootstrap]);
+  }, [status, bootstrap, initial]);
 
   const totals = useMemo(() => {
     const totalLimit = draftCategories.reduce((sum, cat) => sum + Number.parseFloat(cat.limit_amount || "0"), 0);
@@ -133,7 +152,9 @@ export function useBudgetPlanner() {
       setSummary(summaryRes.data);
       setDraftCategories(summaryRes.data.by_category.map((item) => ({ category_name: item.category_name, limit_amount: item.limit_amount })));
     } catch {
-      setError("Unable to save budget changes.");
+        // eslint-disable-next-line no-console
+        console.error("useBudgetPlanner save error:", arguments);
+        setError("Unable to save budget changes.");
     } finally {
       setSaving(false);
     }

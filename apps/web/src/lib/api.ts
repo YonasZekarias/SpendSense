@@ -94,12 +94,14 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     requestBody = JSON.stringify(body);
   }
 
+  const mergedHeaders = { ...headers, ...(authHeader ?? {}) };
+  const finalFetchOptions = { ...fetchOptions, headers: mergedHeaders };
+
   const response = await fetch(url, {
     method,
-    headers:authHeader,
     body: requestBody,
     credentials: "include",
-    ...fetchOptions,
+    ...finalFetchOptions,
     ...(next ? { next } : {}),
     ...(cache ? { cache } : {}),
   });
@@ -149,14 +151,3 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
   }
 }
 
-export async function apiRequest<T>(
-  path: string,
-  init?: RequestInit & { headers?: Record<string, string> },
-): Promise<T> {
-  return apiClient<T>({
-    method: (init?.method as ApiClientConfig["method"]) || "GET",
-    endpoint: path,
-    fetchOptions: init,
-    responseType: "json",
-  });
-}

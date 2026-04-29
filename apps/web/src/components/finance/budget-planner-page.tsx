@@ -5,6 +5,7 @@ import { AlertCircle, CalendarDays, Loader2, Save } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 
 import { useBudgetPlanner } from "@/hooks/use-budget-planner";
+import type { BudgetRecord, BudgetSummary, ExpenseRecord, EditableCategory } from "@/types/finance";
 import { formatMoney, formatMonthLabel } from "@/lib/finance-utils";
 
 import { BudgetOverviewChart } from "@/components/finance/budget-overview";
@@ -12,7 +13,17 @@ import { CategoryCard } from "@/components/finance/category-card";
 import { RecentExpenses } from "@/components/finance/recent-expenses";
 import { SummaryCard } from "@/components/finance/summary-card";
 
-export function BudgetPlannerPage() {
+export function BudgetPlannerPage({
+  initial,
+}: {
+  initial?: {
+    budget?: BudgetRecord | null;
+    summary?: BudgetSummary | null;
+    suggestedMonth?: { month: number; year: number } | null;
+    draftCategories?: EditableCategory[];
+    expenses?: ExpenseRecord[];
+  };
+}) {
   const {
     status,
     loading,
@@ -26,7 +37,7 @@ export function BudgetPlannerPage() {
     spentByCategory,
     handleLimitChange,
     handleSave,
-  } = useBudgetPlanner();
+  } = useBudgetPlanner(initial);
 
   if (status === "loading" || loading) {
     return (
