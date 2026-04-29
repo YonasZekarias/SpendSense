@@ -10,7 +10,7 @@ import { useExpenseListing } from "@/hooks/use-expense-listing";
 import { useAuth } from "@/providers/auth-provider";
 import { downloadFinanceExport } from "@/services/financeService";
 
-export function ExpenseListingPage() {
+export function ExpenseListingPage({ initial }: { initial?: { expenses?: import("@/types/finance").ExpenseRecord[]; budgets?: import("@/types/finance").BudgetRecord[] } }) {
   const { accessToken } = useAuth();
   const {
     status,
@@ -23,7 +23,7 @@ export function ExpenseListingPage() {
     expenses,
     setCategoryFilter,
     setSortBy,
-  } = useExpenseListing();
+  } = useExpenseListing(initial);
 
   const exportCsv = async () => {
     if (!accessToken) return;

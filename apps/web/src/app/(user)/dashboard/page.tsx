@@ -6,11 +6,11 @@ import Link from "next/link";
 
 export default async function UsersPage() {
   // Fetch budgets, expenses and notifications server-side (send access token from cookie)
-  const [budgets, expenses, notifications] = await Promise.all([
+  const [budgets, expenses, notifications] = (await Promise.all([
     apiClient({ method: "GET", endpoint: "/api/finance/budgets/"}).catch(() => []),
     apiClient({ method: "GET", endpoint: "/api/finance/expenses/"}).catch(() => []),
     apiClient({ method: "GET", endpoint: "/api/users/me/notifications/"}).catch(() => []),
-  ]);
+  ])) as [any[], any[], any[]];
 
   // Compute summary similar to client hook
   const now = new Date();

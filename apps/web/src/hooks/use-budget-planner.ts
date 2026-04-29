@@ -151,10 +151,10 @@ export function useBudgetPlanner(initial?: InitialBudgetData) {
       const summaryRes = await api.get<BudgetSummary>(`/api/finance/budgets/${savedBudget.id}/summary/`);
       setSummary(summaryRes.data);
       setDraftCategories(summaryRes.data.by_category.map((item) => ({ category_name: item.category_name, limit_amount: item.limit_amount })));
-    } catch {
-        // eslint-disable-next-line no-console
-        console.error("useBudgetPlanner save error:", arguments);
-        setError("Unable to save budget changes.");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("useBudgetPlanner save error:", err);
+      setError("Unable to save budget changes.");
     } finally {
       setSaving(false);
     }
