@@ -3,6 +3,8 @@ from django.db import models
 
 class Item(models.Model):
     name = models.CharField(max_length=120, unique=True)
+    description = models.TextField(blank=True, default='')
+    image = models.ImageField(upload_to='items/', null=True, blank=True)
     category = models.CharField(max_length=100)
     unit = models.CharField(max_length=30)
 
@@ -20,6 +22,7 @@ class PriceSubmission(models.Model):
     city = models.CharField(max_length=120)
     date_observed = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    image = models.ImageField(upload_to='submissions/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class NationalPrice(models.Model): 
