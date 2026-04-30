@@ -15,14 +15,19 @@ function thisMonthOf(dateString: string) {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-export function useExpenseListing() {
+type InitialExpenseData = {
+  expenses?: ExpenseRecord[];
+  budgets?: BudgetRecord[];
+};
+
+export function useExpenseListing(initial?: InitialExpenseData) {
   const { status, accessToken } = useAuth();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(initial ? false : true);
   const [error, setError] = useState<string | null>(null);
 
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [budgets, setBudgets] = useState<BudgetRecord[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>(initial?.expenses ?? []);
+  const [budgets, setBudgets] = useState<BudgetRecord[]>(initial?.budgets ?? []);
 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "amount_desc" | "amount_asc">("date_desc");
@@ -49,10 +54,12 @@ export function useExpenseListing() {
   }, [accessToken]);
 
   useEffect(() => {
+    // If server-provided initial data exists, skip client fetch.
+    if (initial) return;
     if (status === "authenticated") {
       void fetchAll();
     }
-  }, [status, fetchAll]);
+  }, [status, fetchAll, initial]);
 
   const categories = useMemo(() => {
     const set = new Set(expenses.map((e) => e.category).filter(Boolean));

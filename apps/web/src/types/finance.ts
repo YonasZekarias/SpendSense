@@ -45,6 +45,17 @@ export type BudgetSummary = {
   by_category: BudgetSummaryCategory[];
 };
 
+export type BudgetSuggestion = {
+  month: number;
+  year: number;
+  suggested_total: string;
+  categories: {
+    category_name: string;
+    limit_amount: string;
+  }[];
+}
+
+
 export type ExpenseRecord = {
   id: number;
   category: string;

@@ -1,6 +1,7 @@
 export const AUTH_COOKIE_NAME = "spendsense_access_token";
 export const AUTH_REFRESH_COOKIE_NAME = "spendsense_refresh_token";
 export const DEFAULT_AUTH_REDIRECT = "/dashboard";
+export const AUTH_PROFILE_COOKIE_NAME = "spendsense_profile";
 
 export type AppRole = "user" | "vendor" | "admin" | "analyst";
 
@@ -29,7 +30,7 @@ export function getDefaultRouteForRole(role: string | null | undefined): string 
     case "vendor":
       return "/vendor/dashboard";
     case "admin":
-      return "/admin";
+      return "/admin/admin-panel";
     case "analyst":
       return "/analytics";
     case "user":
