@@ -9,7 +9,6 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { VendorSidebar } from "../../_components/vendor-shell";
 import { formatMoney, getVendorOrderDetail, VendorOrder } from "../../_lib/vendor-api";
 
 export default function VendorOrderDetailPage() {
@@ -44,26 +43,8 @@ export default function VendorOrderDetailPage() {
   }, [orderId]);
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
-      <VendorSidebar />
-
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input
-            className="w-full rounded-xl border-none bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#135bec]/20"
-            placeholder="Search orders, clients..."
-            type="text"
-          />
-        </div>
-        <button className="relative p-2 text-slate-500 transition hover:text-[#135bec]" type="button">
-          <Bell size={18} />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#e73908]" />
-        </button>
-      </header>
-
-      <main className="min-h-[calc(100vh-4rem)] p-4 md:ml-64 md:p-8">
-        <div className="mx-auto max-w-5xl">
+    <main className="min-h-[calc(100vh-4rem)] p-4 md:ml-64 md:p-8">
+      <div className="mx-auto max-w-5xl">
           <div className="mb-6">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
               <span>Orders</span>
@@ -102,7 +83,6 @@ export default function VendorOrderDetailPage() {
           ) : null}
         </div>
       </main>
-    </div>
   );
 }
 

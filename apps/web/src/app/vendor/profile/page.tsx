@@ -12,7 +12,6 @@ import {
     Verified,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { VendorSidebar } from "../_components/vendor-shell";
 import {
     getCurrentUserProfile,
     getStoredVendorId,
@@ -79,28 +78,7 @@ export default function VendorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] font-sans text-[#111318] antialiased">
-      <VendorSidebar />
-
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input
-            className="w-full rounded-xl border-none bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#135bec]/20"
-            placeholder="Search profile, branches, or reviews..."
-            type="text"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <img
-            alt="Vendor profile"
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-[#135bec]/10"
-            src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=120&h=120&fit=crop"
-          />
-        </div>
-      </header>
-
-      <main className="min-h-[calc(100vh-64px)] p-4 md:ml-64 md:p-8">
+    <main className="min-h-[calc(100vh-64px)] p-4 md:ml-64 md:p-8">
         <form onSubmit={onSave}>
           <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div className="flex items-start gap-6">
@@ -349,7 +327,6 @@ export default function VendorProfilePage() {
           </div>
         </form>
       </main>
-    </div>
   );
 }
 
