@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
   Store,
@@ -12,6 +13,7 @@ import {
   LogOut,
   X,
 } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -29,14 +31,25 @@ interface SidebarProps {
 
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  const isPathActive = useCallback(
+    (currentPath: string, candidatePaths: string[], exact?: boolean) => {
+      return candidatePaths.some((path) => {
+        if (exact) return currentPath === path;
+        return currentPath === path || currentPath.startsWith(`${path}/`);
+      });
+    },
+    []
+  );
 
   return (
     <aside
-      className={`${
-        mobile
+      className={`${mobile
           ? "fixed inset-0 z-50 w-64"
           : "hidden md:flex w-64 flex-shrink-0"
-      } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-full overflow-y-auto transition-colors duration-200`}
+        } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-full overflow-y-auto transition-colors duration-200`}
     >
       <div className="p-4 flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -74,25 +87,22 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
                 key={item.label}
                 href={item.href}
                 onClick={mobile ? onClose : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${
-                  isActive
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive
                     ? "bg-[#f0f2f4] dark:bg-gray-700/50"
                     : "hover:bg-[#f0f2f4] dark:hover:bg-gray-800"
-                }`}
+                  }`}
               >
                 <item.icon
-                  className={`size-5 ${
-                    isActive
+                  className={`size-5 ${isActive
                       ? "text-[#111318] dark:text-white"
                       : "text-[#616f89] dark:text-gray-400 group-hover:text-[#111318] dark:group-hover:text-white"
-                  }`}
+                    }`}
                 />
                 <p
-                  className={`text-sm font-medium leading-normal ${
-                    isActive
+                  className={`text-sm font-medium leading-normal ${isActive
                       ? "text-[#111318] dark:text-white"
                       : "text-[#616f89] dark:text-gray-400 group-hover:text-[#111318] dark:group-hover:text-white"
-                  }`}
+                    }`}
                 >
                   {item.label}
                 </p>
@@ -108,8 +118,17 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           <p className="text-[#616f89] dark:text-gray-400 group-hover:text-red-500 text-sm font-medium leading-normal">
             Log Out
           </p>
-        </button>
       </div>
-    </aside>
+
+      <Button
+        variant={'ghost'}
+        onClick={() => { signOut(); router.push("/login"); }}
+        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+      >
+        <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />
+        <span className="text-sm font-medium">Log Out</span>
+      </Button>
+    </div>
+    </aside >
   );
 }
