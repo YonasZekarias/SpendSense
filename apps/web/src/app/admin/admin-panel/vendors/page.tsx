@@ -1,13 +1,28 @@
 import AdminPanelShell from "../_components/admin-panel-shell";
+import { apiClient, ApiError } from "@/lib/api";
+import { vendorListSchema, Vendor } from "@/lib/validation/vendors";
 
-const vendors = [
-	{ name: "Abyssinia Trading PLC", category: "Import/Export", city: "Addis Ababa", status: "Pending", products: 48 },
-	{ name: "Selam Electronics", category: "Electronics", city: "Addis Ababa", status: "Verified", products: 136 },
-	{ name: "Sheger Agro-Processing", category: "Manufacturing", city: "Adama", status: "Pending", products: 22 },
-	{ name: "Ethio Telecom Retailer", category: "Telecommunications", city: "Bahir Dar", status: "Verified", products: 64 },
-];
+export default async function AdminPanelVendorsPage() {
+	let vendors: Vendor[] = [];
 
-export default function AdminPanelVendorsPage() {
+	try {
+		const raw = await apiClient<unknown>({
+			method: "GET",
+			endpoint: "/api/ecommerce/vendors",
+			next: { revalidate: 300, tags: ["ecommerce:vendors"] },
+		});
+
+		// Backend might return { items: Vendor[] } or Vendor[] directly
+		const maybeArray = raw && typeof raw === "object" && "items" in (raw as any) ? (raw as any).items : raw;
+		vendors = vendorListSchema.parse(maybeArray);
+	} catch (err) {
+		if (err instanceof ApiError) {
+			console.error("API error fetching vendors:", err.message, err.payload);
+		} else {
+			console.error("Vendors parse/fetch error:", err);
+		}
+	}
+
 	return (
 		<AdminPanelShell
 			activeTab="vendors"
@@ -15,10 +30,10 @@ export default function AdminPanelVendorsPage() {
 			title="Vendor Management"
 		>
 			<section className="grid grid-cols-1 gap-6 md:grid-cols-4">
-				<Tile label="Total Vendors" value="2,140" />
-				<Tile label="Verified" value="2,003" />
-				<Tile label="Pending" value="137" />
-				<Tile label="Flagged" value="11" />
+				<Tile label="Total Vendors" value={String(vendors.length)} />
+				<Tile label="Verified" value="—" />
+				<Tile label="Pending" value="—" />
+				<Tile label="Flagged" value="—" />
 			</section>
 
 			<section className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
@@ -39,11 +54,11 @@ export default function AdminPanelVendorsPage() {
 					</thead>
 					<tbody className="divide-y divide-slate-100 text-sm">
 						{vendors.map((vendor) => (
-							<tr key={vendor.name} className="hover:bg-slate-50">
+							<tr key={vendor.id} className="hover:bg-slate-50">
 								<td className="px-6 py-4 font-bold text-slate-900">{vendor.name}</td>
 								<td className="px-6 py-4 text-slate-700">{vendor.category}</td>
 								<td className="px-6 py-4 text-slate-500">{vendor.city}</td>
-								<td className="px-6 py-4 text-slate-700">{vendor.products}</td>
+								<td className="px-6 py-4 text-slate-700">{vendor.products ?? "—"}</td>
 								<td className="px-6 py-4">
 									<span
 										className={[
@@ -51,7 +66,7 @@ export default function AdminPanelVendorsPage() {
 											vendor.status === "Verified" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700",
 										].join(" ")}
 									>
-										{vendor.status}
+										{vendor.status ?? "Unknown"}
 									</span>
 								</td>
 								<td className="px-6 py-4 text-right">

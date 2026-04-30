@@ -1,29 +1,13 @@
 import { BudgetPlannerPage as BudgetPlannerClient } from "@/components/finance/budget-planner-page";
-import { cookies } from "next/headers";
-import type { BudgetRecord, BudgetSummary, ExpenseRecord } from "@/types/finance";
+import { apiClient } from "@/lib/api";
+import type { BudgetRecord, BudgetSuggestion, BudgetSummary, ExpenseRecord } from "@/types/finance";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
-async function fetchWithCookies(path: string) {
-  const cookieStore = cookies();
-  const cookieHeader = cookieStore.toString();
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-    credentials: "include",
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${path}: ${res.status}`);
-  }
-  return res.json();
-}
 
 export default async function BudgetPage() {
   try {
     const [budgets, expenses] = await Promise.all([
-      fetchWithCookies("/api/finance/budgets/") as Promise<BudgetRecord[]>,
-      fetchWithCookies("/api/finance/expenses/") as Promise<ExpenseRecord[]>,
+      apiClient({endpoint:"/api/finance/budgets/",method:"GET"}) as Promise<BudgetRecord[]>,
+      apiClient({endpoint:"/api/finance/expenses/",method:"GET"}) as Promise<ExpenseRecord[]>,
     ]);
 
     const latest = (budgets && budgets.length > 0) ? budgets[0] : null;
@@ -33,11 +17,12 @@ export default async function BudgetPage() {
 
     let suggestedCategories: any[] = [];
     if (latest) {
-      summary = await fetchWithCookies(`/api/finance/budgets/${latest.id}/summary/`);
+      summary = await apiClient({endpoint:`/api/finance/budgets/${latest.id}/summary/`,method:"GET"});
       suggestedCategories = summary?.by_category ?? [];
     } else {
       const now = new Date();
-      const suggestion = await fetchWithCookies(`/api/finance/budgets/suggestions/?month=${now.getMonth() + 1}&year=${now.getFullYear()}`);
+
+      const suggestion = await apiClient<BudgetSuggestion>({endpoint:`/api/finance/budgets/suggestions/?month=${now.getMonth() + 1}&year=${now.getFullYear()}`,method:"GET"});
       suggested = { month: suggestion.month, year: suggestion.year };
       suggestedCategories = suggestion?.categories ?? [];
     }
