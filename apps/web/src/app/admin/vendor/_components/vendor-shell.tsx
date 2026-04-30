@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/providers/auth-provider";
+import { Button } from "@repo/ui/components/button";
 import {
     BarChart3,
     CircleUserRound,
@@ -10,7 +12,7 @@ import {
     Store,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 const NAV_LINKS = [
@@ -33,7 +35,9 @@ interface VendorShellProps {
 
 export function VendorSidebar() {
   const pathname = usePathname();
-
+    const router = useRouter();
+  const { signOut } = useAuth();
+  
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col border-r border-slate-200/70 bg-[#f6f6f8] px-4 py-6 md:flex">
       <div className="mb-10 flex items-center gap-3 px-2">
@@ -68,13 +72,12 @@ export function VendorSidebar() {
       </nav>
 
       <div className="mt-auto border-t border-slate-200/70 pt-6">
-        <Link
-          href="/login"
-          className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-500 transition-colors duration-200 hover:bg-[#f0f2f4] hover:text-[#135bec]"
-        >
-          <LogOut size={18} />
-          <span className="text-sm font-medium">Logout</span>
-        </Link>
+        <Button 
+          variant={'ghost'}
+          onClick={()=>{signOut(); router.push("/login");}} 
+          className="mt-8 w-full flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600" type="button">
+          <LogOut size={18} /> Logout
+        </Button>
       </div>
     </aside>
   );

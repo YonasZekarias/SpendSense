@@ -1,3 +1,6 @@
+"use client"
+import { useAuth } from "@/providers/auth-provider";
+import { Button } from "@repo/ui/components/button";
 import {
     Bell,
     Bot,
@@ -15,6 +18,7 @@ import {
     Users,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
 type PanelTab = "dashboard" | "users" | "vendors" | "verification" | "moderation" | "settings" | "categories" | "ml" | "audit";
@@ -39,6 +43,9 @@ const NAV = [
 ] as const;
 
 export default function AdminPanelShell({ title, subtitle, activeTab, children }: AdminPanelShellProps) {
+  const router = useRouter();
+  const { signOut } = useAuth();
+  
   return (
     <div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-100 bg-white px-6 shadow-sm">
@@ -82,9 +89,12 @@ export default function AdminPanelShell({ title, subtitle, activeTab, children }
               );
             })}
           </nav>
-          <button className="mt-8 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600" type="button">
+          <Button 
+            variant={'ghost'}
+            onClick={()=>{signOut(); router.push("/login");}} 
+            className="mt-8 w-full flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600" type="button">
             <LogOut size={18} /> Logout
-          </button>
+          </Button>
         </aside>
 
         <main className="ml-64 flex-1 p-8">

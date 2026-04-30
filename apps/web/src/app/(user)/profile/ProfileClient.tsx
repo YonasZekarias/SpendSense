@@ -77,10 +77,10 @@ export default function ProfileClient({
               <h2 className="text-2xl font-bold text-[#111318]">{form.full_name || "New User"}</h2>
               <p className="mb-4 font-medium text-[#616f89]">{initialUser?.email}</p>
 
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#e2e6ff] px-3 py-1 text-xs font-bold text-[#00174c]">
+              {/* <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-[#e2e6ff] px-3 py-1 text-xs font-bold text-[#00174c]">
                 <Loader2 className="mr-2 size-6 animate-spin text-[#135bec]" />
                 PLATINUM TIER MEMBER
-              </div>
+              </div> */}
 
               <div className="w-full space-y-4 border-t border-[#cbd5e1]/30 pt-6 text-sm">
                 <div className="flex justify-between">
@@ -93,9 +93,9 @@ export default function ProfileClient({
                 </div>
               </div>
 
-              <button className="mt-8 w-full rounded-xl bg-[#135bec] py-3 font-bold text-white shadow-sm transition-all hover:opacity-90 active:scale-95">
+              {/* <button className="mt-8 w-full rounded-xl bg-[#135bec] py-3 font-bold text-white shadow-sm transition-all hover:opacity-90 active:scale-95">
                 Upgrade Membership
-              </button>
+              </button> */}
             </div>
 
             <div className="rounded-xl bg-white p-8 shadow-sm lg:w-2/3">

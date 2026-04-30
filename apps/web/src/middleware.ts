@@ -134,9 +134,9 @@ function extractRoleFromAccessToken(token: string | undefined): string | null {
   }
 
   // For debugging: log available top-level keys when no role found
-  try {
-    console.log("middleware: JWT payload keys:", Object.keys(payload));
-  } catch {}
+  // try {
+  //   console.log("middleware: JWT payload keys:", Object.keys(payload));
+  // } catch {}
 
   return null;
 }
