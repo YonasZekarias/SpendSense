@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
@@ -23,6 +23,7 @@ import {
   Settings,
   MessageSquare,
 } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
 
 const navItems = [
   {
@@ -131,6 +132,7 @@ interface SidebarProps {
 
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut } = useAuth();
 
   const isPathActive = useCallback(
@@ -217,13 +219,14 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           </p>
         </div>
         
-        <button 
-          onClick={signOut} 
+        <Button 
+          variant={'ghost'}
+          onClick={()=>{signOut(); router.push("/login");}} 
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />
           <span className="text-sm font-medium">Log Out</span>
-        </button>
+        </Button>
       </div>
     </aside>
   );

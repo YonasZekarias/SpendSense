@@ -6,30 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import {
-  forgotPassword,
-  getCurrentUser,
-  login,
-  refreshAccessToken,
-  register,
-  resetPassword,
-} from "@/actions/auth";
-import {
-  getAuthErrorStatus,
-  type LoginPayload,
-  type RegisterPayload,
-  type UserProfile,
-} from "@/lib/auth-types";
-import {
-  clearAuthCookies,
-  getAccessTokenFromCookie,
-  getRefreshTokenFromCookie,
-  setTokenPairCookies,
-  setAccessTokenCookie,
-} from "@/lib/auth-client";
+import { forgotPassword, register, resetPassword } from "@/actions/auth";
+import { type LoginPayload, type RegisterPayload, type UserProfile } from "@/lib/auth-types";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -51,76 +33,123 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
+  const scheduleRef = useRef<number | null>(null);
+
   const resetSession = useCallback(() => {
-    clearAuthCookies();
     setAccessToken(null);
     setUser(null);
     setStatus("unauthenticated");
+    if (scheduleRef.current) window.clearTimeout(scheduleRef.current);
   }, []);
 
-  const refreshSession = useCallback(async (token: string): Promise<string> => {
-    const refreshed = await refreshAccessToken(token);
-    setAccessTokenCookie(refreshed.access);
-    setAccessToken(refreshed.access);
-    return refreshed.access;
-  }, []);
+  const hydrateCurrentUser = useCallback(async (maybePayload?: any): Promise<UserProfile | null> => {
+    try {
+      // If caller provided payload, use it; otherwise fetch
+      const payload = maybePayload ?? (await fetch(`/api/auth/me`).then((r) => (r.ok ? r.json() : null)));
+      if (!payload) {
+        setUser(null);
+        setStatus("unauthenticated");
+        return null;
+      }
 
-  const hydrateCurrentUser = useCallback(async (token: string): Promise<UserProfile> => {
-    const currentUser = await getCurrentUser(token);
-    setUser(currentUser);
-    setStatus("authenticated");
-    return currentUser;
+      setUser(payload as UserProfile);
+      setStatus("authenticated");
+      return payload as UserProfile;
+    } catch (err) {
+      setUser(null);
+      setStatus("unauthenticated");
+      return null;
+    }
   }, []);
 
   useEffect(() => {
     const boot = async () => {
-      const access = getAccessTokenFromCookie();
-      const refresh = getRefreshTokenFromCookie();
-
-      if (!access && !refresh) {
-        setStatus("unauthenticated");
-        return;
-      }
-
       try {
-        if (access) {
-          setAccessToken(access);
-          await hydrateCurrentUser(access);
+        const meRes = await fetch(`/api/auth/me`);
+        if (meRes.ok) {
+          const payload = await meRes.json();
+          await hydrateCurrentUser(payload);
+          const expiry = payload?.access_expires_in ?? 60 * 60;
+          // schedule refresh
+          if (expiry) {
+            // refresh at 85% of expiry
+            const ms = Math.max(1000 * (expiry * 0.85), 1000 * 30);
+            if (scheduleRef.current) window.clearTimeout(scheduleRef.current);
+            scheduleRef.current = window.setTimeout(async () => {
+              try {
+                const r = await fetch(`/api/auth/refresh`, { method: "POST" });
+                if (r.ok) {
+                  // re-hydrate
+                  const me = await fetch(`/api/auth/me`).then((r2) => (r2.ok ? r2.json() : null));
+                  if (me) await hydrateCurrentUser(me);
+                } else {
+                  resetSession();
+                }
+              } catch {
+                resetSession();
+              }
+            }, ms);
+          }
           return;
         }
 
-        if (!refresh) {
+        // not authenticated -> attempt rotate once
+        const refreshRes = await fetch(`/api/auth/refresh`, { method: "POST" });
+        if (!refreshRes.ok) {
           resetSession();
           return;
         }
 
-        const nextAccess = await refreshSession(refresh);
-        await hydrateCurrentUser(nextAccess);
-      } catch (error) {
-        if (getAuthErrorStatus(error) === 401 && refresh) {
-          try {
-            const nextAccess = await refreshSession(refresh);
-            await hydrateCurrentUser(nextAccess);
-            return;
-          } catch {
-            resetSession();
-            return;
-          }
+        const meRes2 = await fetch(`/api/auth/me`);
+        if (meRes2.ok) {
+          const payload = await meRes2.json();
+          await hydrateCurrentUser(payload);
+          const expiry = payload?.access_expires_in ?? 60 * 60;
+          const ms = Math.max(1000 * (expiry * 0.85), 1000 * 30);
+          if (scheduleRef.current) window.clearTimeout(scheduleRef.current);
+          scheduleRef.current = window.setTimeout(async () => {
+            try {
+              const r = await fetch(`/api/auth/refresh`, { method: "POST" });
+              if (r.ok) {
+                const me = await fetch(`/api/auth/me`).then((r2) => (r2.ok ? r2.json() : null));
+                if (me) await hydrateCurrentUser(me);
+              } else {
+                resetSession();
+              }
+            } catch {
+              resetSession();
+            }
+          }, ms);
+          return;
         }
 
+        resetSession();
+      } catch (error) {
         resetSession();
       }
     };
 
     void boot();
-  }, [hydrateCurrentUser, refreshSession, resetSession]);
+  }, [hydrateCurrentUser, resetSession]);
 
   const signIn = useCallback(
     async (payload: LoginPayload) => {
-      const tokenPair = await login(payload);
-      setTokenPairCookies(tokenPair);
-      setAccessToken(tokenPair.access);
-      return hydrateCurrentUser(tokenPair.access);
+      const res = await fetch(`/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message || "Login failed");
+      }
+
+      const meRes = await fetch(`/api/auth/me`);
+      if (!meRes.ok) throw new Error("Failed to fetch current user after login");
+      const me = await meRes.json();
+      await hydrateCurrentUser(me);
+      return me as UserProfile;
     },
     [hydrateCurrentUser],
   );
@@ -138,19 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    const access = getAccessTokenFromCookie();
-    if (access) {
-      try {
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/auth/logout/`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
-          },
-        );
-      } catch {
-        // best-effort
-      }
+    try {
+      await fetch(`/api/auth/logout`, { method: "POST" });
+    } catch {
+      // best-effort
     }
     resetSession();
   }, [resetSession]);
