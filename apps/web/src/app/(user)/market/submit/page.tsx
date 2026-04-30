@@ -17,7 +17,9 @@ import {
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { useAuth } from "@/providers/auth-provider";
-import { getItems, submitPrice, type MarketItem } from "@/services/marketService";
+import { fetchMarketItems, createPriceSubmission, type MarketItem } from "@/services/marketService";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/alert";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function MarketSubmitPage() {
   const { accessToken, status } = useAuth();
@@ -33,7 +35,7 @@ export default function MarketSubmitPage() {
   const [warn, setWarn] = useState<string | null>(null);
 
   useEffect(() => {
-    void getItems()
+    void fetchMarketItems()
       .then((list) => {
         setItems(list);
         if (list[0]) setItemId(list[0].id);
@@ -43,19 +45,19 @@ export default function MarketSubmitPage() {
 
   const handleSubmit = async () => {
     if (status === "unauthenticated") {
-      setMsg({ type: 'error', text: "You must be signed in to submit data." });
+      setMsg({ type: 'error', text: "Authentication required. Please sign in to contribute." });
       return;
     }
     if (itemId === "") {
-      setMsg({ type: 'error', text: "Please select an item from the list." });
+      setMsg({ type: 'error', text: "Please select an item to proceed." });
       return;
     }
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-      setMsg({ type: 'error', text: "Please enter a valid price." });
+      setMsg({ type: 'error', text: "A valid positive price is required." });
       return;
     }
     if (!marketLocation.trim()) {
-      setMsg({ type: 'error', text: "Please enter a specific market or store location." });
+      setMsg({ type: 'error', text: "Please specify the market or store name." });
       return;
     }
 
@@ -63,19 +65,29 @@ export default function MarketSubmitPage() {
     setMsg(null);
     setWarn(null);
     try {
-      const res = await submitPrice(accessToken || "", {
+      const res = await createPriceSubmission(accessToken || "", {
         item_id: Number(itemId),
         price_value: Number(price),
         market_location: marketLocation,
         city,
         date_observed: dateObserved,
       });
+      
       if (res.outlier_warning) setWarn(res.outlier_warning);
-      setMsg({ type: 'success', text: "Submitted for review. Thank you!" });
+      
+      setMsg({ 
+        type: 'success', 
+        text: "Your contribution has been submitted! It will appear on the dashboard after a quick verification." 
+      });
+      
       setPrice("");
       setMarketLocation("");
+      
+      // Auto-scroll to message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
     } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || "Submission failed. Check your connection or inputs.";
+      const errorMsg = err.response?.data?.detail || "We couldn't save your submission. Please check your inputs and try again.";
       setMsg({ type: 'error', text: errorMsg });
     } finally {
       setSaving(false);
@@ -207,22 +219,40 @@ export default function MarketSubmitPage() {
               </div>
 
               {/* Success/Warning Messages */}
-              {(msg || warn) && (
-                <div className="px-8 pt-4">
-                  {warn && (
-                    <div className="mb-3 rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-700 border border-amber-100 flex gap-2">
-                      <Lightbulb size={18} /> {warn}
-                    </div>
-                  )}
-                  {msg && (
-                    <div className={`rounded-lg p-3 text-sm font-bold border ${
-                      msg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
-                    }`}>
+              <div className="px-8 pt-4 space-y-4">
+                {warn && (
+                  <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                    <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-xs font-bold uppercase tracking-wider">Note</AlertTitle>
+                    <AlertDescription className="text-sm font-medium">
+                      {warn}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {msg && (
+                  <Alert variant={msg.type === 'success' ? 'default' : 'destructive'} 
+                         className={msg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : ''}>
+                    {msg.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4" />}
+                    <AlertTitle className="text-xs font-bold uppercase tracking-wider">
+                      {msg.type === 'success' ? 'Submission Received' : 'Error'}
+                    </AlertTitle>
+                    <AlertDescription className="text-sm font-medium">
                       {msg.text}
-                    </div>
-                  )}
-                </div>
-              )}
+                      {msg.type === 'success' && (
+                        <div className="mt-3 flex gap-3">
+                          <Button variant="outline" size="sm" asChild className="h-8 bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                            <Link href="/market">Go to Dashboard</Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setMsg(null)} className="h-8 text-emerald-700 hover:bg-emerald-100">
+                            Submit another
+                          </Button>
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
               {/* Footer Actions */}
               <div className="flex justify-end gap-4 border-t border-[#cbd5e1]/30 bg-white p-8">
