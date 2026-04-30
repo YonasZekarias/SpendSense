@@ -12,7 +12,6 @@ import {
     TrendingUp
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { VendorSidebar } from "../_components/vendor-shell";
 import {
     formatMoney,
     getStoredVendorId,
@@ -98,41 +97,8 @@ export default function VendorAnalyticsPage() {
   const activeProducts = useMemo(() => products.filter((item) => item.availability !== false).length, [products]);
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
-      <VendorSidebar />
-
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white/80 px-8 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)]">
-        <div className="flex flex-1 items-center">
-          <div className="relative w-full max-w-xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-            <input
-              className="w-full rounded-lg border-none bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm placeholder:text-slate-500/70 focus:ring-2 focus:ring-[#135bec]/20"
-              placeholder="Search analytics data..."
-              type="text"
-            />
-          </div>
-        </div>
-        <div className="ml-8 flex items-center gap-6">
-          <button className="relative text-slate-500 transition-all hover:text-[#135bec]" type="button">
-            <Bell size={18} />
-            <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[#e73908]" />
-          </button>
-          <div className="flex items-center gap-3 border-l border-slate-300/50 pl-6">
-            <div className="text-right">
-              <p className="text-xs font-bold leading-none">Abebe Kebede</p>
-              <p className="mt-1 text-[10px] text-slate-500">Vendor Manager</p>
-            </div>
-            <img
-              alt="Vendor avatar"
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-slate-200"
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=90&h=90&fit=crop"
-            />
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-[calc(100vh-4rem)] p-8 md:ml-64">
-        <section className="mb-8">
+    <main className="min-h-[calc(100vh-4rem)] p-8 md:ml-64">
+      <section className="mb-8">
           <div className="flex items-end justify-between">
             <div>
               <h2 className="mb-2 text-3xl font-bold tracking-tight">Vendor Analytics</h2>
@@ -260,7 +226,6 @@ export default function VendorAnalyticsPage() {
           </div>
         </div>
       </main>
-    </div>
   );
 }
 

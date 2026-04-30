@@ -1,13 +1,13 @@
 "use client";
 
-import { VendorSidebar } from "@/app/admin/vendor/_components/vendor-shell";
+
 import {
     getStoredVendorId,
     getVendorProducts,
     updateVendorProduct,
     VendorApiError,
     VendorProduct,
-} from "@/app/admin/vendor/_lib/vendor-api";
+} from "../../../_lib/vendor-api";
 import {
     Bell,
     CheckCircle2,
@@ -132,33 +132,8 @@ export default function VendorProductEditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
-      <VendorSidebar />
-
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-        <div className="flex w-full max-w-md items-center gap-3 rounded-full bg-[#f0f2f4] px-4 py-1.5 focus-within:ring-2 focus-within:ring-[#135bec]/20">
-          <Search className="text-slate-500" size={18} />
-          <input
-            className="w-full border-none bg-transparent text-sm outline-none placeholder:text-slate-500"
-            placeholder="Search inventory..."
-            type="text"
-          />
-        </div>
-
-        <div className="ml-4 flex items-center gap-4">
-          <button className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#f0f2f4]" type="button">
-            <Bell className="text-slate-500" size={18} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#e73908]" />
-          </button>
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-bold leading-tight">Premium Vendor</p>
-            <p className="text-[10px] uppercase tracking-tight text-slate-500">Edit Product</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-[calc(100vh-4rem)] bg-[#f6f6f8] p-4 md:ml-64 md:p-8">
-        <div className="mx-auto max-w-5xl">
+    <main className="min-h-[calc(100vh-4rem)] bg-[#f6f6f8] p-4 md:ml-64 md:p-8">
+      <div className="mx-auto max-w-5xl">
           <form id="product-edit-form" onSubmit={onSubmit}>
             <div className="mb-8 flex items-center justify-between gap-4">
               <div className="space-y-1">
@@ -434,6 +409,5 @@ export default function VendorProductEditPage() {
           </form>
         </div>
       </main>
-    </div>
   );
 }

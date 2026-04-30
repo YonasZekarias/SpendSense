@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { VendorSidebar } from "../_components/vendor-shell";
 import { formatMoney, getStoredVendorId, getVendorProducts, VendorProduct } from "../_lib/vendor-api";
 
 export default function VendorProductsPage() {
@@ -59,41 +58,8 @@ export default function VendorProductsPage() {
   const tableRows = useMemo(() => products.slice(0, 8), [products]);
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
-      <VendorSidebar />
-
-      <header className="fixed right-0 top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-        <div className="relative w-full max-w-xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-          <input
-            className="w-full rounded-xl bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm outline-none ring-0 transition-all focus:ring-2 focus:ring-[#135bec]/20"
-            placeholder="Search products, SKUs, or categories..."
-            type="text"
-          />
-        </div>
-
-        <div className="ml-4 flex items-center gap-4">
-          <button className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-[#f0f2f4]" type="button">
-            <Bell className="text-slate-500" size={18} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#e73908]" />
-          </button>
-          <div className="mx-1 h-8 w-px bg-slate-300/60" />
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-bold leading-tight">Abebe Balcha</p>
-              <p className="text-[10px] font-semibold uppercase text-slate-500">Premium Vendor</p>
-            </div>
-            <img
-              alt="Vendor profile"
-              className="h-10 w-10 rounded-full border-2 border-[#135bec]/10 object-cover"
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
-            />
-          </div>
-        </div>
-      </header>
-
-      <main className="min-h-screen p-4 pt-24 md:ml-64 md:p-8 md:pt-24">
-        <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen p-4 pt-24 md:ml-64 md:p-8 md:pt-24">
+      <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <nav className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -292,7 +258,6 @@ export default function VendorProductsPage() {
           </div>
         </div>
       </main>
-    </div>
   );
 }
 

@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { VendorSidebar } from "../_components/vendor-shell";
 import { formatMoney, getVendorOrders, VendorOrder } from "../_lib/vendor-api";
 
 export default function VendorOrdersPage() {
@@ -53,34 +52,8 @@ export default function VendorOrdersPage() {
 	}, []);
 
 	return (
-		<div className="min-h-screen bg-[#f6f6f8] text-[#111318] antialiased">
-			<VendorSidebar />
-
-			<header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-white/80 px-4 shadow-sm backdrop-blur-md md:ml-64 md:w-[calc(100%-16rem)] md:px-8">
-				<div className="relative w-full max-w-md">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-					<input
-						className="w-full rounded-xl border-none bg-[#f0f2f4] py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-[#135bec]/20"
-						placeholder="Search orders, clients..."
-						type="text"
-					/>
-				</div>
-
-				<div className="flex items-center gap-4">
-					<button className="relative p-2 text-slate-500 transition hover:text-[#135bec]" type="button">
-						<Bell size={18} />
-						<span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#e73908]" />
-					</button>
-					<div className="mx-1 hidden h-8 w-px bg-slate-300 sm:block" />
-					<div className="hidden text-right sm:block">
-						<p className="text-xs font-bold text-slate-900">Vendor Team</p>
-						<p className="text-[10px] text-slate-500">Orders Console</p>
-					</div>
-				</div>
-			</header>
-
-			<main className="min-h-[calc(100vh-4rem)] p-4 md:ml-64 md:p-8">
-				<div className="mx-auto max-w-7xl">
+		<main className="min-h-[calc(100vh-4rem)] p-4 md:ml-64 md:p-8">
+			<div className="mx-auto max-w-7xl">
 					<div className="mb-8 flex items-end justify-between gap-4">
 						<div>
 							<div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -151,7 +124,6 @@ export default function VendorOrdersPage() {
 					</div>
 				</div>
 			</main>
-		</div>
 	);
 }
 
