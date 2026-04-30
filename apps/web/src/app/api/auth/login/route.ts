@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiClient, ApiError } from "@/lib/api";
-import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME } from "@/lib/auth-constants";
+import { AUTH_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME, AUTH_PROFILE_COOKIE_NAME } from "@/lib/auth-constants";
+import type { UserProfile } from "@/lib/auth-types";
 
 export async function POST(req: Request) {
   try {
@@ -38,6 +39,33 @@ export async function POST(req: Request) {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
+
+    // Fetch the current user profile using the freshly obtained access token
+    try {
+      const profile = await apiClient<UserProfile>({
+        method: "GET",
+        endpoint: "/api/users/me/",
+        fetchOptions: { headers: { Authorization: `Bearer ${tokens.access}` } },
+      });
+
+      // Store minimal profile info in a server-set cookie for middleware role checks
+      try {
+        const profileValue = JSON.stringify({ id: profile.id, role: profile.role, email: profile.email });
+        res.cookies.set({
+          name: AUTH_PROFILE_COOKIE_NAME,
+          value: profileValue,
+          httpOnly: true,
+          secure,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7,
+        });
+      } catch (e) {
+        console.log("login: failed to set profile cookie", e);
+      }
+    } catch (e) {
+      console.log("login: failed to fetch user profile", e);
+    }
 
     return res;
   } catch (err: unknown) {
