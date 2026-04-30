@@ -31,15 +31,15 @@ interface AdminPanelShellProps {
 }
 
 const NAV = [
-  { key: "users", label: "Users", href: "/admin/admin-panel/users", icon: <Users size={18} /> },
-  { key: "vendors", label: "Vendors", href: "/admin/admin-panel/vendors", icon: <Store size={18} /> },
-  { key: "dashboard", label: "Dashboard", href: "/admin/admin-panel/dashboard", icon: <LayoutDashboard size={18} /> },
-  { key: "verification", label: "Vendor Verification", href: "/admin/admin-panel/vendor-verification", icon: <ShieldCheck size={18} /> },
-  { key: "moderation", label: "Price Moderation", href: "/admin/admin-panel/price-moderation", icon: <Gavel size={18} /> },
-  { key: "settings", label: "System Settings", href: "/admin/admin-panel/system-settings", icon: <Settings2 size={18} /> },
-  // { key: "categories", label: "Categories", href: "/admin/admin-panel/categories", icon: <Shapes size={18} /> },
-  { key: "ml", label: "ML Monitoring", href: "/admin/admin-panel/ml-monitoring", icon: <Bot size={18} /> },
-  { key: "audit", label: "Audit Logs", href: "/admin/admin-panel/audit-logs", icon: <ReceiptText size={18} /> },
+  { key: "users", label: "Users", href: "/admin/users", icon: <Users size={18} /> },
+  { key: "vendors", label: "Vendors", href: "/admin/vendors", icon: <Store size={18} /> },
+  { key: "dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
+  { key: "verification", label: "Vendor Verification", href: "/admin/vendor-verification", icon: <ShieldCheck size={18} /> },
+  { key: "moderation", label: "Price Moderation", href: "/admin/price-moderation", icon: <Gavel size={18} /> },
+  { key: "settings", label: "System Settings", href: "/admin/system-settings", icon: <Settings2 size={18} /> },
+  // { key: "categories", label: "Categories", href: "/admin/categories", icon: <Shapes size={18} /> },
+  { key: "ml", label: "ML Monitoring", href: "/admin/ml-monitoring", icon: <Bot size={18} /> },
+  { key: "audit", label: "Audit Logs", href: "/admin/audit-logs", icon: <ReceiptText size={18} /> },
 ] as const;
 
 export default function AdminPanelShell({ title, subtitle, activeTab, children }: AdminPanelShellProps) {
