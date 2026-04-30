@@ -46,14 +46,36 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    vendor_info = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
             'city', 'household_size', 'income_bracket', 'onboarding_completed', 'created_at',
+            'vendor_info',
         )
         read_only_fields = ('id', 'email', 'role', 'created_at',
             'notification_preferences')
+
+    def get_vendor_info(self, obj):
+        if obj.role == 'vendor':
+            vendor = obj.vendor_set.first()
+            if vendor:
+                return {
+                    'vendor_id': vendor.id,
+                    'shop_name': vendor.shop_name,
+                    'city': vendor.city,
+                    'address': vendor.address,
+                    'contact_phone': vendor.contact_phone,
+                    'is_verified': vendor.is_verified,
+                    'rating_avg': str(vendor.rating_avg),
+                    'rating_count': vendor.rating_count,
+                    'latitude': str(vendor.latitude) if vendor.latitude else None,
+                    'longitude': str(vendor.longitude) if vendor.longitude else None,
+                    'image': vendor.image.url if vendor.image else None,
+                }
+        return None
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

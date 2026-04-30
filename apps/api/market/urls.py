@@ -19,3 +19,10 @@ urlpatterns = [
     path('admin/submissions/<int:pk>/approve/', views.AdminSubmissionApproveView.as_view(), name='admin-submission-approve'),
     path('admin/submissions/<int:pk>/reject/', views.AdminSubmissionRejectView.as_view(), name='admin-submission-reject'),
 ]
+
+# Import new views
+from .vendor_views import VendorListView, VendorLocationListView
+urlpatterns.extend([
+    path('vendors/', VendorListView.as_view(), name='vendors-list'),
+    path('vendors/locations/', VendorLocationListView.as_view(), name='vendors-locations-list'),
+])
