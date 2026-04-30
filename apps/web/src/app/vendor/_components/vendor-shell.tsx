@@ -16,11 +16,11 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 const NAV_LINKS = [
-  { href: "/admin/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/vendor/profile", label: "Profile", icon: CircleUserRound },
-  { href: "/admin/vendor/products", label: "Products", icon: Package },
-  { href: "/admin/vendor/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/vendor/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/vendor/profile", label: "Profile", icon: CircleUserRound },
+  { href: "/vendor/products", label: "Products", icon: Package },
+  { href: "/vendor/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/vendor/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 function isActiveLink(pathname: string, href: string): boolean {
