@@ -6,13 +6,13 @@ from .models import Item, PriceSubmission
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('id', 'name', 'category', 'unit')
+        fields = ('id', 'name', 'category', 'unit', 'description', 'image')
 
 
 class AdminItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('id', 'name', 'category', 'unit')
+        fields = ('id', 'name', 'category', 'unit', 'description', 'image')
         read_only_fields = ('id',)
 
     def validate_name(self, value):
@@ -36,7 +36,7 @@ class PriceSubmissionSerializer(serializers.ModelSerializer):
         model = PriceSubmission
         fields = (
             'id', 'item_id', 'price_value', 'market_location', 'city',
-            'date_observed', 'status', 'created_at', 'outlier_warning',
+            'date_observed', 'status', 'image', 'created_at', 'outlier_warning',
         )
         read_only_fields = ('id', 'status', 'created_at')
 
@@ -57,7 +57,7 @@ class AdminSubmissionListSerializer(serializers.ModelSerializer):
         model = PriceSubmission
         fields = (
             'id', 'item', 'item_name', 'price_value', 'market_location', 'city',
-            'date_observed', 'status', 'created_at', 'submitter_email',
+            'date_observed', 'status', 'image', 'created_at', 'submitter_email',
         )
 
 
@@ -70,6 +70,6 @@ class AdminSubmissionUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceSubmission
         fields = (
-            'item', 'price_value', 'market_location', 'city', 'date_observed', 'status',
+            'item', 'price_value', 'market_location', 'city', 'date_observed', 'status', 'image',
         )
 

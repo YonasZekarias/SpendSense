@@ -22,3 +22,8 @@ urlpatterns = [
     path('admin/users/<uuid:pk>/', views.AdminUserDetailView.as_view(), name='admin-user-detail'),
     path('admin/users/', views.AdminUserListView.as_view(), name='admin-user-list'),
 ]
+
+from .vendor_views import VendorRequestView
+urlpatterns.extend([
+    path('vendors/request/', VendorRequestView.as_view(), name='vendor-request'),
+])
