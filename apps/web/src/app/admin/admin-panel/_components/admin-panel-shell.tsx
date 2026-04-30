@@ -37,7 +37,7 @@ const NAV = [
   { key: "verification", label: "Vendor Verification", href: "/admin/admin-panel/vendor-verification", icon: <ShieldCheck size={18} /> },
   { key: "moderation", label: "Price Moderation", href: "/admin/admin-panel/price-moderation", icon: <Gavel size={18} /> },
   { key: "settings", label: "System Settings", href: "/admin/admin-panel/system-settings", icon: <Settings2 size={18} /> },
-  { key: "categories", label: "Categories", href: "/admin/admin-panel/categories", icon: <Shapes size={18} /> },
+  // { key: "categories", label: "Categories", href: "/admin/admin-panel/categories", icon: <Shapes size={18} /> },
   { key: "ml", label: "ML Monitoring", href: "/admin/admin-panel/ml-monitoring", icon: <Bot size={18} /> },
   { key: "audit", label: "Audit Logs", href: "/admin/admin-panel/audit-logs", icon: <ReceiptText size={18} /> },
 ] as const;
