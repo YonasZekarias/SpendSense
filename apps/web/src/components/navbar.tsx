@@ -8,7 +8,7 @@ import { Bell, Search } from "lucide-react";
 const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Budget", href: "/budget" },
-  { label: "Live Prices", href: "/live-prices" },
+  { label: "Live Prices", href: "/market/trends" },
   { label: "Expenses", href: "/expenses" },
 ];
 

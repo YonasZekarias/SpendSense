@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import {
   LayoutDashboard,
@@ -17,7 +17,13 @@ import {
   Store,
   X,
   CreditCard,
+  UserCircle,
+  FileDown,
+  CirclePlus,
+  Settings,
+  MessageSquare,
 } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
 
 const navItems = [
   {
@@ -36,8 +42,8 @@ const navItems = [
   {
     icon: TrendingUp,
     label: "Live Prices",
-    href: "/live-prices",
-    matchPaths: ["/live-prices"],
+    href: "/market/trends",
+    matchPaths: ["/market/trends", "/market", "/live-prices", "/price-trends"],
   },
   {
     icon: ReceiptText,
@@ -50,6 +56,36 @@ const navItems = [
     label: "Alerts",
     href: "/alerts",
     matchPaths: ["/alerts"],
+  },
+  {
+    icon: MessageSquare,
+    label: "Notifications",
+    href: "/notifications",
+    matchPaths: ["/notifications"],
+  },
+  {
+    icon: Settings,
+    label: "Settings",
+    href: "/settings",
+    matchPaths: ["/settings"],
+  },
+  {
+    icon: UserCircle,
+    label: "Profile",
+    href: "/profile",
+    matchPaths: ["/profile"],
+  },
+  {
+    icon: CirclePlus,
+    label: "Submit price",
+    href: "/market/submit",
+    matchPaths: ["/market/submit"],
+  },
+  {
+    icon: FileDown,
+    label: "Export reports",
+    href: "/reports",
+    matchPaths: ["/reports"],
   },
   {
     icon: Store,
@@ -96,6 +132,7 @@ interface SidebarProps {
 
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut } = useAuth();
 
   const isPathActive = useCallback(
@@ -182,13 +219,14 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
           </p>
         </div>
         
-        <button 
-          onClick={signOut} 
+        <Button 
+          variant={'ghost'}
+          onClick={()=>{signOut(); router.push("/login");}} 
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />
           <span className="text-sm font-medium">Log Out</span>
-        </button>
+        </Button>
       </div>
     </aside>
   );

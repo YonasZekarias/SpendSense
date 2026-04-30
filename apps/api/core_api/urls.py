@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
-from users.views import EmailTokenObtainPairView
+from users.views import EmailTokenObtainPairView, LogoutView
 from market.views import AdminMLRetrainView, AdminMLStatusView
 
 schema_view = get_schema_view(
@@ -30,6 +30,7 @@ urlpatterns = [
     # JWT auth (accepts email + password)
     path('api/auth/token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/logout/', LogoutView.as_view(), name='token_logout'),
     # API apps
     path('api/users/', include('users.urls')),
     path('api/admin/', include('users.admin_urls')),

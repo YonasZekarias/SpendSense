@@ -5,7 +5,9 @@ from . import views
 app_name = 'market'
 
 urlpatterns = [
-    path('items/', views.ItemsView.as_view(), name='items'),
+    path('categories/', views.MarketCategoriesView.as_view(), name='market-categories'),
+    path('items/<int:pk>/', views.ItemDetailView.as_view(), name='item-detail'),
+    path('items/', views.ItemsListView.as_view(), name='items'),
     path('admin/items/', views.AdminItemCreateView.as_view(), name='admin-item-create'),
     path('prices/submit/', views.SubmitPriceView.as_view(), name='price-submit'),
     path('prices/averages/', views.PriceAveragesView.as_view(), name='price-averages'),

@@ -7,8 +7,11 @@ import { ExpensesSummaryCards } from "@/components/finance/expenses/expenses-sum
 import { ExpensesFilters } from "@/components/finance/expenses/expenses-filters";
 import { ExpensesTable } from "@/components/finance/expenses/expenses-table";
 import { useExpenseListing } from "@/hooks/use-expense-listing";
+import { useAuth } from "@/providers/auth-provider";
+import { downloadFinanceExport } from "@/services/financeService";
 
-export function ExpenseListingPage() {
+export function ExpenseListingPage({ initial }: { initial?: { expenses?: import("@/types/finance").ExpenseRecord[]; budgets?: import("@/types/finance").BudgetRecord[] } }) {
+  const { accessToken } = useAuth();
   const {
     status,
     loading,
@@ -20,11 +23,14 @@ export function ExpenseListingPage() {
     expenses,
     setCategoryFilter,
     setSortBy,
-  } = useExpenseListing();
+  } = useExpenseListing(initial);
 
-  const exportCsv = () => {
-    if (typeof window !== "undefined") {
-      window.open("/api/finance/export/?format=csv", "_blank", "noopener,noreferrer");
+  const exportCsv = async () => {
+    if (!accessToken) return;
+    try {
+      await downloadFinanceExport(accessToken, "csv");
+    } catch {
+      // ignored; could toast
     }
   };
 

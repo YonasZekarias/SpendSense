@@ -1,14 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { createApiClient } from "@/lib/finance-utils";
 import { useAuth } from "@/providers/auth-provider";
+import { listBudgets, listExpenses } from "@/services/financeService";
 import { BudgetRecord, ExpenseRecord } from "@/types/finance";
-
-type ReportSummary = {
-  total_spent?: string | number;
-  top_category?: string;
-  top_category_amount?: string | number;
-};
 
 function toNumber(value: string | number | null | undefined) {
   const n = typeof value === "string" ? Number.parseFloat(value || "0") : Number(value ?? 0);
@@ -21,15 +15,19 @@ function thisMonthOf(dateString: string) {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-export function useExpenseListing() {
+type InitialExpenseData = {
+  expenses?: ExpenseRecord[];
+  budgets?: BudgetRecord[];
+};
+
+export function useExpenseListing(initial?: InitialExpenseData) {
   const { status, accessToken } = useAuth();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(initial ? false : true);
   const [error, setError] = useState<string | null>(null);
 
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [budgets, setBudgets] = useState<BudgetRecord[]>([]);
-  const [reportSummary, setReportSummary] = useState<ReportSummary | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>(initial?.expenses ?? []);
+  const [budgets, setBudgets] = useState<BudgetRecord[]>(initial?.budgets ?? []);
 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "amount_desc" | "amount_asc">("date_desc");
@@ -44,21 +42,10 @@ export function useExpenseListing() {
     setError(null);
 
     try {
-      const api = createApiClient(accessToken);
-      const [expensesRes, budgetsRes] = await Promise.all([
-        api.get<ExpenseRecord[]>("/api/finance/expenses/"),
-        api.get<BudgetRecord[]>("/api/finance/budgets/"),
-      ]);
+      const [expenseList, budgetList] = await Promise.all([listExpenses(accessToken), listBudgets(accessToken)]);
 
-      setExpenses(expensesRes.data);
-      setBudgets(budgetsRes.data);
-
-      try {
-        const reportsRes = await api.get<ReportSummary>("/api/finance/reports/");
-        setReportSummary(reportsRes.data);
-      } catch {
-        setReportSummary(null);
-      }
+      setExpenses(expenseList);
+      setBudgets(budgetList);
     } catch {
       setError("Unable to load expenses right now.");
     } finally {
@@ -67,10 +54,12 @@ export function useExpenseListing() {
   }, [accessToken]);
 
   useEffect(() => {
+    // If server-provided initial data exists, skip client fetch.
+    if (initial) return;
     if (status === "authenticated") {
       void fetchAll();
     }
-  }, [status, fetchAll]);
+  }, [status, fetchAll, initial]);
 
   const categories = useMemo(() => {
     const set = new Set(expenses.map((e) => e.category).filter(Boolean));
@@ -107,18 +96,15 @@ export function useExpenseListing() {
     const budgetLimit = currentBudget ? toNumber(currentBudget.total_limit) : 0;
     const usedPct = budgetLimit > 0 ? (monthlyTotalFromData / budgetLimit) * 100 : 0;
 
-    const reportedTotal = reportSummary?.total_spent !== undefined ? toNumber(reportSummary.total_spent) : monthlyTotalFromData;
-
     return {
-      monthlyTotal: reportedTotal,
-      topCategory: reportSummary?.top_category || topCategory,
-      topCategoryAmount:
-        reportSummary?.top_category_amount !== undefined ? toNumber(reportSummary.top_category_amount) : topAmount,
+      monthlyTotal: monthlyTotalFromData,
+      topCategory,
+      topCategoryAmount: topAmount,
       transactions: expenses.length,
       budgetLimit,
       usedPct: Number(usedPct.toFixed(2)),
     };
-  }, [expenses, budgets, reportSummary]);
+  }, [expenses, budgets]);
 
   return {
     status,

@@ -1,60 +1,45 @@
-"use client";
+import { BudgetPlannerPage as BudgetPlannerClient } from "@/components/finance/budget-planner-page";
+import { apiClient } from "@/lib/api";
+import type { BudgetRecord, BudgetSuggestion, BudgetSummary, ExpenseRecord } from "@/types/finance";
 
-import { Loader2 } from "lucide-react";
 
-import { BudgetCategoriesSection } from "@/components/finance/budget/budget-categories-section";
-import { BudgetErrorBanner } from "@/components/finance/budget/budget-error-banner";
-import { BudgetHeader } from "@/components/finance/budget/budget-header";
-import { BudgetMetricsRow } from "@/components/finance/budget/budget-metrics-row";
-import { BudgetSidebar } from "@/components/finance/budget/budget-sidebar";
-import { useBudgetPlanner } from "@/hooks/use-budget-planner";
+export default async function BudgetPage() {
+  try {
+    const [budgets, expenses] = await Promise.all([
+      apiClient({endpoint:"/api/finance/budgets/",method:"GET"}) as Promise<BudgetRecord[]>,
+      apiClient({endpoint:"/api/finance/expenses/",method:"GET"}) as Promise<ExpenseRecord[]>,
+    ]);
 
-export default function BudgetPage() {
-  const {
-    status,
-    loading,
-    saving,
-    error,
-    budget,
-    suggestedMonth,
-    draftCategories,
-    expenses,
-    totals,
-    spentByCategory,
-    handleLimitChange,
-    handleSave,
-  } = useBudgetPlanner();
+    const latest = (budgets && budgets.length > 0) ? budgets[0] : null;
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex min-h-80 items-center justify-center text-slate-500">
-        <Loader2 className="mr-2 size-4 animate-spin" />
-        Loading budget data...
-      </div>
-    );
+    let summary: BudgetSummary | null = null;
+    let suggested: { month: number; year: number } | null = null;
+
+    let suggestedCategories: any[] = [];
+    if (latest) {
+      summary = await apiClient({endpoint:`/api/finance/budgets/${latest.id}/summary/`,method:"GET"});
+      suggestedCategories = summary?.by_category ?? [];
+    } else {
+      const now = new Date();
+
+      const suggestion = await apiClient<BudgetSuggestion>({endpoint:`/api/finance/budgets/suggestions/?month=${now.getMonth() + 1}&year=${now.getFullYear()}`,method:"GET"});
+      suggested = { month: suggestion.month, year: suggestion.year };
+      suggestedCategories = suggestion?.categories ?? [];
+    }
+
+    const initial = {
+      budget: latest,
+      summary,
+      suggestedMonth: suggested,
+      draftCategories: suggestedCategories.map((c: any) => ({ category_name: c.category_name, limit_amount: c.limit_amount })),
+      expenses: (expenses ?? []).slice(0, 6),
+    };
+
+    return <BudgetPlannerClient initial={initial} />;
+  } catch (err) {
+    // On server errors, render the client with empty initial data so client can show proper UI/errors
+    // eslint-disable-next-line no-console
+    console.error("BudgetPage server fetch error:", err);
+    return <BudgetPlannerClient initial={{}} />;
   }
-
-  return (
-    <div className="space-y-8 pb-8">
-      <BudgetHeader
-        budget={budget}
-        suggestedMonth={suggestedMonth}
-        saving={saving}
-        canSave={!saving && draftCategories.length > 0}
-        onSave={handleSave}
-      />
-
-      <BudgetErrorBanner error={error} />
-      <BudgetMetricsRow totals={totals} />
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <BudgetCategoriesSection
-          draftCategories={draftCategories}
-          spentByCategory={spentByCategory}
-          onLimitChange={handleLimitChange}
-        />
-        <BudgetSidebar totals={totals} expenses={expenses} />
-      </div>
-    </div>
-  );
 }

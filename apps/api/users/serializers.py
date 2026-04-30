@@ -55,8 +55,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'city', 'household_size', 'income_bracket', 'onboarding_completed', 'created_at',
             'vendor_info',
         )
-        read_only_fields = ('id', 'email', 'role', 'created_at',
-            'notification_preferences')
+        read_only_fields = ('id', 'email', 'role', 'created_at')
+
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+    """Aligned with task doc: GET/PATCH /api/users/preferences/."""
+
+    class Meta:
+        model = User
+        fields = ('notification_preferences', 'onboarding_completed')
+        extra_kwargs = {'onboarding_completed': {'required': False}}
 
     def get_vendor_info(self, obj):
         if obj.role == 'vendor':

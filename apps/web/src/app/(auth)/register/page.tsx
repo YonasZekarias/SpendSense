@@ -50,7 +50,7 @@ export default function RegisterPage() {
 				role: values.role === "Vendor" ? "vendor" : "user",
 			});
 
-			router.push("/login");
+			router.push("/login?returnTo=/onboarding");
 		} catch (err) {
 			if (getAuthErrorStatus(err) === 400) {
 				setError("Please review your details and try again.");

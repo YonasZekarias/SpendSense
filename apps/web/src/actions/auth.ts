@@ -92,7 +92,7 @@ export async function forgotPassword(email: string): Promise<{ detail?: string }
   try {
     return await apiClient<{ detail?: string }>({
       method: "POST",
-      endpoint: "/api/users/forgot-password/",
+      endpoint: "/api/users/password/reset/request/",
       body: { email },
     });
   } catch (error) {
@@ -101,13 +101,14 @@ export async function forgotPassword(email: string): Promise<{ detail?: string }
 }
 
 export async function resetPassword(payload: {
+  uid: string;
   token: string;
   new_password: string;
 }): Promise<{ detail?: string }> {
   try {
     return await apiClient<{ detail?: string }>({
       method: "POST",
-      endpoint: "/api/users/reset-password/",
+      endpoint: "/api/users/password/reset/confirm/",
       body: payload,
     });
   } catch (error) {

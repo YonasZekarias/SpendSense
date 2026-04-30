@@ -1,6 +1,7 @@
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/providers/auth-provider";
+import { RealtimeProvider } from "@/providers/realtime-provider";
 import { TooltipProvider } from "@repo/ui/components/tooltip";
 import "@repo/ui/styles/globals.css";
 
@@ -17,7 +18,9 @@ export default function RootLayout({
       </head>
       <body>
         <TooltipProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <RealtimeProvider>{children}</RealtimeProvider>
+          </AuthProvider>
         </TooltipProvider>
       </body>
     </html>

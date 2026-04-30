@@ -44,7 +44,14 @@ export default function LoginPage() {
 		try {
 			const currentUser = await signIn({ email: values.email.trim(), password: values.password });
 			const fallbackRoute = getDefaultRouteForRole(currentUser.role);
-			const nextRoute = rawReturnTo ? returnTo : fallbackRoute;
+			let nextRoute = rawReturnTo ? returnTo : fallbackRoute;
+			if (
+				currentUser.role === "user" &&
+				!currentUser.onboarding_completed &&
+				!rawReturnTo
+			) {
+				nextRoute = "/onboarding";
+			}
 			router.replace(nextRoute);
 		} catch (err) {
 			if (getAuthErrorStatus(err) === 401) {

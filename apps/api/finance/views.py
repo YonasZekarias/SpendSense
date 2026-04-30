@@ -262,3 +262,71 @@ class FinanceExportView(APIView):
             f'trailer << /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF'.encode()
         )
         return out.getvalue()
+
+
+class BudgetHistoryView(APIView):
+    """GET /api/finance/budgets/history/ — per-month rollups (task distribution)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rows = []
+        for budget in (
+            Budget.objects.filter(user=request.user)
+            .prefetch_related("categories")
+            .order_by("-year", "-month")[:36]
+        ):
+            spent = (
+                Expense.objects.filter(
+                    user=request.user,
+                    date__year=budget.year,
+                    date__month=budget.month,
+                ).aggregate(s=Sum("amount"))["s"]
+                or Decimal("0")
+            )
+            limit = budget.total_limit
+            remaining = max(limit - spent, Decimal("0"))
+            pct = float((spent / limit * 100) if limit and limit > 0 else 0)
+            rows.append(
+                {
+                    "budget_id": budget.id,
+                    "month": budget.month,
+                    "year": budget.year,
+                    "total_limit": str(limit),
+                    "total_spent": str(spent),
+                    "remaining": str(remaining),
+                    "percent_used": round(pct, 2),
+                }
+            )
+        return Response(rows)
+
+
+class FinanceReportSummaryView(APIView):
+    """GET /api/finance/reports/ — JSON summary (complements /export/ file download)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        month = int(request.query_params.get("month", 0) or 0)
+        year = int(request.query_params.get("year", 0) or 0)
+        qs = Expense.objects.filter(user=request.user)
+        if month and year:
+            qs = qs.filter(date__month=month, date__year=year)
+        total = qs.aggregate(s=Sum("amount"))["s"] or Decimal("0")
+        by_cat: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+        for e in qs:
+            by_cat[e.category] += e.amount
+        top_name = None
+        top_amt = Decimal("0")
+        for name, amt in by_cat.items():
+            if amt > top_amt:
+                top_name, top_amt = name, amt
+        return Response(
+            {
+                "total_spent": str(total),
+                "top_category": top_name,
+                "top_category_amount": str(top_amt) if top_name else "0",
+                "by_category": {k: str(v) for k, v in by_cat.items()},
+                "transaction_count": qs.count(),
+            }
+        )

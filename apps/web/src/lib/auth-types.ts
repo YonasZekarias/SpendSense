@@ -59,5 +59,6 @@ export type UserProfile = {
   city?: string;
   household_size?: number;
   income_bracket?: string;
+  onboarding_completed?: boolean;
   created_at: string;
 };

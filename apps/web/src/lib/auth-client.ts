@@ -1,86 +1,64 @@
-import {
-  AUTH_COOKIE_NAME,
-  AUTH_REFRESH_COOKIE_NAME,
-} from "@/lib/auth-constants";
+/*
+  Deprecated client-side cookie helpers.
 
-const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 60;
-const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+  This project has moved to server-set HttpOnly cookies for authentication tokens.
+  Client-side code must NOT write or rely on document.cookie for access/refresh tokens.
 
-function getCookieValue(cookieName: string): string | null {
-  const tokenCookie = document.cookie
-    .split("; ")
-    .find((item) => item.startsWith(`${cookieName}=`));
+  Use the Next API routes under `app/api/auth/`:
+    - POST `/api/auth/login`  -> server sets HttpOnly cookies
+    - POST `/api/auth/refresh`
+    - GET  `/api/auth/me`
+    - POST `/api/auth/logout`
 
-  if (!tokenCookie) {
-    return null;
-  }
-
-  return decodeURIComponent(tokenCookie.split("=")[1] || "");
-}
-
-function setCookie(name: string, value: string, maxAge: number): void {
-  const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secureFlag}`;
-}
-
-function clearCookie(name: string): void {
-  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax`;
-}
+  These stubs intentionally avoid writing cookies and will warn if used for reads
+  and throw for writes so accidental client-side writes are prevented.
+*/
 
 export function getAccessTokenFromCookie(): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  return getCookieValue(AUTH_COOKIE_NAME);
+  if (typeof document === "undefined") return null;
+  // HttpOnly cookies are not readable from JS. Return null and let callers use server routes.
+  console.warn("getAccessTokenFromCookie(): tokens are now HttpOnly; call /api/auth/me instead.");
+  return null;
 }
 
-export function setAccessTokenCookie(token: string): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  setCookie(AUTH_COOKIE_NAME, token, ACCESS_TOKEN_MAX_AGE_SECONDS);
+export function setAccessTokenCookie(_token: string): void {
+  throw new Error(
+    "setAccessTokenCookie() is deprecated. Use POST /api/auth/login which sets HttpOnly cookies on the server."
+  );
 }
 
 export function clearAccessTokenCookie(): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  clearCookie(AUTH_COOKIE_NAME);
+  throw new Error(
+    "clearAccessTokenCookie() is deprecated. Use POST /api/auth/logout which clears HttpOnly cookies on the server."
+  );
 }
 
 export function getRefreshTokenFromCookie(): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  return getCookieValue(AUTH_REFRESH_COOKIE_NAME);
+  if (typeof document === "undefined") return null;
+  console.warn("getRefreshTokenFromCookie(): tokens are now HttpOnly; call /api/auth/refresh instead.");
+  return null;
 }
 
-export function setRefreshTokenCookie(token: string): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  setCookie(AUTH_REFRESH_COOKIE_NAME, token, REFRESH_TOKEN_MAX_AGE_SECONDS);
+export function setRefreshTokenCookie(_token: string): void {
+  throw new Error(
+    "setRefreshTokenCookie() is deprecated. Use POST /api/auth/login which sets HttpOnly cookies on the server."
+  );
 }
 
 export function clearRefreshTokenCookie(): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  clearCookie(AUTH_REFRESH_COOKIE_NAME);
+  throw new Error(
+    "clearRefreshTokenCookie() is deprecated. Use POST /api/auth/logout which clears HttpOnly cookies on the server."
+  );
 }
 
-export function setTokenPairCookies(tokenPair: { access: string; refresh: string }): void {
-  setAccessTokenCookie(tokenPair.access);
-  setRefreshTokenCookie(tokenPair.refresh);
+export function setTokenPairCookies(_tokenPair: { access: string; refresh: string }): void {
+  throw new Error(
+    "setTokenPairCookies() is deprecated. Use POST /api/auth/login which sets HttpOnly cookies on the server."
+  );
 }
 
 export function clearAuthCookies(): void {
-  clearAccessTokenCookie();
-  clearRefreshTokenCookie();
+  throw new Error(
+    "clearAuthCookies() is deprecated. Use POST /api/auth/logout which clears HttpOnly cookies on the server."
+  );
 }

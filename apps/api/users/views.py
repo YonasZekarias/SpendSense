@@ -24,6 +24,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
+    UserPreferencesSerializer,
     UserProfileSerializer,
 )
 
@@ -162,6 +163,31 @@ class MeView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class UserPreferencesView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/users/preferences/ — notification and onboarding flags."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserPreferencesSerializer
+
+    def get_object(self):
+        return self.request.user
+
+
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/ — client should discard access/refresh tokens.
+    (Server-side invalidation would require a token blacklist; not enabled here.)
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        return Response(
+            {'detail': 'Tokens should be removed on the client. Session not stored server-side.'},
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminUserListView(generics.ListAPIView):

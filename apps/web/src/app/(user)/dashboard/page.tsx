@@ -1,25 +1,75 @@
-"use client";
-
-import { useAuth } from "@/providers/auth-provider";
-import Link from "next/link";
+import { markNotificationRead } from "@/actions/notifications";
+import { apiClient } from "@/lib/api";
 import { Button } from "@repo/ui/components/button";
-import {
-  Bell,
-  CircleHelp,
-  LayoutDashboard,
-  PieChart,
-  Settings,
-  ShoppingBasket,
-  TrendingUp,
-} from "lucide-react";
+import { Bell, ShoppingBasket, TrendingUp } from "lucide-react";
+import Link from "next/link";
 
-export default function UsersPage() {
-  const { status, user, signOut } = useAuth();
+export default async function UsersPage() {
+  // Fetch budgets, expenses and notifications server-side (send access token from cookie)
+  const [budgets, expenses, notifications] = (await Promise.all([
+    apiClient({ method: "GET", endpoint: "/api/finance/budgets/"}).catch(() => []),
+    apiClient({ method: "GET", endpoint: "/api/finance/expenses/"}).catch(() => []),
+    apiClient({ method: "GET", endpoint: "/api/users/me/notifications/"}).catch(() => []),
+  ])) as [any[], any[], any[]];
 
-  if (status === "loading") {
-    return <main className="p-6">Loading your profile...</main>;
+  // Compute summary similar to client hook
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dayOfMonth = Math.max(1, now.getDate());
+  const monthExpenses = (Array.isArray(expenses) ? expenses : []).filter((e: any) => {
+    const d = new Date(e.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const monthlySpent = monthExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const dailyAverage = monthlySpent / dayOfMonth;
+
+  const current = (Array.isArray(budgets) ? budgets.find((b: any) => b.month === now.getMonth() + 1 && b.year === now.getFullYear()) : undefined) || (Array.isArray(budgets) ? budgets[0] : null) || null;
+
+  let summary: any = null;
+  if (current) {
+    try {
+      const s = await apiClient<{ total_limit?: number; total_spent?: number; remaining?: number; percent_total_used?: number }>({ method: "GET", endpoint: `/api/finance/budgets/${current.id}/summary/`} );
+      const limit = Number(s?.total_limit || 0);
+      const spent = Number(s?.total_spent || 0);
+      const rem = Number(s?.remaining || 0);
+      summary = {
+        monthlySpent: spent,
+        budgetLimit: limit,
+        remaining: rem,
+        percentUsed: Number(s.percent_total_used) || (limit > 0 ? (spent / limit) * 100 : 0),
+      };
+    } catch {
+      const limit = Number(current.total_limit || 0);
+      const rem = Math.max(0, limit - monthlySpent);
+      summary = {
+        monthlySpent,
+        budgetLimit: limit,
+        remaining: rem,
+        percentUsed: limit > 0 ? (monthlySpent / limit) * 100 : 0,
+      };
+    }
+  } else {
+    summary = { monthlySpent, budgetLimit: 0, remaining: 0, percentUsed: 0 };
   }
 
+  function formatEtb(n: number) {
+    return n.toLocaleString("en-ET", { maximumFractionDigits: 0, minimumFractionDigits: 0 }) + " ETB";
+  }
+
+  const formatted = {
+    monthly: formatEtb(summary.monthlySpent),
+    saved: formatEtb(Math.max(0, summary.remaining)),
+    dailyAvg: formatEtb(dailyAverage),
+    spentLine: formatEtb(summary.monthlySpent) + " Spent",
+    remainLine: formatEtb(Math.max(0, summary.remaining)) + " left",
+    barPct: Math.min(100, Math.max(0, Math.round(summary.percentUsed))),
+    unreadCount: (Array.isArray(notifications) ? notifications : []).filter((n: any) => !n.is_read).length,
+  };
+
+  const user = (await apiClient({ method: "GET", endpoint: "/api/users/me/"}).catch(() => null)) as any;
+
+  // Render server-side; use form actions to invoke server action for marking read
   return (
     <div className="min-h-screen ">
 
@@ -43,28 +93,29 @@ export default function UsersPage() {
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
                 <p className="text-sm font-medium text-muted-foreground">Total Monthly Spending</p>
                 <div className="mt-2 flex items-end justify-between">
-                  <p className="text-2xl font-bold tracking-tight">4,500 ETB</p>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                    ↑ 12%
-                  </span>
+                  <p className="text-2xl font-bold tracking-tight">{formatted.monthly}</p>
+                  {summary && summary.budgetLimit > 0 && (
+                    <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                      of {summary.budgetLimit.toLocaleString("en-ET")} ETB budget
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-                <p className="text-sm font-medium text-muted-foreground">Estimated Savings</p>
+                <p className="text-sm font-medium text-muted-foreground">Remaining in budget</p>
                 <div className="mt-2 flex items-end justify-between">
-                  <p className="text-2xl font-bold tracking-tight">1,200 ETB</p>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                    ↑ 5%
-                  </span>
+                  <p className="text-2xl font-bold tracking-tight">{formatted.saved}</p>
+                  {summary && summary.budgetLimit === 0 && (
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">
+                      Set a budget
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
-                <p className="text-sm font-medium text-muted-foreground">Daily Average</p>
+                <p className="text-sm font-medium text-muted-foreground">Daily average (this month)</p>
                 <div className="mt-2 flex items-end justify-between">
-                  <p className="text-2xl font-bold tracking-tight">150 ETB</p>
-                  <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">
-                    ↓ 2%
-                  </span>
+                  <p className="text-2xl font-bold tracking-tight">{formatted.dailyAvg}</p>
                 </div>
               </div>
             </section>
@@ -77,14 +128,19 @@ export default function UsersPage() {
                       <h3 className="text-base font-bold">Monthly Budget Usage</h3>
                       <p className="text-sm text-muted-foreground">Food, Housing &amp; Transport</p>
                     </div>
-                    <span className="text-lg font-bold">65%</span>
+                    <span className="text-lg font-bold">
+                      {summary ? `${formatted.barPct}%` : "—"}
+                    </span>
                   </div>
                   <div className="mt-4 h-3 w-full rounded-full bg-muted">
-                    <div className="h-3 w-[65%] rounded-full bg-primary" />
+                    <div
+                      className="h-3 rounded-full bg-primary transition-all"
+                      style={{ width: `${summary ? formatted.barPct : 0}%` }}
+                    />
                   </div>
                   <div className="mt-3 flex justify-between text-sm">
-                    <span className="text-muted-foreground">4,500 ETB Spent</span>
-                    <span className="font-semibold">8,000 ETB Remaining</span>
+                    <span className="text-muted-foreground">{formatted.spentLine}</span>
+                    <span className="font-semibold">{formatted.remainLine}</span>
                   </div>
                 </div>
 
@@ -134,52 +190,56 @@ export default function UsersPage() {
 
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
                 <div className="mb-6 flex items-center justify-between">
-                  <h3 className="text-base font-bold">Real-time Alerts</h3>
-                  <button className="text-sm font-medium text-primary hover:underline" type="button">
-                    Mark all read
-                  </button>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="flex gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
-                      <TrendingUp className="size-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">Price Hike: Teff</p>
-                      <p className="text-sm text-muted-foreground">Teff prices have risen by 5% in Addis Ababa markets today.</p>
-                      <p className="mt-1 text-xs text-muted-foreground">Just now</p>
-                    </div>
-                    <span className="mt-2 size-2 rounded-full bg-primary" />
+                    <h3 className="text-base font-bold">Notifications</h3>
+                    <Button variant="link" asChild className="h-auto p-0 text-sm">
+                      <Link href="/notifications">View all{formatted.unreadCount ? ` (${formatted.unreadCount} new)` : ""}</Link>
+                    </Button>
                   </div>
 
-                  <hr className="border-border/60" />
-
-                  <div className="flex gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <ShoppingBasket className="size-5" />
+                  {(notifications || [])?.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No notifications yet. Spending and market alerts will appear here.</p>
+                  ) : (
+                    <div className="space-y-5">
+                      {(notifications || [])?.map((n: any, i: number) => (
+                        <div key={n.id}>
+                          {i > 0 && <hr className="mb-5 border-border/60" />}
+                          <form action={markNotificationRead} className="w-full">
+                            <button name="id" value={String(n.id)} type="submit" className="w-full text-left">
+                              <div className="flex gap-4">
+                                <div
+                                  className={`flex size-10 items-center justify-center rounded-full ${
+                                    n.type?.includes("price") || n.type?.includes("market")
+                                      ? "bg-rose-50 text-rose-600"
+                                      : n.type?.includes("budget")
+                                        ? "bg-primary/10 text-primary"
+                                        : "bg-emerald-50 text-emerald-600"
+                                  }`}
+                                >
+                                  {n.type?.includes("price") || n.type?.includes("market") ? (
+                                    <TrendingUp className="size-5" />
+                                  ) : n.type?.includes("budget") ? (
+                                    <Bell className="size-5" />
+                                  ) : (
+                                    <ShoppingBasket className="size-5" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold capitalize">
+                                    {n.type?.replaceAll("_", " ") ?? "Update"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">{n.message}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {n.created_at ? new Date(n.created_at).toLocaleString() : ""}
+                                  </p>
+                                </div>
+                                {!n.is_read && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-hidden />}
+                              </div>
+                            </button>
+                          </form>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">Sale Detected: Cooking Oil</p>
-                      <p className="text-sm text-muted-foreground">5L Cooking Oil dropped to 850 ETB at Shoa Supermarket.</p>
-                      <p className="mt-1 text-xs text-muted-foreground">2 hours ago</p>
-                    </div>
-                    <span className="mt-2 size-2 rounded-full bg-primary" />
-                  </div>
-
-                  <hr className="border-border/60" />
-
-                  <div className="flex gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Bell className="size-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">Budget Limit Approaching</p>
-                      <p className="text-sm text-muted-foreground">You have used 65% of your monthly budget.</p>
-                      <p className="mt-1 text-xs text-muted-foreground">Yesterday</p>
-                    </div>
-                  </div>
-                </div>
+                  )}
               </div>
             </section>
           </div>

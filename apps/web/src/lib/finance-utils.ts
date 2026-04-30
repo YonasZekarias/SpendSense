@@ -1,11 +1,7 @@
-import axios from "axios";
+import { createApiClient as createBase } from "@/services/apiClient";
 
-export const createApiClient = (token: string) => {
-  return axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
+/** Authenticated API client; uses same base URL as `services/apiClient`. */
+export const createApiClient = (token: string) => createBase(() => token);
 
 export function formatMoney(value: string | number) {
   const amount = typeof value === "string" ? Number.parseFloat(value || "0") : value;
