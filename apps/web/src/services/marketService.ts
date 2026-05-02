@@ -49,8 +49,8 @@ export async function getPriceAverages(params?: {
 
 export async function getItems(params?: { category?: string; search?: string }): Promise<MarketItem[]> {
   const api = createApiClient();
-  const { data } = await api.get<MarketItem[]>("/api/market/items/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/items/", { params });
+  return data.results ? data.results : data;
 }
 
 export async function getItem(itemId: number): Promise<MarketItem> {

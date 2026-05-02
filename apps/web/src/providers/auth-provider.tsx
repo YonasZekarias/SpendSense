@@ -53,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(payload as UserProfile);
+      if (payload.accessToken) {
+        setAccessToken(payload.accessToken);
+      }
       setStatus("authenticated");
       return payload as UserProfile;
     } catch (err) {
@@ -148,6 +151,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const meRes = await fetch(`/api/auth/me`);
       if (!meRes.ok) throw new Error("Failed to fetch current user after login");
       const me = await meRes.json();
+      if (me.accessToken) {
+        setAccessToken(me.accessToken);
+      }
       await hydrateCurrentUser(me);
       return me as UserProfile;
     },
