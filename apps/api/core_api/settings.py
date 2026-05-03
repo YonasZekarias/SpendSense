@@ -208,6 +208,7 @@ SIMPLE_JWT = {
 
 # CORS - allow frontend origin(s)
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Week 3 — password reset emails link to the Next.js app (forgot / reset password pages)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')

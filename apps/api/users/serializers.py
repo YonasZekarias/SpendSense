@@ -57,15 +57,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'email', 'role', 'created_at')
 
-
-class UserPreferencesSerializer(serializers.ModelSerializer):
-    """Aligned with task doc: GET/PATCH /api/users/preferences/."""
-
-    class Meta:
-        model = User
-        fields = ('notification_preferences', 'onboarding_completed')
-        extra_kwargs = {'onboarding_completed': {'required': False}}
-
     def get_vendor_info(self, obj):
         if obj.role == 'vendor':
             vendor = obj.vendor_set.first()
@@ -84,6 +75,15 @@ class UserPreferencesSerializer(serializers.ModelSerializer):
                     'image': vendor.image.url if vendor.image else None,
                 }
         return None
+
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+    """Aligned with task doc: GET/PATCH /api/users/preferences/."""
+
+    class Meta:
+        model = User
+        fields = ('notification_preferences', 'onboarding_completed')
+        extra_kwargs = {'onboarding_completed': {'required': False}}
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
