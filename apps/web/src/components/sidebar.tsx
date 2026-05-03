@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
@@ -33,31 +32,22 @@ interface SidebarProps {
 export function Sidebar({ mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuth();
-
-  const isPathActive = useCallback(
-    (currentPath: string, candidatePaths: string[], exact?: boolean) => {
-      return candidatePaths.some((path) => {
-        if (exact) return currentPath === path;
-        return currentPath === path || currentPath.startsWith(`${path}/`);
-      });
-    },
-    []
-  );
+  const { signOut } = useAuth();
 
   return (
     <aside
-      className={`${mobile
+      className={`${
+        mobile
           ? "fixed inset-0 z-50 w-64"
           : "hidden md:flex w-64 flex-shrink-0"
-        } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-full overflow-y-auto transition-colors duration-200`}
+      } flex flex-col justify-between bg-white dark:bg-[#1a202c] border-r border-[#dbdfe6] dark:border-gray-800 h-full overflow-y-auto transition-colors duration-200`}
     >
       <div className="p-4 flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3 px-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              alt="User profile"
+              alt="SpendSense logo"
               className="rounded-full h-10 w-10 shadow-sm object-cover"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvlFjpv1n70cYg_5hNUynZpOFc2BvcSEPIDy9pK-mi6bECZiklitRacUev5Jdq4V4owVs4-5tvh8gJ_z04hcoHmmtHljVDhpsDe7o78R5oaUlz6X7303q5wJFUPsIAGEJUDMGVMjGbLGJi4eplIAfPRHOk8BIjJv0ebWs-JJsj0n6Yn8YbYfIvJKnSATy6A7flVSliWpfkFvLvUS6RtHnNICa_u8K-a2yClzOFeTtfdgCv19U3r0R6dQR0BLgC8pnM2NEsBbwlVXQ"
             />
@@ -82,28 +72,31 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
 
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.label}
                 href={item.href}
                 onClick={mobile ? onClose : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${
+                  isActive
                     ? "bg-[#f0f2f4] dark:bg-gray-700/50"
                     : "hover:bg-[#f0f2f4] dark:hover:bg-gray-800"
-                  }`}
+                }`}
               >
                 <item.icon
-                  className={`size-5 ${isActive
+                  className={`size-5 ${
+                    isActive
                       ? "text-[#111318] dark:text-white"
                       : "text-[#616f89] dark:text-gray-400 group-hover:text-[#111318] dark:group-hover:text-white"
-                    }`}
+                  }`}
                 />
                 <p
-                  className={`text-sm font-medium leading-normal ${isActive
+                  className={`text-sm font-medium leading-normal ${
+                    isActive
                       ? "text-[#111318] dark:text-white"
                       : "text-[#616f89] dark:text-gray-400 group-hover:text-[#111318] dark:group-hover:text-white"
-                    }`}
+                  }`}
                 >
                   {item.label}
                 </p>
@@ -115,8 +108,11 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
 
       <div className="p-4 border-t border-[#dbdfe6] dark:border-gray-800">
         <Button
-          variant={'ghost'}
-          onClick={() => { signOut(); router.push("/login"); }}
+          variant="ghost"
+          onClick={() => {
+            signOut();
+            router.push("/login");
+          }}
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />

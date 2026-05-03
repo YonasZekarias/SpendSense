@@ -40,7 +40,8 @@ export default function SubmitPricePage() {
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<SubmitSchema>({
-    resolver: zodResolver(submitSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(submitSchema as any),
     defaultValues: {
       item_id: 0,
       price_value: 0,

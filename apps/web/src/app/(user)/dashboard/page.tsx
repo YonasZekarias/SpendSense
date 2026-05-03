@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@repo/ui/components/button";
 import {
@@ -59,7 +60,6 @@ export default async function UsersPage() {
                 <p className="truncate text-xs text-muted-foreground">Ethiopia</p>
               </div>
             </div>
-
             <nav className="flex flex-col gap-1 text-sm">
               <Link className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2.5 font-medium" href="/dashboard">
                 <LayoutDashboard className="size-4" />
@@ -79,9 +79,8 @@ export default async function UsersPage() {
               </Link>
             </nav>
           </div>
-
           <div className="space-y-3 border-t border-border/60 pt-4">
-            <Button variant="outline" onClick={signOut} className="w-full justify-start">
+            <Button variant="outline" onClick={() => { signOut(); router.push("/login"); }} className="w-full justify-start">
               Log Out
             </Button>
             <p className="text-xs text-muted-foreground">Role: {user?.role ?? "user"}</p>
@@ -107,27 +106,21 @@ export default async function UsersPage() {
                 <p className="text-sm font-medium text-muted-foreground">Total Monthly Spending</p>
                 <div className="mt-2 flex items-end justify-between">
                   <p className="text-2xl font-bold tracking-tight">4,500 ETB</p>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                    ↑ 12%
-                  </span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">↑ 12%</span>
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
                 <p className="text-sm font-medium text-muted-foreground">Estimated Savings</p>
                 <div className="mt-2 flex items-end justify-between">
                   <p className="text-2xl font-bold tracking-tight">1,200 ETB</p>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                    ↑ 5%
-                  </span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">↑ 5%</span>
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
                 <p className="text-sm font-medium text-muted-foreground">Daily Average</p>
                 <div className="mt-2 flex items-end justify-between">
                   <p className="text-2xl font-bold tracking-tight">150 ETB</p>
-                  <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">
-                    ↓ 2%
-                  </span>
+                  <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700">↓ 2%</span>
                 </div>
               </div>
             </section>
@@ -163,7 +156,6 @@ export default async function UsersPage() {
                       <option>Last Year</option>
                     </select>
                   </div>
-
                   <div className="mt-6 min-h-56">
                     <svg className="h-56 w-full" viewBox="0 0 478 150" preserveAspectRatio="none">
                       <defs>
@@ -172,24 +164,11 @@ export default async function UsersPage() {
                           <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
                         </linearGradient>
                       </defs>
-                      <path
-                        d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25 V 150 H 0 Z"
-                        fill="url(#chartGradient)"
-                      />
-                      <path
-                        d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25"
-                        fill="none"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25 V 150 H 0 Z" fill="url(#chartGradient)" />
+                      <path d="M0 109 C18 109 18 21 36 21 C54 21 54 41 72 41 C90 41 90 93 108 93 C127 93 127 33 145 33 C163 33 163 101 181 101 C199 101 199 61 217 61 C236 61 236 45 254 45 C272 45 272 121 290 121 C308 121 308 149 326 149 C344 149 344 1 363 1 C381 1 381 81 399 81 C417 81 417 129 435 129 C453 129 453 25 472 25" fill="none" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     <div className="mt-4 flex justify-between text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      <span>Week 1</span>
-                      <span>Week 2</span>
-                      <span>Week 3</span>
-                      <span>Week 4</span>
+                      <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
                     </div>
                   </div>
                 </div>
@@ -198,11 +177,8 @@ export default async function UsersPage() {
               <div className="rounded-xl border border-border/60 bg-background p-6 shadow-sm">
                 <div className="mb-6 flex items-center justify-between">
                   <h3 className="text-base font-bold">Real-time Alerts</h3>
-                  <button className="text-sm font-medium text-primary hover:underline" type="button">
-                    Mark all read
-                  </button>
+                  <button className="text-sm font-medium text-primary hover:underline" type="button">Mark all read</button>
                 </div>
-
                 <div className="space-y-5">
                   <div className="flex gap-4">
                     <div className="flex size-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
@@ -215,9 +191,7 @@ export default async function UsersPage() {
                     </div>
                     <span className="mt-2 size-2 rounded-full bg-primary" />
                   </div>
-
                   <hr className="border-border/60" />
-
                   <div className="flex gap-4">
                     <div className="flex size-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                       <ShoppingBasket className="size-5" />
@@ -229,9 +203,7 @@ export default async function UsersPage() {
                     </div>
                     <span className="mt-2 size-2 rounded-full bg-primary" />
                   </div>
-
                   <hr className="border-border/60" />
-
                   <div className="flex gap-4">
                     <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <Bell className="size-5" />

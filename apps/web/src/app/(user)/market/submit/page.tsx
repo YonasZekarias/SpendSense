@@ -14,6 +14,8 @@ import {
   Target,
   Trophy
 } from "lucide-react";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/card";
@@ -62,7 +64,9 @@ export default function SubmitMarketPricePage() {
       try {
         setItems(await getItems());
       } catch {
-        setError("Unable to load market items. Please make sure the API is running.");
+        setMsg({ type: 'error', text: "Unable to load market items. Please make sure the API is running." });
+      } finally {
+        setLoading(false);
       }
     };
     void boot();
