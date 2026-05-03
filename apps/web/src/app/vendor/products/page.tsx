@@ -1,61 +1,61 @@
-"use client";
-
 import {
-    Bell,
-    ChevronLeft,
-    ChevronRight,
-    Filter,
-    Lightbulb,
-    Pencil,
-    Plus,
-    Search,
-    Trash2
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Lightbulb,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { formatMoney, getStoredVendorId, getVendorProducts, VendorProduct } from "../_lib/vendor-api";
+import { apiClient, ApiError } from "@/lib/api";
+import { formatMoney, VendorProduct } from "../_lib/vendor-api";
 
-export default function VendorProductsPage() {
-  const [vendorId, setVendorId] = useState("");
-  const [products, setProducts] = useState<VendorProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default async function VendorProductsPage() {
+  let vendorId = "";
+  let products: VendorProduct[] = [];
+  let loading = true;
+  let error = "";
 
-  useEffect(() => {
-    const id = getStoredVendorId();
-    setVendorId(id);
+  try {
+    // Get current user profile server-side to determine vendor id
+    const profile = await apiClient<Record<string, unknown>>({ method: "GET", endpoint: "/api/users/me/" });
 
-    async function loadProducts() {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
+    // Try multiple common locations for vendor id
+    // profile.vendor_info?.vendor_id || profile.vendor_id || profile.vendor?.id
+    const p = profile as any;
+    vendorId = p?.vendor_info?.vendor_id || p?.vendor_id || (p?.vendor && (p.vendor.id || p.vendor.vendor_id)) || "";
 
-      setLoading(true);
-      setError("");
-
-      try {
-        const data = await getVendorProducts(id);
-        setProducts(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load products");
-      } finally {
-        setLoading(false);
+    if (vendorId) {
+      const data = await apiClient<unknown>({ method: "GET", endpoint: `/api/ecommerce/vendors/${vendorId}/listings/` });
+      if (Array.isArray(data)) {
+        products = data as VendorProduct[];
+      } else if (typeof data === "object" && data && Array.isArray((data as any).results)) {
+        products = (data as any).results as VendorProduct[];
+      } else {
+        products = [];
       }
     }
-
-    void loadProducts();
-  }, []);
+  } catch (err: unknown) {
+    loading = false;
+    if (err instanceof ApiError) {
+      error = err.message;
+    } else if (err instanceof Error) {
+      error = err.message;
+    } else {
+      error = "Failed to load products";
+    }
+  } finally {
+    loading = false;
+  }
 
   const totalListings = products.length;
-  const lowStock = useMemo(() => Math.min(products.length, 18), [products.length]);
-  const outOfStock = useMemo(() => products.filter((item) => item.availability === false).length, [products]);
-  const inventoryValue = useMemo(
-    () => products.reduce((sum, item) => sum + Number(item.price || 0), 0),
-    [products],
-  );
-
-  const tableRows = useMemo(() => products.slice(0, 8), [products]);
+  const lowStock = Math.min(products.length, 18);
+  const outOfStock = products.filter((item) => item.availability === false).length;
+  const inventoryValue = products.reduce((sum, item) => sum + Number(item.price || 0), 0);
+  const tableRows = products.slice(0, 8);
 
   return (
     <main className="min-h-screen p-4 pt-24 md:ml-64 md:p-8 md:pt-24">

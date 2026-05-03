@@ -1,55 +1,40 @@
-"use client";
-
-import {
-		Bell,
-		ChevronRight,
-		Search
-} from "lucide-react";
+import { Bell, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { formatMoney, getVendorOrders, VendorOrder } from "../_lib/vendor-api";
+import { apiClient, ApiError } from "@/lib/api";
+import { formatMoney } from "../_lib/vendor-api";
+import type { VendorOrder } from "../_lib/vendor-api";
 
-export default function VendorOrdersPage() {
-	const [orders, setOrders] = useState<VendorOrder[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState("");
+export default async function VendorOrdersPage() {
+	let orders: VendorOrder[] = [];
+	let error = "";
+	let loading = false;
 
-	const deliveredCount = useMemo(
-		() => orders.filter((order) => statusHas(normalizeStatus(order.status), "deliver")).length,
-		[orders],
-	);
-
-	const pendingCount = useMemo(
-		() =>
-			orders.filter((order) => {
-				const status = normalizeStatus(order.status);
-				return statusHas(status, "pending") || statusHas(status, "processing");
-			}).length,
-		[orders],
-	);
-
-	const totalAmount = useMemo(
-		() => orders.reduce((sum, order) => sum + Number(order.amount || 0), 0),
-		[orders],
-	);
-
-	useEffect(() => {
-		async function loadOrders() {
-			setLoading(true);
-			setError("");
-
-			try {
-				const data = await getVendorOrders();
-				setOrders(data);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to load orders");
-			} finally {
-				setLoading(false);
-			}
+	try {
+		const data = await apiClient<unknown>({ method: "GET", endpoint: "/api/ecommerce/purchases/" });
+		if (Array.isArray(data)) {
+			orders = data as VendorOrder[];
+		} else if (data && typeof data === "object" && Array.isArray((data as any).results)) {
+			orders = (data as any).results as VendorOrder[];
+		} else {
+			orders = [];
 		}
+	} catch (err: unknown) {
+		if (err instanceof ApiError) {
+			error = err.message;
+		} else if (err instanceof Error) {
+			error = err.message;
+		} else {
+			error = "Failed to load orders";
+		}
+		console.error("Failed to load vendor orders:", err);
+	}
 
-		void loadOrders();
-	}, []);
+	const deliveredCount = orders.filter((order) => statusHas(normalizeStatus(order.status), "deliver")).length;
+	const pendingCount = orders.filter((order) => {
+		const status = normalizeStatus(order.status);
+		return statusHas(status, "pending") || statusHas(status, "processing");
+	}).length;
+	const totalAmount = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
 
 	return (
 		<main className="min-h-[calc(100vh-4rem)] p-4 md:ml-64 md:p-8">

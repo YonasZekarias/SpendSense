@@ -40,6 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("unauthenticated");
     if (scheduleRef.current) window.clearTimeout(scheduleRef.current);
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("spendsense_vendor_id");
+      }
+    } catch {}
   }, []);
 
   const hydrateCurrentUser = useCallback(async (maybePayload?: any): Promise<UserProfile | null> => {
@@ -53,6 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(payload as UserProfile);
+      try {
+        if (typeof window !== "undefined") {
+          const role = (payload as any).role;
+          const vendorId = (payload as any)?.vendor_info?.vendor_id;
+          if (role === "vendor" && vendorId) {
+            window.localStorage.setItem("spendsense_vendor_id", String(vendorId));
+          } else {
+            window.localStorage.removeItem("spendsense_vendor_id");
+          }
+        }
+      } catch {}
       setStatus("authenticated");
       return payload as UserProfile;
     } catch (err) {

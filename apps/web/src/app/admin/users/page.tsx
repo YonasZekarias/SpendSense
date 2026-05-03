@@ -77,7 +77,7 @@ export default async function AdminPanelUsersPage() {
 												endpoint: `/api/admin/users/${id}/`,
 												body: { suspended: true },
 											});
-											revalidatePath("/admin/admin-panel/users");
+											revalidatePath("/admin/users");
 										} catch (e) {
 											console.error("Failed to suspend user", e);
 										}

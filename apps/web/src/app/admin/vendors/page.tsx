@@ -19,13 +19,17 @@ export default async function AdminPanelVendorsPage() {
   let vendors: Vendor[] = [];
 
   try {
-    const raw = await apiClient<Vendor[]>({
-      method: "GET",
-      endpoint: "/api/ecommerce/admin/vendors/",
-      next: { revalidate: 300, tags: ["ecommerce:vendors"] },
-    });
+    const raw = await apiClient<{
+      count: number,
+      next: string,
+      previous: number|null,
+      results:Vendor[]}>({
+          method: "GET",
+          endpoint: "/api/ecommerce/admin/vendors/",
+          next: { revalidate: 300, tags: ["ecommerce:vendors"] },
+        });
 
-		vendors = raw ?? [];
+		vendors = raw.results ?? [];
   } catch (err) {
     if (err instanceof ApiError) {
       console.error("API error fetching vendors:", err.message, err.payload);
