@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
@@ -113,22 +114,15 @@ export function Sidebar({ mobile, onClose }: SidebarProps) {
       </div>
 
       <div className="p-4 border-t border-[#dbdfe6] dark:border-gray-800">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f4] dark:hover:bg-gray-800 transition-colors group w-full">
-          <LogOut className="size-5 text-[#616f89] dark:text-gray-400 group-hover:text-red-500" />
-          <p className="text-[#616f89] dark:text-gray-400 group-hover:text-red-500 text-sm font-medium leading-normal">
-            Log Out
-          </p>
+        <Button
+          variant={'ghost'}
+          onClick={() => { signOut(); router.push("/login"); }}
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span className="text-sm font-medium">Log Out</span>
+        </Button>
       </div>
-
-      <Button
-        variant={'ghost'}
-        onClick={() => { signOut(); router.push("/login"); }}
-        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-      >
-        <LogOut className="size-5 transition-transform group-hover:-translate-x-1" />
-        <span className="text-sm font-medium">Log Out</span>
-      </Button>
-    </div>
-    </aside >
+    </aside>
   );
 }

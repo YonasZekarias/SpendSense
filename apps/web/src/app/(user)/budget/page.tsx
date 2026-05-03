@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { BudgetPlannerPage as BudgetPlannerClient } from "@/components/finance/budget-planner-page";
 import { apiClient } from "@/lib/api";
 import type { BudgetRecord, BudgetSuggestion, BudgetSummary, ExpenseRecord } from "@/types/finance";

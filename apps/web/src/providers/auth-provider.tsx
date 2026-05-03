@@ -19,7 +19,7 @@ type AuthContextValue = {
   status: AuthStatus;
   user: UserProfile | null;
   accessToken: string | null;
-  signIn: (payload: LoginPayload) => Promise<void>;
+  signIn: (payload: LoginPayload) => Promise<UserProfile>;
   signUp: (payload: RegisterPayload) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (token: string, newPassword: string) => Promise<void>;

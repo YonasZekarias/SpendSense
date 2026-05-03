@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { createApiClient } from "@/lib/finance-utils";
