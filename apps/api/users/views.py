@@ -195,6 +195,44 @@ class AdminUserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by('-created_at')
     serializer_class = AdminUserBriefSerializer
 
+    def list(self, request, *args, **kwargs):
+        # Support ?search=...&page=1&pageSize=20 and return a consistent paginated shape
+        search = (request.query_params.get('search') or '').strip()
+        try:
+            page = int(request.query_params.get('page') or 1)
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            page_size = int(request.query_params.get('pageSize') or request.query_params.get('page_size') or 20)
+        except (TypeError, ValueError):
+            page_size = 20
+
+        qs = self.filter_queryset(self.get_queryset())
+
+        if search:
+            from django.db.models import Q
+
+            qs = qs.filter(Q(full_name__icontains=search) | Q(email__icontains=search))
+
+        from django.core.paginator import Paginator, EmptyPage
+
+        paginator = Paginator(qs, page_size)
+        try:
+            page_obj = paginator.page(page)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages or 1)
+
+        serializer = self.get_serializer(page_obj.object_list, many=True)
+
+        pagination = {
+            'total_records': paginator.count,
+            'total_pages': paginator.num_pages,
+            'page_size': page_size,
+            'current_page': page_obj.number,
+        }
+
+        return Response({'pagination': pagination, 'results': serializer.data})
+
 
 class AdminUserDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAdminRole]

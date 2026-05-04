@@ -1,0 +1,169 @@
+"use client";
+
+import React, { FormEvent, useState } from "react";
+import type { VendorProfile } from "../_lib/vendor-api";
+import { updateCurrentUserProfile } from "../_lib/vendor-api";
+import { updateProfile } from "@/actions/vendor/updateProfile";
+
+export default function VendorProfileClient({ initialProfile }: { initialProfile: VendorProfile | null }) {
+  const [profile, setProfile] = useState<VendorProfile | null>(initialProfile);
+  const [vendorId, setVendorId] = useState<string>(typeof window !== "undefined" ? localStorage.getItem("spendsense_vendor_id") || "" : "");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function onSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!profile) return;
+
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    try {
+      // Call server action which uses server-side apiClient
+      const result = await updateProfile({
+        full_name: profile.full_name,
+        phone: profile.phone,
+        city: profile.city,
+        income_bracket: profile.income_bracket,
+        household_size: profile.household_size,
+      });
+
+      if (result?.success) {
+        setProfile(result.data || null);
+        setMessage("Profile updated successfully.");
+      } else {
+        setError(result?.message || "Unable to save profile.");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unable to save profile.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSave}>
+      <div className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div className="flex items-start gap-6">
+          <div className="group relative">
+            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-4 ring-white">
+              <img
+                alt="Business logo"
+                className="h-full w-full object-cover"
+                src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=240&h=240&fit=crop"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-3xl font-extrabold tracking-tight">{profile?.full_name || "Vendor"}</h2>
+            </div>
+            <p className="mt-2 max-w-xl text-slate-500">Business profile information.</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            className="rounded-xl bg-[#135bec] px-6 py-2.5 font-semibold text-white shadow-md transition-transform active:scale-95"
+            disabled={saving}
+            type="submit"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
+
+      {loading ? <p className="mb-4 text-sm text-slate-600">Loading profile...</p> : null}
+      {error ? <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      {message ? <p className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
+
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 space-y-6 lg:col-span-8">
+          <section className="rounded-xl bg-white p-8 shadow-sm">
+            <div className="mb-8 flex items-center justify-between">
+              <h3 className="text-lg font-bold">Business Profile Details</h3>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#135bec]">Editable Section</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="col-span-2 md:col-span-1">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Official Business Name</label>
+                <input
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, full_name: event.target.value } : prev))}
+                  type="text"
+                  value={profile?.full_name || ""}
+                />
+              </div>
+
+              <div className="col-span-2 md:col-span-1">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Business Category</label>
+                <select className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20">
+                  <option>Logistics & Supply Chain</option>
+                  <option>Manufacturing</option>
+                  <option>Retail Distribution</option>
+                </select>
+              </div>
+
+              <div className="col-span-2">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Business Description</label>
+                <textarea
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
+                  rows={4}
+                  value={profile?.income_bracket ? `Income profile: ${profile.income_bracket}. Serving customers in ${profile.city || "major cities"}.` : "Specializing in reliable logistics, distribution, and warehouse coordination across Ethiopia."}
+                  onChange={() => undefined}
+                />
+              </div>
+
+              <div className="col-span-1">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Phone</label>
+                <input
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, phone: event.target.value } : prev))}
+                  type="text"
+                  value={profile?.phone || ""}
+                />
+              </div>
+
+              <div className="col-span-1">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">City</label>
+                <input
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, city: event.target.value } : prev))}
+                  type="text"
+                  value={profile?.city || ""}
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="col-span-12 space-y-6 lg:col-span-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-6 text-sm font-bold">Client Trust Metrics</h3>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-extrabold">4.9 / 5.0</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Satisfaction rate</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-extrabold text-[#135bec]">124</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Contracts Fulfilled</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-500">
+            Stored vendor id: <span className="font-semibold text-slate-700">{vendorId || "Not found"}</span>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}

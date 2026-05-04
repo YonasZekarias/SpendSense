@@ -63,6 +63,8 @@ export type ExpenseRecord = {
   date: string;
   description?: string;
   payment_method?: string;
+  item?: number;
+  vendor?: string;
 };
 
 export type EditableCategory = {

@@ -214,16 +214,7 @@ export async function getCurrentUserProfile(): Promise<VendorProfile> {
     method: "GET",
   });
 
-  return {
-    id: profile.id ? String(profile.id) : undefined,
-    full_name: profile.full_name ? String(profile.full_name) : undefined,
-    email: profile.email ? String(profile.email) : undefined,
-    phone: profile.phone ? String(profile.phone) : undefined,
-    city: profile.city ? String(profile.city) : undefined,
-    role: profile.role ? String(profile.role) : undefined,
-    household_size: profile.household_size ? Number(profile.household_size) : undefined,
-    income_bracket: profile.income_bracket ? String(profile.income_bracket) : undefined,
-  };
+  return profile
 }
 
 export async function updateCurrentUserProfile(

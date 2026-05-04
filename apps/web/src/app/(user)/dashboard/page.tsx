@@ -196,11 +196,11 @@ export default async function UsersPage() {
                     </Button>
                   </div>
 
-                  {(notifications || [])?.length === 0 ? (
+                  {!(Array.isArray(notifications) && notifications.length > 0) ? (
                     <p className="text-sm text-muted-foreground">No notifications yet. Spending and market alerts will appear here.</p>
                   ) : (
                     <div className="space-y-5">
-                      {(notifications || [])?.map((n: any, i: number) => (
+                      {notifications.map((n: any, i: number) => (
                         <div key={n.id}>
                           {i > 0 && <hr className="mb-5 border-border/60" />}
                           <form action={markNotificationRead} className="w-full">
