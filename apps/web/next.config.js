@@ -22,9 +22,5 @@ module.exports = {
       // { source: "/admin/moderate/prices", destination: "/admin/price-moderation", permanent: false },
     ];
   },
-  async rewrites() {
-    return [
-      { source: "/market/:id(\\d+)", destination: "/market/items/:id" },
-    ];
-  },
+
 };

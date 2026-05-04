@@ -17,6 +17,7 @@ export async function POST() {
       {
         method: "POST",
         endpoint: "/api/auth/token/refresh/",
+        body: { refresh },
         fetchOptions,
       }
     );

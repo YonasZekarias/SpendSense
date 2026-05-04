@@ -26,8 +26,12 @@ export function useExpenseListing(initial?: InitialExpenseData) {
   const [loading, setLoading] = useState<boolean>(initial ? false : true);
   const [error, setError] = useState<string | null>(null);
 
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>(initial?.expenses ?? []);
-  const [budgets, setBudgets] = useState<BudgetRecord[]>(initial?.budgets ?? []);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>(
+    Array.isArray(initial?.expenses) ? initial.expenses : []
+  );
+  const [budgets, setBudgets] = useState<BudgetRecord[]>(
+    Array.isArray(initial?.budgets) ? initial.budgets : []
+  );
 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "amount_desc" | "amount_asc">("date_desc");

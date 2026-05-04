@@ -6,11 +6,15 @@ import Link from "next/link";
 
 export default async function UsersPage() {
   // Fetch budgets, expenses and notifications server-side (send access token from cookie)
-  const [budgets, expenses, notifications] = (await Promise.all([
+  const [budgetsRaw, expensesRaw, notificationsRaw] = (await Promise.all([
     apiClient({ method: "GET", endpoint: "/api/finance/budgets/"}).catch(() => []),
     apiClient({ method: "GET", endpoint: "/api/finance/expenses/"}).catch(() => []),
     apiClient({ method: "GET", endpoint: "/api/users/me/notifications/"}).catch(() => []),
-  ])) as [any[], any[], any[]];
+  ])) as [any, any, any];
+
+  const budgets = Array.isArray(budgetsRaw) ? budgetsRaw : budgetsRaw?.results || [];
+  const expenses = Array.isArray(expensesRaw) ? expensesRaw : expensesRaw?.results || [];
+  const notifications = Array.isArray(notificationsRaw) ? notificationsRaw : notificationsRaw?.results || [];
 
   // Compute summary similar to client hook
   const now = new Date();
@@ -64,7 +68,7 @@ export default async function UsersPage() {
     spentLine: formatEtb(summary.monthlySpent) + " Spent",
     remainLine: formatEtb(Math.max(0, summary.remaining)) + " left",
     barPct: Math.min(100, Math.max(0, Math.round(summary.percentUsed))),
-    unreadCount: (Array.isArray(notifications) ? notifications : []).filter((n: any) => !n.is_read).length,
+    unreadCount: notifications.filter((n: any) => !n.is_read).length,
   };
 
   const user = (await apiClient({ method: "GET", endpoint: "/api/users/me/"}).catch(() => null)) as any;
@@ -196,11 +200,11 @@ export default async function UsersPage() {
                     </Button>
                   </div>
 
-                  {(notifications || [])?.length === 0 ? (
+                  {notifications.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No notifications yet. Spending and market alerts will appear here.</p>
                   ) : (
                     <div className="space-y-5">
-                      {(notifications || [])?.map((n: any, i: number) => (
+                      {notifications.map((n: any, i: number) => (
                         <div key={n.id}>
                           {i > 0 && <hr className="mb-5 border-border/60" />}
                           <form action={markNotificationRead} className="w-full">

@@ -4,10 +4,13 @@ import type { ExpenseRecord, BudgetRecord } from "@/types/finance";
 
 export default async function ExpensesPageRoute() {
   try {
-    const [expenses, budgets] = (await Promise.all([
-      apiClient<ExpenseRecord[]>({ method: "GET", endpoint: "/api/finance/expenses/" }).catch(() => []),
-      apiClient<BudgetRecord[]>({ method: "GET", endpoint: "/api/finance/budgets/" }).catch(() => []),
-    ])) as [ExpenseRecord[], BudgetRecord[]];
+    const [expensesRaw, budgetsRaw] = await Promise.all([
+      apiClient<any>({ method: "GET", endpoint: "/api/finance/expenses/" }).catch(() => []),
+      apiClient<any>({ method: "GET", endpoint: "/api/finance/budgets/" }).catch(() => []),
+    ]);
+
+    const expenses = Array.isArray(expensesRaw) ? expensesRaw : (expensesRaw?.results ?? []);
+    const budgets = Array.isArray(budgetsRaw) ? budgetsRaw : (budgetsRaw?.results ?? []);
 
     const initial = { expenses, budgets };
 

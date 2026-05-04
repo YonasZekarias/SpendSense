@@ -342,8 +342,8 @@ export default function PriceTrendsPage() {
                           <Plus className="size-4" />
                         </Link>
                         <Link
-                          href={`/market?item_id=${row.id}`}
-                          title="View trend"
+                          href={`/market/${row.id}`}
+                          title="View detailed trends"
                           className="p-2 rounded-full text-[#616f89] hover:text-[#135bec] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           <ArrowUpRight className="size-4" />

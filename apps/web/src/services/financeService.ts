@@ -3,8 +3,8 @@ import type { BudgetRecord, BudgetSummary, ExpenseRecord } from "@/types/finance
 
 export async function listBudgets(accessToken: string): Promise<BudgetRecord[]> {
   const api = createApiClient(() => accessToken);
-  const { data } = await api.get<BudgetRecord[]>("/api/finance/budgets/");
-  return data;
+  const { data } = await api.get<any>("/api/finance/budgets/");
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export async function getBudgetSummary(accessToken: string, budgetId: number): Promise<BudgetSummary> {
@@ -15,8 +15,8 @@ export async function getBudgetSummary(accessToken: string, budgetId: number): P
 
 export async function listExpenses(accessToken: string): Promise<ExpenseRecord[]> {
   const api = createApiClient(() => accessToken);
-  const { data } = await api.get<ExpenseRecord[]>("/api/finance/expenses/");
-  return data;
+  const { data } = await api.get<any>("/api/finance/expenses/");
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 /** Triggers a browser download of the export (CSV or PDF) using the user JWT. */

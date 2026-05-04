@@ -43,8 +43,8 @@ export async function fetchPriceAverages(params?: {
   to_date?: string;
 }): Promise<PriceAverageRow[]> {
   const api = createApiClient();
-  const { data } = await api.get<PriceAverageRow[]>("/api/market/prices/averages/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/prices/averages/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export async function fetchMarketItems(params?: { category?: string; search?: string }): Promise<MarketItem[]> {
@@ -68,8 +68,8 @@ export async function fetchPriceTrends(params: {
   to_date?: string;
 }): Promise<TrendPoint[]> {
   const api = createApiClient();
-  const { data } = await api.get<TrendPoint[]>("/api/market/trends/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/trends/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export type ForecastPoint = {
@@ -88,8 +88,8 @@ export async function fetchMarketForecasts(params: {
   forecast_weeks?: number;
 }): Promise<ForecastPoint[]> {
   const api = createApiClient();
-  const { data } = await api.get<ForecastPoint[]>("/api/market/forecasts/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/forecasts/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export type InflationResponse = {
