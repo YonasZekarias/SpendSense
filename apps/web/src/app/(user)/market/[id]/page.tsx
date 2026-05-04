@@ -34,6 +34,11 @@ import {
 } from "@/services/marketService";
 import { MarketTrendsChart } from "@/components/market/market-trends-chart";
 
+import { MarketSentimentCard } from "@/components/market/market-sentiment-card";
+import { VendorComparisonTable } from "@/components/market/vendor-comparison-table";
+import { SourcingMap } from "@/components/market/sourcing-map";
+import { MarketIntelligenceList } from "@/components/market/market-intelligence-list";
+
 export default function MarketItemDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -80,13 +85,6 @@ export default function MarketItemDetailPage() {
     return averages.reduce((acc, curr) => acc + parseFloat(curr.average_price), 0) / averages.length;
   }, [averages]);
 
-  const bestCity = useMemo(() => {
-    if (averages.length === 0) return null;
-    return averages.reduce((prev, curr) => 
-      parseFloat(curr.average_price) < parseFloat(prev.average_price) ? curr : prev
-    );
-  }, [averages]);
-
   if (loading) return <MarketItemDetailSkeleton />;
 
   if (error || !item) {
@@ -104,156 +102,105 @@ export default function MarketItemDetailPage() {
     );
   }
 
-  return (
-    <div className="pb-20">
-      {/* Breadcrumbs & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <nav className="flex items-center gap-2 text-sm font-medium text-[#616f89]">
-          <Link href="/market" className="hover:text-[#135bec] transition-colors">Market</Link>
-          <ChevronRight size={14} />
-          <span className="text-[#111318] dark:text-white font-bold">{item.name}</span>
-        </nav>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => void fetchData()} className="h-9">
-            <RefreshCw className="size-3.5 mr-1.5" /> Refresh
-          </Button>
-          <Button asChild size="sm" className="bg-[#135bec] font-bold h-9">
-            <Link href={`/market/submit?item_id=${item.id}`}>
-              <Plus className="size-4 mr-1.5" /> Submit Price
-            </Link>
-          </Button>
-        </div>
-      </div>
+  // Mock data for the premium UI
+  const productDetails = [
+    { label: "Grade", value: "Magna (Premium)" },
+    { label: "Unit", value: item.unit },
+    { label: "Region", value: "Ada'a / Bishoftu" },
+    { label: "Shelf Life", value: "18 - 24 Months" },
+  ];
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#135bec] to-[#0047cc] p-8 md:p-12 mb-8 text-white shadow-xl shadow-blue-500/20">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+  const sourcingId = `ETH-${item.category.substring(0,3).toUpperCase()}-${String(item.id).padStart(4, '0')}`;
+
+  return (
+    <div className="pb-20 max-w-[1600px] mx-auto">
+      {/* Top Header & Breadcrumbs */}
+      <div className="mb-8">
+        <nav className="flex items-center gap-2 text-xs font-bold text-[#616f89] uppercase tracking-widest mb-2">
+          <Link href="/market" className="hover:text-[#135bec] transition-colors">Market</Link>
+          <ChevronRight size={10} className="text-slate-300" />
+          <span className="text-slate-300">{item.category}</span>
+          <ChevronRight size={10} className="text-slate-300" />
+          <span className="text-[#135bec]">{item.name}</span>
+        </nav>
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold uppercase tracking-wider mb-4">
-              <ShoppingBasket className="size-3.5" /> {item.category}
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
-              {item.name}
+            <h1 className="text-4xl md:text-5xl font-black text-[#111318] dark:text-white tracking-tight">
+              {item.name} — <span className="text-slate-400">Magna Grade</span>
             </h1>
-            <p className="text-blue-100 text-lg font-medium">
-              Standardized unit: <span className="text-white font-bold">{item.unit}</span>
+            <p className="text-[#616f89] font-bold text-xs mt-2 uppercase tracking-widest">
+              Ethical Sourcing ID: <span className="text-[#111318] dark:text-white">{sourcingId}</span>
             </p>
           </div>
-          
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-right">
-              <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">National Average</p>
-              <p className="text-4xl md:text-5xl font-black tabular-nums">
-                {nationalAvg ? `${nationalAvg.toLocaleString(undefined, { maximumFractionDigits: 1 })}` : "—"}
-                <span className="text-xl ml-1 opacity-80">ETB</span>
-              </p>
-            </div>
-            {inflation?.change_percent !== null && (
-              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold ${
-                inflation!.change_percent! > 0 ? "bg-red-500/20 text-red-100" : "bg-green-500/20 text-green-100"
-              }`}>
-                {inflation!.change_percent! > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                {Math.abs(inflation!.change_percent!).toFixed(1)}% vs last month
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Background Decor */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute bottom-0 left-0 -ml-10 -mb-10 h-40 w-40 rounded-full bg-blue-400/10 blur-2xl" />
-      </div>
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard 
-          label="Best Price Found" 
-          value={bestCity ? `${parseFloat(bestCity.average_price).toLocaleString()} ETB` : "—"}
-          subValue={bestCity ? `In ${bestCity.city}` : "No data yet"}
-          icon={<Target className="text-[#135bec]" />}
-        />
-        <StatCard 
-          label="Price Volatility" 
-          value="Medium" 
-          subValue="Based on last 30 days"
-          icon={<TrendingUp className="text-orange-500" />}
-        />
-        <StatCard 
-          label="Total Submissions" 
-          value={averages.reduce((s, a) => s + a.count, 0).toLocaleString()} 
-          subValue="Active contributors"
-          icon={<RefreshCw className="text-green-500" />}
-        />
-        <StatCard 
-          label="Market Coverage" 
-          value={averages.length.toString()} 
-          subValue="Cities reporting prices"
-          icon={<MapPin className="text-purple-500" />}
-        />
-      </div>
-
-      {/* Main Content Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Chart Column */}
-        <div className="lg:col-span-8">
-          <MarketTrendsChart />
-        </div>
-
-        {/* City Breakdown Column */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white dark:bg-[#1e2330] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3140] p-6 shadow-sm h-fit">
-            <h3 className="text-lg font-bold text-[#111318] dark:text-white mb-6 flex items-center gap-2">
-              <MapPin className="size-5 text-[#135bec]" /> Regional Prices
-            </h3>
-            <div className="space-y-4">
-              {averages.length > 0 ? (
-                averages.map((row) => (
-                  <div key={row.city} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors group">
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{row.city}</p>
-                      <p className="text-[10px] font-bold text-[#616f89] uppercase tracking-tighter">
-                        {row.count} reports
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-[#111318] dark:text-white tabular-nums">
-                        {parseFloat(row.average_price).toLocaleString()} ETB
-                      </p>
-                      <p className={`text-[10px] font-bold ${
-                        nationalAvg && parseFloat(row.average_price) < nationalAvg ? "text-green-600" : "text-[#616f89]"
-                      }`}>
-                        {nationalAvg 
-                          ? `${parseFloat(row.average_price) < nationalAvg ? "-" : "+"}${Math.abs(((parseFloat(row.average_price) - nationalAvg) / nationalAvg) * 100).toFixed(0)}% avg.`
-                          : "Regional avg."
-                        }
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="py-10 text-center">
-                  <p className="text-sm text-slate-500 italic">No regional data available yet.</p>
-                </div>
-              )}
-            </div>
-            
-            <Button variant="outline" className="w-full mt-6 text-xs font-bold h-9 bg-slate-50 border-slate-200" onClick={() => router.push("/market")}>
-              View All Regions
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-xl font-bold text-xs h-11 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+              <RefreshCw className="size-3.5 mr-2" /> Export Analysis
+            </Button>
+            <Button className="rounded-xl bg-[#135bec] hover:bg-[#0d4fd4] font-black text-xs h-11 shadow-lg shadow-blue-500/20 px-6">
+              <Plus className="size-4 mr-2" /> Source Batch
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Info Card */}
-          <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800 p-6">
-            <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2 mb-2">
-              <Info className="size-4" /> Market Intelligence
-            </h4>
-            <p className="text-xs text-blue-800/70 dark:text-blue-200/60 leading-relaxed">
-              Prices are calculated based on user-submitted data. We use machine learning to filter outliers and provide the most accurate real-time market averages across Ethiopia.
-            </p>
+      {/* Main Grid: Forecast & Sentiment */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        {/* Chart Column */}
+        <div className="lg:col-span-8 bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] p-8 shadow-sm flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+            <div>
+              <h3 className="text-xl font-bold text-[#111318] dark:text-white">Historical Price & ML Forecast</h3>
+              <p className="text-sm text-[#616f89] mt-1">Data aggregated from {averages.length} regional markets</p>
+            </div>
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              {['6M', '1Y', 'All'].map((t) => (
+                <button 
+                  key={t}
+                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${t === '6M' ? 'bg-white dark:bg-slate-900 text-[#135bec] shadow-sm' : 'text-[#616f89] hover:text-[#111318]'}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-[300px]">
+            <MarketTrendsChart />
           </div>
         </div>
 
+        {/* Sidebar Info Column */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <MarketSentimentCard 
+            sentiment={inflation?.change_percent && inflation.change_percent > 10 ? "High Volatility" : "Rising"}
+            predictionText={`Prices are expected to ${inflation?.change_percent && inflation.change_percent > 0 ? 'rise' : 'stabilize'} by ${Math.abs(inflation?.change_percent || 5).toFixed(1)}% in the next quarter due to seasonal shifts and local harvest reports.`}
+            yearOverYear={12.4}
+          />
+
+          <div className="bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] p-6 shadow-sm flex-1">
+            <h4 className="text-sm font-black text-[#111318] dark:text-white uppercase tracking-widest mb-6">Product Details</h4>
+            <div className="space-y-4">
+              {productDetails.map((detail) => (
+                <div key={detail.label} className="flex items-center justify-between py-1">
+                  <span className="text-xs font-bold text-[#616f89] uppercase tracking-tighter">{detail.label}</span>
+                  <span className="text-sm font-black text-[#111318] dark:text-white">{detail.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Vendor Comparison Section */}
+      <div className="mb-8">
+        <VendorComparisonTable />
+      </div>
+
+      {/* Bottom Grid: Sourcing & Intel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SourcingMap />
+        <MarketIntelligenceList />
       </div>
     </div>
   );
