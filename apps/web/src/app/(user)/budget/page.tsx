@@ -1,5 +1,6 @@
 import { BudgetPlannerPage as BudgetPlannerClient } from "@/components/finance/budget-planner-page";
 import { apiClient } from "@/lib/api";
+import { PaginatedResponse } from "@/lib/types/pagination";
 import type { BudgetRecord, BudgetSuggestion, BudgetSummary, ExpenseRecord } from "@/types/finance";
 
 
@@ -7,7 +8,7 @@ export default async function BudgetPage() {
   try {
     const [budgets, expenses] = await Promise.all([
       apiClient({endpoint:"/api/finance/budgets/",method:"GET"}) as Promise<BudgetRecord[]>,
-      apiClient({endpoint:"/api/finance/expenses/",method:"GET"}) as Promise<ExpenseRecord[]>,
+      apiClient({endpoint:"/api/finance/expenses/",method:"GET"}) as Promise<PaginatedResponse<ExpenseRecord>>,
     ]);
 
     const latest = (budgets && budgets.length > 0) ? budgets[0] : null;
@@ -32,7 +33,7 @@ export default async function BudgetPage() {
       summary,
       suggestedMonth: suggested,
       draftCategories: suggestedCategories.map((c: any) => ({ category_name: c.category_name, limit_amount: c.limit_amount })),
-      expenses: (expenses ?? []).slice(0, 6),
+      expenses: (expenses.results ?? []),
     };
 
     return <BudgetPlannerClient initial={initial} />;
