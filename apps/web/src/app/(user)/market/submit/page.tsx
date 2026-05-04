@@ -226,7 +226,7 @@ export default function MarketSubmitPage() {
 
               {/* Footer Actions */}
               <div className="flex justify-end gap-4 border-t border-[#cbd5e1]/30 bg-white p-8">
-                <Link href="/market/trends" className="flex items-center px-6 py-2.5 font-semibold text-[#616f89] hover:text-[#135bec] transition-colors text-sm">
+                <Link href="/market" className="flex items-center px-6 py-2.5 font-semibold text-[#616f89] hover:text-[#135bec] transition-colors text-sm">
                   Cancel
                 </Link>
                 <Button
