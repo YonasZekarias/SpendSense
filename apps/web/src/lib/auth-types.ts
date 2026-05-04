@@ -61,4 +61,17 @@ export type UserProfile = {
   income_bracket?: string;
   onboarding_completed?: boolean;
   created_at: string;
-};
+  vendor_info: {
+    vendor_id: string;
+    shop_name: string;
+    city: string;
+    address: string;
+    contact_phone: string;
+    is_verified: boolean;
+    rating_avg: string;
+    rating_count: number;
+    latitude: string;
+    longitude: string;
+    image: null;
+  };
+}

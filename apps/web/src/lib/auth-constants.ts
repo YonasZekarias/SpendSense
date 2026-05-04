@@ -30,7 +30,7 @@ export function getDefaultRouteForRole(role: string | null | undefined): string 
     case "vendor":
       return "/vendor/dashboard";
     case "admin":
-      return "/admin/admin-panel";
+      return "/admin/dashboard";
     case "analyst":
       return "/analytics";
     case "user":

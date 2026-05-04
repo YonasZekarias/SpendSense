@@ -1,12 +1,13 @@
+"use client";
 import { formatMonthLabel } from "@/lib/finance-utils";
+import { Button } from "@repo/ui/components/button";
+import Link from "next/link";
 
-interface ExpensesHeaderProps {
-  onExportCsv: () => void;
-}
 
-export function ExpensesHeader({ onExportCsv }: ExpensesHeaderProps) {
+
+export function ExpensesHeader() {
   const now = new Date();
-
+  const onExportCsv = () => {};
   return (
     <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
       <div>
@@ -25,6 +26,9 @@ export function ExpensesHeader({ onExportCsv }: ExpensesHeaderProps) {
         >
           Export CSV
         </button>
+        <Link href={"/expenses/new"}>
+          <Button>New Expense</Button>
+        </Link>
       </div>
     </div>
   );

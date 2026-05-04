@@ -1,3 +1,4 @@
+"use client"
 import { useTheme } from "next-themes"
 import type { CSSProperties } from "react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
