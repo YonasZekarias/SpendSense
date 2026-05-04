@@ -11,9 +11,12 @@ import { Suspense } from "react";
 import { MarketTrendsChart } from "@/components/market/market-trends-chart";
 import { MarketFilterBar, type SortOption } from "@/components/market/market-filter-bar";
 import {
-  getItems, getPriceAverages, getInflation,
+  fetchMarketItems, fetchPriceAverages, fetchInflationData,
   type MarketItem, type PriceAverageRow,
 } from "@/services/marketService";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/alert";
+import { AlertCircle, SearchX } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -63,8 +66,8 @@ export default function PriceTrendsPage() {
     try {
       const cityParam = city === "All Regions" ? undefined : city;
       const [itemList, avgList] = await Promise.all([
-        getItems(),
-        getPriceAverages({ city: cityParam }),
+        fetchMarketItems(),
+        fetchPriceAverages({ city: cityParam }),
       ]);
       setItems(itemList);
       setAverages(avgList);
@@ -76,7 +79,7 @@ export default function PriceTrendsPage() {
       setSelectedItem((prev) => (prev === null && itemList.length > 0 ? itemList[0].id : prev));
       setLastUpdated(new Date());
     } catch {
-      setError("Unable to load market data. Please check the API is running.");
+      setError("Unable to load market data. The server might be down or unreachable.");
     } finally {
       setLoading(false);
     }
@@ -88,7 +91,7 @@ export default function PriceTrendsPage() {
   useEffect(() => {
     if (!selectedItem) return;
     const cityParam = city === "All Regions" ? undefined : city;
-    getInflation({ item_id: selectedItem, city: cityParam, period: "month" })
+    fetchInflationData({ item_id: selectedItem, city: cityParam, period: "month" })
       .then((r) => setInflation(r.change_percent))
       .catch(() => setInflation(null));
   }, [selectedItem, city]);
@@ -156,9 +159,9 @@ export default function PriceTrendsPage() {
     : null;
 
   return (
-    <div>
+    <div className="pb-12 lg:pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 lg:mb-12">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-[#111318] dark:text-white tracking-tight">
             Current Market Prices
@@ -190,14 +193,20 @@ export default function PriceTrendsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-400 flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => void fetchData()} className="underline font-medium">Retry</button>
-        </div>
+        <Alert variant="destructive" className="mb-8 border-red-200/50 bg-red-50/50 dark:bg-red-950/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Connection Error</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={() => void fetchData()} className="h-7 px-3 text-xs bg-white dark:bg-slate-900 border-red-200 hover:bg-red-50">
+              Try Again
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 lg:mb-12">
         <SummaryCard
           icon={<ShoppingBasket className="size-5" />}
           iconBg="bg-blue-50 dark:bg-blue-900/20 text-[#135bec]"
@@ -225,7 +234,7 @@ export default function PriceTrendsPage() {
       </div>
 
       {/* Chart */}
-      <Suspense fallback={<div className="mb-8 h-40 flex items-center justify-center rounded-2xl border bg-white text-slate-500">Loading chart…</div>}>
+      <Suspense fallback={<ChartSkeleton />}>
         <MarketTrendsChart />
       </Suspense>
 
@@ -239,17 +248,24 @@ export default function PriceTrendsPage() {
       />
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#1e2330] rounded-xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm overflow-hidden">
-        {loading && (
-          <div className="flex items-center justify-center gap-2 py-16 text-[#616f89]">
-            <Loader2 className="size-5 animate-spin" /> Loading market data…
-          </div>
-        )}
+      <div className="bg-white dark:bg-[#1e2330] rounded-2xl border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm overflow-hidden">
+        {loading && <TableSkeleton />}
         {!loading && pageItems.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-[#616f89]">
-            <ShoppingBasket className="size-10 opacity-30" />
-            <p className="font-medium">No items match your filters.</p>
-            <button onClick={() => { setSearch(""); setCategory("All Categories"); }} className="text-sm text-[#135bec] underline">Clear filters</button>
+          <div className="flex flex-col items-center justify-center py-24 px-6 text-center gap-4 text-[#616f89]">
+            <div className="h-20 w-20 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-2">
+              <SearchX className="size-10 opacity-40 text-slate-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">No results found</p>
+              <p className="text-sm mt-1 max-w-xs mx-auto">We couldn't find any items matching your current filters. Try adjusting your search or category.</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => { setSearch(""); setCategory("All Categories"); setCity("All Regions"); }} 
+              className="mt-2"
+            >
+              Reset all filters
+            </Button>
           </div>
         )}
         {!loading && pageItems.length > 0 && (
@@ -326,8 +342,8 @@ export default function PriceTrendsPage() {
                           <Plus className="size-4" />
                         </Link>
                         <Link
-                          href={`/market?item_id=${row.id}`}
-                          title="View trend"
+                          href={`/market/${row.id}`}
+                          title="View detailed trends"
                           className="p-2 rounded-full text-[#616f89] hover:text-[#135bec] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           <ArrowUpRight className="size-4" />
@@ -397,18 +413,58 @@ export default function PriceTrendsPage() {
   );
 }
 
+function ChartSkeleton() {
+  return (
+    <div className="mb-8 p-6 rounded-2xl border border-slate-200 bg-white dark:bg-[#1e2330] dark:border-slate-800">
+      <div className="flex justify-between items-start mb-6">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+      </div>
+      <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="bg-slate-50 dark:bg-slate-900/50 h-12 flex items-center px-6">
+        <Skeleton className="h-4 w-full" />
+      </div>
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="py-4 px-6 flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-3 w-1/6" />
+          </div>
+          <Skeleton className="h-8 w-24 rounded-md" />
+          <Skeleton className="h-8 w-24 rounded-md" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SummaryCard({ icon, iconBg, label, value, badge, badgeColor }: {
   icon: React.ReactNode; iconBg: string; label: string; value: string;
   badge?: string; badgeColor?: string;
 }) {
   return (
-    <div className="bg-white dark:bg-[#1e2330] rounded-xl p-5 border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm flex flex-col">
+    <div className="bg-white dark:bg-[#1e2330] rounded-xl p-5 border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm flex flex-col group hover:border-[#135bec]/30 transition-all duration-300">
       <div className="flex justify-between items-start mb-4">
-        <div className={`p-2 rounded-lg ${iconBg}`}>{icon}</div>
-        {badge && <span className={`text-xs font-bold px-2 py-1 rounded ${badgeColor}`}>{badge}</span>}
+        <div className={`p-2 rounded-lg ${iconBg} shadow-sm`}>{icon}</div>
+        {badge && <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tight ${badgeColor}`}>{badge}</span>}
       </div>
-      <p className="text-[#616f89] dark:text-gray-400 text-sm font-medium">{label}</p>
-      <p className="text-xl font-bold text-[#111318] dark:text-white mt-1 truncate">{value}</p>
+      <p className="text-[#616f89] dark:text-gray-400 text-xs font-bold uppercase tracking-wider">{label}</p>
+      <p className="text-xl md:text-2xl font-black text-[#111318] dark:text-white mt-1 tabular-nums">{value}</p>
     </div>
   );
 }

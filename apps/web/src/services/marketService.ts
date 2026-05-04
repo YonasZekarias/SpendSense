@@ -36,24 +36,24 @@ export type PriceSubmissionResponse = {
   outlier_warning?: string | null;
 };
 
-export async function getPriceAverages(params?: {
+export async function fetchPriceAverages(params?: {
   item_id?: number;
   city?: string;
   from_date?: string;
   to_date?: string;
 }): Promise<PriceAverageRow[]> {
   const api = createApiClient();
-  const { data } = await api.get<PriceAverageRow[]>("/api/market/prices/averages/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/prices/averages/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
-export async function getItems(params?: { category?: string; search?: string }): Promise<MarketItem[]> {
+export async function fetchMarketItems(params?: { category?: string; search?: string }): Promise<MarketItem[]> {
   const api = createApiClient();
   const { data } = await api.get<any>("/api/market/items/", { params });
   return data.results ? data.results : data;
 }
 
-export async function getItem(itemId: number): Promise<MarketItem> {
+export async function fetchMarketItem(itemId: number): Promise<MarketItem> {
   const api = createApiClient();
   const { data } = await api.get<MarketItem>(`/api/market/items/${itemId}/`);
   return data;
@@ -61,15 +61,15 @@ export async function getItem(itemId: number): Promise<MarketItem> {
 
 export type TrendPoint = { date: string; average_price: string; count: number };
 
-export async function getPriceTrends(params: {
+export async function fetchPriceTrends(params: {
   item_id: number;
   city?: string;
   from_date?: string;
   to_date?: string;
 }): Promise<TrendPoint[]> {
   const api = createApiClient();
-  const { data } = await api.get<TrendPoint[]>("/api/market/trends/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/trends/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export type ForecastPoint = {
@@ -82,14 +82,14 @@ export type ForecastPoint = {
   city?: string | null;
 };
 
-export async function getForecasts(params: {
+export async function fetchMarketForecasts(params: {
   item_id: number;
   city?: string;
   forecast_weeks?: number;
 }): Promise<ForecastPoint[]> {
   const api = createApiClient();
-  const { data } = await api.get<ForecastPoint[]>("/api/market/forecasts/", { params });
-  return data;
+  const { data } = await api.get<any>("/api/market/forecasts/", { params });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 
 export type InflationResponse = {
@@ -101,7 +101,7 @@ export type InflationResponse = {
   change_percent: number | null;
 };
 
-export async function getInflation(params?: {
+export async function fetchInflationData(params?: {
   period?: "week" | "month";
   city?: string;
   item_id?: number;
@@ -111,9 +111,26 @@ export async function getInflation(params?: {
   return data;
 }
 
-export async function submitPrice(accessToken: string, payload: SubmitPricePayload): Promise<PriceSubmissionResponse> {
+export async function createPriceSubmission(accessToken: string, payload: SubmitPricePayload): Promise<PriceSubmissionResponse> {
   const api = createApiClient(() => accessToken);
   const { data } = await api.post<PriceSubmissionResponse>("/api/market/prices/submit/", payload);
   return data;
+}
+
+export type VendorPriceRow = {
+  id: number;
+  vendor_id: string;
+  vendor_name: string;
+  city: string;
+  rating_avg: string;
+  is_verified: boolean;
+  price: string;
+  date: string;
+};
+
+export async function fetchItemVendorPrices(itemId: number): Promise<VendorPriceRow[]> {
+  const api = createApiClient();
+  const { data } = await api.get<any>("/api/market/vendors/prices/", { params: { item_id: itemId } });
+  return Array.isArray(data) ? data : (data?.results ?? []);
 }
 

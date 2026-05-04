@@ -22,8 +22,9 @@ urlpatterns = [
 ]
 
 # Import new views
-from .vendor_views import VendorListView, VendorLocationListView
+from .vendor_views import VendorListView, VendorLocationListView, ItemVendorPricesView
 urlpatterns.extend([
     path('vendors/', VendorListView.as_view(), name='vendors-list'),
     path('vendors/locations/', VendorLocationListView.as_view(), name='vendors-locations-list'),
+    path('vendors/prices/', ItemVendorPricesView.as_view(), name='vendors-prices-list'),
 ])

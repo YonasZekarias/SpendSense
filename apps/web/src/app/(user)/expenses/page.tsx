@@ -45,10 +45,13 @@ export default async function ExpensesPageRoute({ searchParams }: PageProps) {
 
 async function ExpensesSummaryWrapper() {
   try {
-    const budgets = await apiClient<BudgetRecord[]>({
-      method: "GET",
-      endpoint: "/api/finance/budgets/",
-    });
+    const [expensesRaw, budgetsRaw] = await Promise.all([
+      apiClient<any>({ method: "GET", endpoint: "/api/finance/expenses/" }).catch(() => []),
+      apiClient<any>({ method: "GET", endpoint: "/api/finance/budgets/" }).catch(() => []),
+    ]);
+
+    const expenses = Array.isArray(expensesRaw) ? expensesRaw : (expensesRaw?.results ?? []);
+    const budgets = Array.isArray(budgetsRaw) ? budgetsRaw : (budgetsRaw?.results ?? []);
 
     // We can't easily fetch "all" for summary anymore due to pagination,
     // but the summary cards usually reflect "this month".

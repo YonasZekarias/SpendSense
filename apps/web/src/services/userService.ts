@@ -49,8 +49,8 @@ export type InAppNotification = {
 
 export async function listNotifications(accessToken: string): Promise<InAppNotification[]> {
   const api = createApiClient(() => accessToken);
-  const { data } = await api.get<InAppNotification[]>("/api/users/me/notifications/");
-  return data;
+  const { data } = await api.get<any>("/api/users/me/notifications/");
+  return Array.isArray(data) ? data : data?.results || [];
 }
 
 export async function patchNotification(

@@ -63,6 +63,21 @@ export function MarketFilterBar({
           options={["name", "avg_price_asc", "avg_price_desc", "trend"]}
           labels={{ name: "Sort: Name", avg_price_asc: "Price ↑", avg_price_desc: "Price ↓", trend: "Volatility" }}
         />
+        
+        {(search || category !== "All Categories" || city !== "All Regions") && (
+          <button
+            onClick={() => {
+              onSearch("");
+              onCategory("All Categories");
+              onCity("All Regions");
+            }}
+            className="flex items-center gap-1.5 px-3 h-10 rounded-lg text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <X className="size-3.5" />
+            Reset
+          </button>
+        )}
+
         <button
           type="button"
           className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#f0f2f4] dark:bg-[#2a3140] text-[#616f89] hover:bg-[#e2e4e8] dark:hover:bg-[#374151] transition-colors"
