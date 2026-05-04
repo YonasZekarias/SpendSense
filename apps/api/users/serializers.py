@@ -84,7 +84,6 @@ class UserPreferencesSerializer(serializers.ModelSerializer):
         model = User
         fields = ('notification_preferences', 'onboarding_completed')
         extra_kwargs = {'onboarding_completed': {'required': False}}
-    
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
