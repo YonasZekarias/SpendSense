@@ -1,65 +1,45 @@
-"use client";
-
-import { Star, MapPin, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star, MapPin, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
+import { fetchItemVendorPrices, type VendorPriceRow } from "@/services/marketService";
 
-interface Vendor {
-  id: string;
-  name: string;
-  logoLetter: string;
-  location: string;
-  stockLevel: number; // 0 to 100
-  stockLabel: string;
-  rating: number;
-  price: number;
-  isLowest?: boolean;
-  badge?: string;
-}
+export function VendorComparisonTable({ itemId }: { itemId: number }) {
+  const [vendors, setVendors] = useState<VendorPriceRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const MOCK_VENDORS: Vendor[] = [
-  {
-    id: "1",
-    name: "Ada's Agricultural Union",
-    logoLetter: "AA",
-    location: "Bishoftu, Oromia",
-    stockLevel: 75,
-    stockLabel: "650 Qt Available",
-    rating: 4.9,
-    price: 4150,
-    isLowest: true,
-    badge: "SOURCE DIRECT"
-  },
-  {
-    id: "2",
-    name: "EthioGrain Global",
-    logoLetter: "EG",
-    location: "Addis Ababa, Kality",
-    stockLevel: 40,
-    stockLabel: "125 Qt Available",
-    rating: 4.2,
-    price: 4320,
-    badge: "WHOLESALE"
-  },
-  {
-    id: "3",
-    name: "Selam Multi-Action",
-    logoLetter: "SM",
-    location: "Debre Zeit",
-    stockLevel: 60,
-    stockLabel: "450 Qt Available",
-    rating: 4.5,
-    price: 4280,
-    badge: "VERIFIED FARM GROUP"
+  useEffect(() => {
+    setLoading(true);
+    fetchItemVendorPrices(itemId)
+      .then(setVendors)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [itemId]);
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] overflow-hidden shadow-sm h-64 flex items-center justify-center">
+        <Loader2 className="size-8 text-[#135bec] animate-spin" />
+      </div>
+    );
   }
-];
 
-export function VendorComparisonTable() {
+  if (vendors.length === 0) {
+    return (
+      <div className="bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] overflow-hidden shadow-sm p-12 text-center">
+        <h3 className="text-lg font-bold text-[#111318] dark:text-white mb-2">No Vendors Found</h3>
+        <p className="text-sm text-[#616f89]">We couldn't find any verified vendors offering this item right now.</p>
+      </div>
+    );
+  }
+
+  const lowestPrice = Math.min(...vendors.map(v => parseFloat(v.price)));
+
   return (
     <div className="bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] overflow-hidden shadow-sm">
       <div className="p-6 border-b border-[#e5e7eb] dark:border-[#2a3140] flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-[#111318] dark:text-white">Vendor Comparison</h3>
-          <p className="text-sm text-[#616f89] mt-1">Top verified suppliers for this grade</p>
+          <p className="text-sm text-[#616f89] mt-1">Top verified suppliers for this item</p>
         </div>
         <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-[#135bec] px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
           <span className="relative flex h-2 w-2">
@@ -83,18 +63,24 @@ export function VendorComparisonTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#e5e7eb] dark:divide-[#2a3140]">
-            {MOCK_VENDORS.map((vendor) => (
+            {vendors.map((vendor) => {
+              const priceNum = parseFloat(vendor.price);
+              const isLowest = priceNum === lowestPrice;
+              // Mock stock level for visual effect
+              const stockLevel = Math.max(30, Math.min(100, Math.floor(priceNum % 100)));
+              
+              return (
               <tr key={vendor.id} className="hover:bg-slate-50 dark:hover:bg-[#252b38]/50 transition-colors group">
                 <td className="py-6 pl-8 pr-4">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[#616f89] font-black text-xs shrink-0 border border-slate-200 dark:border-slate-700">
-                      {vendor.logoLetter}
+                      {vendor.vendor_name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[#111318] dark:text-white">{vendor.name}</p>
-                      {vendor.badge && (
+                      <p className="text-sm font-bold text-[#111318] dark:text-white">{vendor.vendor_name}</p>
+                      {vendor.is_verified && (
                         <span className="text-[8px] font-black bg-blue-50 dark:bg-blue-900/30 text-[#135bec] px-1.5 py-0.5 rounded uppercase tracking-tighter mt-1 inline-block">
-                          {vendor.badge}
+                          VERIFIED VENDOR
                         </span>
                       )}
                     </div>
@@ -103,18 +89,18 @@ export function VendorComparisonTable() {
                 <td className="py-6 px-4">
                   <div className="flex items-center gap-1.5 text-sm text-[#616f89]">
                     <MapPin className="size-3.5 shrink-0" />
-                    <span>{vendor.location}</span>
+                    <span>{vendor.city}</span>
                   </div>
                 </td>
                 <td className="py-6 px-4">
                   <div className="w-32">
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[10px] font-bold text-[#616f89] truncate">{vendor.stockLabel}</span>
+                      <span className="text-[10px] font-bold text-[#616f89] truncate">In Stock</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-1000 ${vendor.stockLevel > 50 ? 'bg-[#135bec]' : 'bg-orange-500'}`}
-                        style={{ width: `${vendor.stockLevel}%` }}
+                        className={`h-full rounded-full transition-all duration-1000 ${stockLevel > 50 ? 'bg-[#135bec]' : 'bg-orange-500'}`}
+                        style={{ width: `${stockLevel}%` }}
                       />
                     </div>
                   </div>
@@ -122,15 +108,15 @@ export function VendorComparisonTable() {
                 <td className="py-6 px-4">
                   <div className="flex items-center gap-1">
                     <Star className="size-3.5 text-blue-500 fill-blue-500" />
-                    <span className="text-sm font-bold text-[#111318] dark:text-white">{vendor.rating}</span>
+                    <span className="text-sm font-bold text-[#111318] dark:text-white">{vendor.rating_avg}</span>
                   </div>
                 </td>
                 <td className="py-6 px-4">
                   <div>
                     <p className="text-base font-black text-[#111318] dark:text-white tabular-nums">
-                      {vendor.price.toLocaleString()} <span className="text-[10px] font-bold uppercase text-[#616f89]">ETB</span>
+                      {priceNum.toLocaleString()} <span className="text-[10px] font-bold uppercase text-[#616f89]">ETB</span>
                     </p>
-                    {vendor.isLowest && (
+                    {isLowest && (
                       <span className="text-[8px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded uppercase tracking-tighter">Lowest Found</span>
                     )}
                   </div>
@@ -141,16 +127,18 @@ export function VendorComparisonTable() {
                   </Button>
                 </td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
 
-      <div className="p-4 bg-slate-50 dark:bg-[#252b38]/30 text-center border-t border-[#e5e7eb] dark:border-[#2a3140]">
-        <button className="text-xs font-bold text-[#135bec] hover:underline uppercase tracking-widest">
-          View 8 more vendors
-        </button>
-      </div>
+      {vendors.length > 3 && (
+        <div className="p-4 bg-slate-50 dark:bg-[#252b38]/30 text-center border-t border-[#e5e7eb] dark:border-[#2a3140]">
+          <button className="text-xs font-bold text-[#135bec] hover:underline uppercase tracking-widest">
+            View {vendors.length - 3} more vendors
+          </button>
+        </div>
+      )}
     </div>
   );
 }

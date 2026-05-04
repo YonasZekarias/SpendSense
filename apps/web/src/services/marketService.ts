@@ -117,3 +117,20 @@ export async function createPriceSubmission(accessToken: string, payload: Submit
   return data;
 }
 
+export type VendorPriceRow = {
+  id: number;
+  vendor_id: string;
+  vendor_name: string;
+  city: string;
+  rating_avg: string;
+  is_verified: boolean;
+  price: string;
+  date: string;
+};
+
+export async function fetchItemVendorPrices(itemId: number): Promise<VendorPriceRow[]> {
+  const api = createApiClient();
+  const { data } = await api.get<any>("/api/market/vendors/prices/", { params: { item_id: itemId } });
+  return Array.isArray(data) ? data : (data?.results ?? []);
+}
+

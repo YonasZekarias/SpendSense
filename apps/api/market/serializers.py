@@ -73,3 +73,16 @@ class AdminSubmissionUpdateSerializer(serializers.ModelSerializer):
             'item', 'price_value', 'market_location', 'city', 'date_observed', 'status', 'image',
         )
 
+from .models import VendorPrice
+
+class VendorPriceSerializer(serializers.ModelSerializer):
+    vendor_id = serializers.UUIDField(source='vendor.id', read_only=True)
+    vendor_name = serializers.CharField(source='vendor.shop_name', read_only=True)
+    city = serializers.CharField(source='vendor.city', read_only=True)
+    rating_avg = serializers.DecimalField(source='vendor.rating_avg', max_digits=3, decimal_places=2, read_only=True)
+    is_verified = serializers.BooleanField(source='vendor.is_verified', read_only=True)
+
+    class Meta:
+        model = VendorPrice
+        fields = ('id', 'vendor_id', 'vendor_name', 'city', 'rating_avg', 'is_verified', 'price', 'date')
+

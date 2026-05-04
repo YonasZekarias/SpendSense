@@ -12,7 +12,8 @@ import {
   Lightbulb, 
   Search,
   Target,
-  Trophy
+  Trophy,
+  X
 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
@@ -33,6 +34,9 @@ export default function MarketSubmitPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [warn, setWarn] = useState<string | null>(null);
+  
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchMarketItems()
@@ -82,6 +86,8 @@ export default function MarketSubmitPage() {
       
       setPrice("");
       setMarketLocation("");
+      setFile(null);
+      setPreviewUrl(null);
       
       // Auto-scroll to message
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -92,6 +98,20 @@ export default function MarketSubmitPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+    }
+  };
+
+  const handleRemoveFile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setFile(null);
+    setPreviewUrl(null);
   };
 
   if (status === "loading" || loading) {
@@ -218,8 +238,41 @@ export default function MarketSubmitPage() {
                 </div>
               </div>
 
+              {/* Proof of Purchase Section */}
+              <div className="border-t border-[#cbd5e1]/30 bg-white p-8">
+                <h3 className="mb-6 flex items-center gap-2 text-lg font-bold">
+                  <Camera className="text-[#135bec]" size={20} />
+                  Proof of Purchase / Price Tag
+                </h3>
+                <div className="flex w-full items-center justify-center">
+                  <label htmlFor="dropzone-file" className={`flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed ${previewUrl ? 'border-[#135bec]/30 bg-[#f0f2f4]/30' : 'border-[#cbd5e1]/60 bg-[#f8f9fa] hover:bg-[#f0f2f4]'} transition-colors relative overflow-hidden`}>
+                    {previewUrl ? (
+                      <div className="relative h-full w-full p-2 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={previewUrl} alt="Preview" className="h-full max-w-full object-contain rounded-lg" />
+                        <button 
+                          onClick={handleRemoveFile} 
+                          className="absolute top-4 right-4 bg-red-500/90 text-white rounded-full p-1.5 hover:bg-red-600 shadow-md transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center pb-6 pt-5">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e2e6ff]">
+                          <UploadCloud className="size-6 text-[#135bec]" />
+                        </div>
+                        <p className="mb-1 text-sm font-bold text-[#111318]">Click to upload photo</p>
+                        <p className="text-xs text-[#616f89]">PNG, JPG or PDF (Max 5MB)</p>
+                      </div>
+                    )}
+                    <input id="dropzone-file" type="file" className="hidden" accept="image/png, image/jpeg, application/pdf" onChange={handleFileChange} />
+                  </label>
+                </div>
+              </div>
+
               {/* Success/Warning Messages */}
-              <div className="px-8 pt-4 space-y-4">
+              <div className="px-8 pt-4 pb-4 space-y-4">
                 {warn && (
                   <Alert className="bg-amber-50 border-amber-200 text-amber-800">
                     <Lightbulb className="h-4 w-4 text-amber-600" />
@@ -255,14 +308,14 @@ export default function MarketSubmitPage() {
               </div>
 
               {/* Footer Actions */}
-              <div className="flex justify-end gap-4 border-t border-[#cbd5e1]/30 bg-white p-8">
-                <Link href="/market" className="flex items-center px-6 py-2.5 font-semibold text-[#616f89] hover:text-[#135bec] transition-colors text-sm">
-                  Cancel
-                </Link>
+              <div className="flex justify-end items-center gap-6 border-t border-[#cbd5e1]/30 bg-white p-6 md:p-8">
+                <button className="text-sm font-bold text-[#111318] hover:text-[#135bec] transition-colors">
+                  Save as Draft
+                </button>
                 <Button
                   disabled={saving}
                   onClick={handleSubmit}
-                  className="bg-[#135bec] px-8 py-2.5 font-bold text-white shadow-sm hover:opacity-90 active:scale-95 transition-all rounded-lg disabled:opacity-50"
+                  className="bg-[#135bec] px-8 py-2.5 font-bold text-white shadow-sm hover:bg-[#0d4fd4] active:scale-95 transition-all rounded-lg disabled:opacity-50"
                 >
                   {saving ? "Submitting..." : "Submit Price"}
                 </Button>

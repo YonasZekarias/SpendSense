@@ -194,7 +194,7 @@ export default function MarketItemDetailPage() {
 
       {/* Vendor Comparison Section */}
       <div className="mb-8">
-        <VendorComparisonTable />
+        <VendorComparisonTable itemId={item.id} />
       </div>
 
       {/* Bottom Grid: Sourcing & Intel */}
