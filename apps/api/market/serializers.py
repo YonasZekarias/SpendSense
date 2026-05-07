@@ -85,4 +85,4 @@ class VendorPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorPrice
         fields = ('id', 'vendor_id', 'vendor_name', 'city', 'rating_avg', 'is_verified', 'price', 'date')
-
+        ref_name = "MarketVendorPrice"

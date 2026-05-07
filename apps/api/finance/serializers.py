@@ -45,7 +45,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
         model = Expense
         fields = (
             'id', 'category', 'amount', 'date', 'description',
-            'item', 'vendor', 'payment_method',
+            'item', 'vendor', 'payment_method', 'receipt',
         )
         read_only_fields = ('id',)
 
