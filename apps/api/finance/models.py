@@ -29,3 +29,4 @@ class Expense(models.Model):
     payment_method = models.CharField(max_length=50, null=True, blank=True) 
     date = models.DateField() 
     note = models.TextField(null=True, blank=True)
+    receipt = models.ImageField(upload_to='receipts/', null=True, blank=True)

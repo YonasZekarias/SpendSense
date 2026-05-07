@@ -71,6 +71,7 @@ class Vendor(models.Model):
     latitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='vendor_profiles/', null=True, blank=True)
+    theme_image = models.ImageField(upload_to='vendor_themes/', null=True, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
 

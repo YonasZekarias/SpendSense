@@ -24,7 +24,8 @@ urlpatterns = [
     path('admin/users/', views.AdminUserListView.as_view(), name='admin-user-list'),
 ]
 
-from .vendor_views import VendorRequestView
+from .vendor_views import VendorRequestView, VendorUpdateView
 urlpatterns.extend([
     path('vendors/request/', VendorRequestView.as_view(), name='vendor-request'),
+    path('vendors/me/', VendorUpdateView.as_view(), name='vendor-update'),
 ])

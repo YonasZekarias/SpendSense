@@ -6,10 +6,13 @@ from io import BytesIO, StringIO
 
 from django.db.models import Sum
 from django.http import HttpResponse
+from django.utils.decorators import method_decorator
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
 
 from users.models import Notification
 
@@ -121,8 +124,13 @@ class BudgetSummaryView(APIView):
         })
 
 
+@method_decorator(name='post', decorator=swagger_auto_schema(
+    operation_description="Create an expense. Supports file uploads for the receipt.",
+    consumes=['multipart/form-data'],
+))
 class ExpenseListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ExpenseSerializer
 
     def get_queryset(self):

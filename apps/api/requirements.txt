@@ -24,3 +24,5 @@ numpy>=1.26.0
 gunicorn>=21.2.0
 django-filter==23.5
 Pillow
+cloudinary>=1.39.0
+django-cloudinary-storage>=0.3.0
