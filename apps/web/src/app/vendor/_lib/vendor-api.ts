@@ -16,6 +16,10 @@ export interface VendorProfile {
   role?: string;
   household_size?: number;
   income_bracket?: string;
+  avatar?: string;
+  image?: string;
+  theme_image?: string;
+  shop_name?: string;
 }
 
 export interface VendorProduct {

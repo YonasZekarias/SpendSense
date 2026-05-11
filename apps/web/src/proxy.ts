@@ -141,7 +141,7 @@ function extractRoleFromAccessToken(token: string | undefined): string | null {
   return null;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const profileCookie = request.cookies.get(AUTH_PROFILE_COOKIE_NAME)?.value;
