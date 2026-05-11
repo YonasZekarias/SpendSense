@@ -24,6 +24,19 @@ export interface VendorListing {
   is_verified: boolean;
 }
 
+export interface Product {
+  item_id: number;
+  item_name: string;
+  unit: string;
+  category: string;
+  image_url: string;
+}
+
+export interface Category {
+  name: string;
+  image_url: string;
+}
+
 export interface Recommendation {
   vendor_id: string;
   shop_name: string;
@@ -81,6 +94,11 @@ export type CollectionLike<T> = T[] | ApiCollection<T>;
 
 export type Product = Recommendation;
 export type Order = Purchase;
+
+export interface StaticMetaResponse {
+  products: Product[];
+  categories: Category[];
+}
 
 export interface CartItem {
   listing_id: number;

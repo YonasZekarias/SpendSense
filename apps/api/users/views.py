@@ -15,7 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from core_api.permissions import IsAdminRole
 
-from .models import AuditLog, User
+from .models import AuditLog, Notification, User
 from .serializers import (
     AdminUserBriefSerializer,
     AdminUserUpdateSerializer,
@@ -260,6 +260,8 @@ class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Notification.objects.none()
         return self.request.user.notifications.all().order_by('-created_at')
 
 
@@ -269,4 +271,6 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
     lookup_field = 'pk'
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Notification.objects.none()
         return self.request.user.notifications.all()

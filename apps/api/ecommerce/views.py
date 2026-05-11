@@ -54,13 +54,19 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
     serializer_class = VendorPriceSerializer
 
     def get_vendor(self):
-        vendor = get_object_or_404(Vendor, pk=self.kwargs['vendor_id'])
+        vendor_id = self.kwargs.get('vendor_id')
+        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+            return Vendor.objects.first() or Vendor()
+        vendor = get_object_or_404(Vendor, pk=vendor_id)
         is_admin = IsAdminRole().has_permission(self.request, self)
-        if vendor.owner_id != self.request.user.id and not is_admin:
+        if self.request.user.is_authenticated and vendor.owner_id != self.request.user.id and not is_admin:
             self.permission_denied(self.request)
         return vendor
 
     def get_queryset(self):
+        vendor_id = self.kwargs.get('vendor_id')
+        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+            return VendorPrice.objects.none()
         v = self.get_vendor()
         return VendorPrice.objects.filter(vendor=v).select_related('item', 'vendor').order_by('-date', '-id')
 
@@ -75,6 +81,8 @@ class VendorListingUpdateView(generics.UpdateAPIView):
     http_method_names = ['patch', 'head', 'options']
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return VendorPrice.objects.none()
         qs = VendorPrice.objects.select_related('vendor')
         user = self.request.user
         if IsAdminRole().has_permission(self.request, self):
@@ -156,6 +164,8 @@ class PurchaseListCreateView(generics.ListCreateAPIView):
         return TransactionSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Transaction.objects.none()
         return Transaction.objects.filter(user=self.request.user).select_related('vendor').order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
@@ -171,6 +181,8 @@ class PurchaseDetailView(generics.RetrieveAPIView):
     lookup_field = 'pk'
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Transaction.objects.none()
         return Transaction.objects.filter(user=self.request.user)
 
 
@@ -264,10 +276,16 @@ class VendorReviewListCreateView(generics.ListCreateAPIView):
         return [AllowAny()]
 
     def get_vendor(self):
-        return get_object_or_404(Vendor, pk=self.kwargs['vendor_id'])
+        vendor_id = self.kwargs.get('vendor_id')
+        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+            return Vendor.objects.first() or Vendor()
+        return get_object_or_404(Vendor, pk=vendor_id)
 
     def get_queryset(self):
-        return VendorReview.objects.filter(vendor_id=self.kwargs['vendor_id']).select_related('user')
+        vendor_id = self.kwargs.get('vendor_id')
+        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+            return VendorReview.objects.none()
+        return VendorReview.objects.filter(vendor_id=vendor_id).select_related('user')
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

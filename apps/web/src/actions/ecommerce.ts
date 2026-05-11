@@ -12,6 +12,9 @@ import {
   type Review,
   type Vendor,
   type VendorListing,
+  type Product,
+  type Category,
+  type StaticMetaResponse,
 } from "@/lib/ecommerce-types";
 import {
   addToCartSchema,
@@ -138,7 +141,7 @@ export async function getVendors(): Promise<Vendor[]> {
   try {
     const response = await apiClient<Vendor[]>({
       method: "GET",
-      endpoint: "/api/ecommerce/admin/vendors/",
+      endpoint: "/api/market/vendors/",
       cache: "force-cache",
       next: {
         revalidate: 300,
@@ -147,6 +150,27 @@ export async function getVendors(): Promise<Vendor[]> {
     });
 
     return normalizeCollection(response);
+  } catch (error) {
+    throw toEcommerceApiError(error);
+  }
+}
+
+export async function getStaticMeta(): Promise<StaticMetaResponse> {
+  try {
+    const response = await apiClient<StaticMetaResponse>(
+      {
+        method: "GET",
+        endpoint: "/api/finance/expenses/",
+        query: { include_products: 1 },
+        cache: "force-cache",
+        next: { revalidate: 300 },
+      },
+    );
+
+    const products = Array.isArray(response.products) ? response.products : [];
+    const categories = Array.isArray(response.categories) ? response.categories : [];
+
+    return { products, categories };
   } catch (error) {
     throw toEcommerceApiError(error);
   }
