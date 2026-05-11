@@ -97,7 +97,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
     try {
       const result = await createListingAction(vendorId, formData);
       if (result.success) {
-        toast.success("Product listed successfully!", {
+        toast.success("Product Created successfully!", {
           description: `Listing #${result.data.id} — ${result.data.item_name} at ETB ${result.data.price}`,
         });
         setSelectedItemId("");
@@ -130,7 +130,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         </nav>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">List New Product</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight">New Product</h2>
             <p className="mt-1 text-slate-500">Provide details to showcase your product on the SpendSense marketplace.</p>
             {vendorId && (
               <div className="mt-2 flex items-center gap-1.5">
