@@ -26,6 +26,7 @@ from .serializers import (
     VendorRegisterSerializer,
     VendorReviewSerializer,
 )
+from .pagination import StandardResultsSetPagination
 
 
 def _haversine_km(lat1, lon1, lat2, lon2):
@@ -55,6 +56,7 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    pagination_class = StandardResultsSetPagination
 
 
     def get_vendor(self):

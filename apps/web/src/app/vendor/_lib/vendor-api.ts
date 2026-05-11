@@ -257,11 +257,15 @@ export async function getVendorProducts(vendorId: string): Promise<VendorProduct
     method: "GET",
   });
 
-  if (!Array.isArray(data)) {
-    return [];
+  if (Array.isArray(data)) {
+    return data.map((item) => normalizeProduct((item as Record<string, unknown>) || {}));
   }
 
-  return data.map((item) => normalizeProduct((item as Record<string, unknown>) || {}));
+  if (data && typeof data === "object" && "results" in data && Array.isArray((data as any).results)) {
+    return (data as any).results.map((item: any) => normalizeProduct(item));
+  }
+
+  return [];
 }
 
 export async function getMarketItems(): Promise<MarketItem[]> {

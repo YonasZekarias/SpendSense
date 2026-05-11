@@ -13,11 +13,23 @@ import Link from "next/link";
 import { apiClient, ApiError } from "@/lib/api";
 import { formatMoney, VendorProduct } from "../_lib/vendor-api";
 
-export default async function VendorProductsPage() {
+export default async function VendorProductsPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const currentPage = searchParams?.page ? Number(searchParams.page) : 1;
+
   let vendorId = "";
   let products: VendorProduct[] = [];
   let loading = true;
   let error = "";
+  
+  let paginationInfo = {
+    total_records: 0,
+    total_pages: 1,
+    page_size: 10,
+    current_page: 1,
+  };
 
   try {
     // Get current user profile server-side to determine vendor id
@@ -29,11 +41,21 @@ export default async function VendorProductsPage() {
     vendorId = p?.vendor_info?.vendor_id || p?.vendor_id || (p?.vendor && (p.vendor.id || p.vendor.vendor_id)) || "";
 
     if (vendorId) {
-      const data = await apiClient<unknown>({ method: "GET", endpoint: `/api/ecommerce/vendors/${vendorId}/listings/` });
+      const data = await apiClient<unknown>({ 
+        method: "GET", 
+        endpoint: `/api/ecommerce/vendors/${vendorId}/listings/?page=${currentPage}` 
+      });
       if (Array.isArray(data)) {
         products = data as VendorProduct[];
+        paginationInfo.total_records = products.length;
       } else if (typeof data === "object" && data && Array.isArray((data as any).results)) {
         products = (data as any).results as VendorProduct[];
+        if ((data as any).pagination) {
+          paginationInfo = (data as any).pagination;
+        } else {
+          // fallback if no pagination object
+          paginationInfo.total_records = products.length;
+        }
       } else {
         products = [];
       }
@@ -51,11 +73,11 @@ export default async function VendorProductsPage() {
     loading = false;
   }
 
-  const totalListings = products.length;
-  const lowStock = Math.min(products.length, 18);
-  const outOfStock = products.filter((item) => item.availability === false).length;
-  const inventoryValue = products.reduce((sum, item) => sum + Number(item.price || 0), 0);
-  const tableRows = products.slice(0, 8);
+  const totalListings = paginationInfo.total_records || products.length;
+  const lowStock = Math.min(products.length, 18); // calculated for current page
+  const outOfStock = products.filter((item) => item.availability === false).length; // calculated for current page
+  const inventoryValue = products.reduce((sum, item) => sum + Number(item.price || 0), 0); // calculated for current page
+  const tableRows = products;
 
   return (
     <main className="min-h-screen p-4 pt-24 md:ml-64 md:p-8 md:pt-24">
@@ -177,7 +199,7 @@ export default async function VendorProductsPage() {
                             </div>
                             <div>
                               <p className="mb-0.5 text-sm font-bold leading-tight">{product.title}</p>
-                              <p className="font-mono text-[10px] text-slate-500">SKU: ETH-{product.id.slice(0, 6).toUpperCase()}</p>
+                              <p className="font-mono text-[10px] text-slate-500">SKU: ETH-{product.price}</p>
                             </div>
                           </div>
                         </td>
@@ -222,18 +244,59 @@ export default async function VendorProductsPage() {
 
             <div className="flex items-center justify-between border-t border-slate-200/40 bg-[#f0f2f4]/20 px-6 py-4">
               <p className="text-xs font-bold text-slate-500">
-                Showing {tableRows.length ? 1 : 0}-{tableRows.length} of {totalListings} products
+                Showing {tableRows.length ? (paginationInfo.current_page - 1) * paginationInfo.page_size + 1 : 0}-
+                {Math.min(paginationInfo.current_page * paginationInfo.page_size, paginationInfo.total_records)} of {paginationInfo.total_records} products
               </p>
               <div className="flex items-center gap-2">
-                <button className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded bg-[#f0f2f4] text-slate-500/50" type="button">
-                  <ChevronLeft size={14} />
-                </button>
-                <button className="flex h-8 w-8 items-center justify-center rounded bg-[#135bec] text-xs font-bold text-white" type="button">1</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-xs font-bold text-slate-600" type="button">2</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-xs font-bold text-slate-600" type="button">3</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-slate-500" type="button">
-                  <ChevronRight size={14} />
-                </button>
+                {paginationInfo.current_page > 1 ? (
+                  <Link 
+                    href={`/vendor/products?page=${paginationInfo.current_page - 1}`}
+                    className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-slate-500 hover:bg-[#e2e6ff] hover:text-[#135bec]"
+                  >
+                    <ChevronLeft size={14} />
+                  </Link>
+                ) : (
+                  <button disabled className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded bg-[#f0f2f4] text-slate-500/50" type="button">
+                    <ChevronLeft size={14} />
+                  </button>
+                )}
+                
+                {Array.from({ length: paginationInfo.total_pages }, (_, i) => i + 1)
+                  .filter(page => page === 1 || page === paginationInfo.total_pages || Math.abs(page - paginationInfo.current_page) <= 1)
+                  .map((page, index, array) => {
+                    const content = (
+                      <Link 
+                        key={page}
+                        href={`/vendor/products?page=${page}`}
+                        className={`flex h-8 w-8 items-center justify-center rounded text-xs font-bold ${page === paginationInfo.current_page ? 'bg-[#135bec] text-white' : 'bg-[#f0f2f4] text-slate-600 hover:bg-[#e2e6ff] hover:text-[#135bec]'}`}
+                      >
+                        {page}
+                      </Link>
+                    );
+                    
+                    if (index > 0 && page - array[index - 1] > 1) {
+                      return (
+                        <div key={`ellipsis-${page}`} className="flex items-center gap-2">
+                          <span className="flex h-8 w-8 items-center justify-center text-slate-500">...</span>
+                          {content}
+                        </div>
+                      );
+                    }
+                    return content;
+                  })}
+
+                {paginationInfo.current_page < paginationInfo.total_pages ? (
+                  <Link 
+                    href={`/vendor/products?page=${paginationInfo.current_page + 1}`}
+                    className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-slate-500 hover:bg-[#e2e6ff] hover:text-[#135bec]"
+                  >
+                    <ChevronRight size={14} />
+                  </Link>
+                ) : (
+                  <button disabled className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded bg-[#f0f2f4] text-slate-500/50" type="button">
+                    <ChevronRight size={14} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
