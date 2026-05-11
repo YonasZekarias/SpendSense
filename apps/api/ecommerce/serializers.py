@@ -47,7 +47,7 @@ class VendorPriceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VendorPrice
-        fields = ('id', 'item', 'item_name', 'unit', 'price', 'date', 'is_verified')
+        fields = ('id', 'item', 'item_name', 'unit', 'price', 'image', 'date', 'is_verified')
         # Listing verification is managed by the system/admin flow, not vendor input.
         read_only_fields = ('id', 'date', 'is_verified')
         ref_name = "EcommerceVendorPrice"

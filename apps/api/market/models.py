@@ -42,6 +42,7 @@ class VendorPrice(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE) 
     price = models.DecimalField(max_digits=10, decimal_places=2) 
     date = models.DateField(auto_now_add=True) 
+    image = models.ImageField(upload_to='listings/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
 
 class Forecast(models.Model): 

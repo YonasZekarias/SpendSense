@@ -29,7 +29,9 @@ export interface VendorProduct {
   unit?: string;
   price: number;
   availability?: boolean;
+  image?: string;
   updated_at?: string;
+
 }
 
 export interface MarketItem {
@@ -284,12 +286,35 @@ export async function getMarketItems(): Promise<MarketItem[]> {
     .filter((item) => Number.isFinite(item.id) && item.id > 0);
 }
 
+export async function getMarketCategories(): Promise<{ name: string }[]> {
+  const data = await requestJson<unknown>("/api/market/categories/", {
+    method: "GET",
+  });
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((item) => {
+    const source = (item as Record<string, unknown>) || {};
+    return {
+      name: String(source.name ?? ""),
+    };
+  });
+}
+
+
 export async function createVendorProduct(
   vendorId: string,
-  payload:
-    | { item: number; price: number }
-    | { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
+  payload: FormData | { item: number; price: number } | { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
 ): Promise<Record<string, unknown>> {
+  if (payload instanceof FormData) {
+    return requestJson<Record<string, unknown>>(`/api/ecommerce/vendors/${vendorId}/listings/`, {
+      method: "POST",
+      body: payload,
+    });
+  }
+
   const body =
     "item" in payload
       ? { item: payload.item, price: payload.price }
@@ -306,6 +331,7 @@ export async function createVendorProduct(
     body: JSON.stringify(body),
   });
 }
+
 
 export async function updateVendorProduct(
   listingId: string,

@@ -74,7 +74,7 @@ export default async function VendorProductsPage() {
             </div>
 
             <Link
-              href="/admin/vendor/products/new"
+              href="/vendor/products/new"
               className="inline-flex items-center gap-2 rounded-xl bg-[#135bec] px-6 py-3 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02]"
             >
               <Plus size={18} />

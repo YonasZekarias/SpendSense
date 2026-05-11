@@ -5,6 +5,8 @@ from django.conf import settings
 from django.db.models import Avg
 from django.utils import timezone
 from rest_framework import generics, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -52,20 +54,25 @@ class VendorDetailView(generics.RetrieveAPIView):
 class VendorListingListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
 
     def get_vendor(self):
-        vendor_id = self.kwargs.get('vendor_id')
-        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+        if getattr(self, 'swagger_fake_view', False):
             return Vendor.objects.first() or Vendor()
+        vendor_id = self.kwargs.get('vendor_id')
         vendor = get_object_or_404(Vendor, pk=vendor_id)
+        
+        if not self.request or not self.request.user or not self.request.user.is_authenticated:
+            return vendor
+            
         is_admin = IsAdminRole().has_permission(self.request, self)
-        if self.request.user.is_authenticated and vendor.owner_id != self.request.user.id and not is_admin:
+        if vendor.owner_id != self.request.user.id and not is_admin:
             self.permission_denied(self.request)
         return vendor
 
     def get_queryset(self):
-        vendor_id = self.kwargs.get('vendor_id')
-        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+        if getattr(self, 'swagger_fake_view', False):
             return VendorPrice.objects.none()
         v = self.get_vendor()
         return VendorPrice.objects.filter(vendor=v).select_related('item', 'vendor').order_by('-date', '-id')
@@ -78,10 +85,16 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
 class VendorListingUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     http_method_names = ['patch', 'head', 'options']
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+        if getattr(self, 'swagger_fake_view', False):
+            return VendorPrice.objects.none()
+        
+        user = getattr(self.request, 'user', None)
+        if not user or not user.is_authenticated:
             return VendorPrice.objects.none()
         qs = VendorPrice.objects.select_related('vendor')
         user = self.request.user
@@ -276,15 +289,15 @@ class VendorReviewListCreateView(generics.ListCreateAPIView):
         return [AllowAny()]
 
     def get_vendor(self):
-        vendor_id = self.kwargs.get('vendor_id')
-        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+        if getattr(self, 'swagger_fake_view', False):
             return Vendor.objects.first() or Vendor()
+        vendor_id = self.kwargs.get('vendor_id')
         return get_object_or_404(Vendor, pk=vendor_id)
 
     def get_queryset(self):
-        vendor_id = self.kwargs.get('vendor_id')
-        if not vendor_id and getattr(self, 'swagger_fake_view', False):
+        if getattr(self, 'swagger_fake_view', False):
             return VendorReview.objects.none()
+        vendor_id = self.kwargs.get('vendor_id')
         return VendorReview.objects.filter(vendor_id=vendor_id).select_related('user')
 
     def get_serializer_context(self):

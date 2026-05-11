@@ -1,6 +1,8 @@
 """
 URL configuration for core_api project.
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -40,3 +42,7 @@ urlpatterns = [
     path('api/finance/', include('finance.urls')),
     path('api/ecommerce/', include('ecommerce.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
