@@ -1,15 +1,17 @@
 "use server";
 
 import { apiClient, ApiError } from "@/lib/api";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { VendorPriceResponse } from "@/types/api/vendor";
 import { vendorPriceSchema } from "@/lib/validation/vendor";
 
-export type ActionResult<T> = { success: true; data: T } | { success: false; message: string };
+export type ActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; message: string };
 
 export async function createListingAction(
   vendorId: string,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<VendorPriceResponse>> {
   const item = formData.get("item");
   const price = formData.get("price");
@@ -62,13 +64,16 @@ export async function createListingAction(
     if (err instanceof Error) {
       return { success: false, message: err.message };
     }
-    return { success: false, message: "An unexpected error occurred while creating the listing." };
+    return {
+      success: false,
+      message: "An unexpected error occurred while creating the listing.",
+    };
   }
 }
 
 export async function updateListingAction(
   listingId: string,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<VendorPriceResponse>> {
   const item = formData.get("item");
   const price = formData.get("price");
@@ -118,6 +123,47 @@ export async function updateListingAction(
     if (err instanceof Error) {
       return { success: false, message: err.message };
     }
-    return { success: false, message: "An unexpected error occurred while updating the listing." };
+    return {
+      success: false,
+      message: "An unexpected error occurred while updating the listing.",
+    };
+  }
+}
+
+export async function deleteListingAction(
+  listingId: string,
+): Promise<ActionResult<{ id: string }>> {
+  if (!listingId) {
+    return { success: false, message: "Listing ID is required." };
+  }
+
+  try {
+    await apiClient<void>({
+      method: "DELETE",
+      endpoint: `/api/ecommerce/listings/${listingId}/`,
+    });
+
+    revalidateTag("vendor-products", "max");
+    revalidateTag("market-items", "max");
+    revalidatePath("/vendor/products");
+
+    return { success: true, data: { id: listingId } };
+  } catch (err: unknown) {
+    console.error("Delete listing error:", err);
+    if (err instanceof ApiError) {
+      const payload = err.payload as Record<string, unknown> | null;
+      const detail =
+        (payload?.detail as string) ||
+        (payload?.non_field_errors as string[])?.join(", ") ||
+        err.message;
+      return { success: false, message: detail };
+    }
+    if (err instanceof Error) {
+      return { success: false, message: err.message };
+    }
+    return {
+      success: false,
+      message: "An unexpected error occurred while deleting the listing.",
+    };
   }
 }

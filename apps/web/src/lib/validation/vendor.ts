@@ -5,7 +5,7 @@ export const vendorPriceSchema = z.object({
   item: z.number(),
   item_name: z.string(),
   unit: z.string(),
-  category: z.string().optional(),
+  category: z.string().default(""),
   price: z.number().or(z.string().transform((v) => Number(v))),
   image: z.string().nullable(),
   images: z

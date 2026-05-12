@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api";
+import { PaginatedResponse } from "@/lib/types/pagination";
 import { marketCategorySchema, paginatedSchema, vendorPriceSchema } from "@/lib/validation/vendor";
-import type { VendorPriceResponse } from "@/types/api/vendor";
+import { type VendorPriceResponse } from "@/types/api/vendor";
 import { z } from "zod";
 
 const userProfileSchema = z
@@ -134,64 +135,16 @@ export async function getVendorProducts(filters: VendorProductsFilters): Promise
     category: filters.category !== "all" ? filters.category : undefined,
   };
 
-  const dataRaw = await apiClient<unknown>({
+  const dataRaw = await apiClient<PaginatedResponse<VendorPriceResponse>>({
     method: "GET",
     endpoint: `/api/ecommerce/vendors/${vendorId}/listings/`,
     query,
   });
 
-  const drfParsed = paginatedSchema(vendorPriceWithStockSchema).safeParse(dataRaw);
-  if (drfParsed.success) {
-    const pageSize = drfParsed.data.results.length || 10;
     return {
       vendorId,
-      products: drfParsed.data.results,
-      pagination: {
-        total_records: drfParsed.data.count,
-        total_pages: Math.max(1, Math.ceil(drfParsed.data.count / pageSize)),
-        page_size: pageSize,
-        current_page: filters.page,
-      },
+      products: dataRaw.results,
+      pagination: dataRaw.pagination
     };
   }
 
-  const legacyParsed = legacyPaginatedListingsSchema.safeParse(dataRaw);
-  if (legacyParsed.success) {
-    const fallbackPageSize = legacyParsed.data.results.length || 10;
-    return {
-      vendorId,
-      products: legacyParsed.data.results,
-      pagination: legacyParsed.data.pagination ?? {
-        total_records: legacyParsed.data.results.length,
-        total_pages: 1,
-        page_size: fallbackPageSize,
-        current_page: filters.page,
-      },
-    };
-  }
-
-  const listParsed = z.array(vendorPriceWithStockSchema).safeParse(dataRaw);
-  if (listParsed.success) {
-    return {
-      vendorId,
-      products: listParsed.data,
-      pagination: {
-        total_records: listParsed.data.length,
-        total_pages: 1,
-        page_size: listParsed.data.length || 10,
-        current_page: filters.page,
-      },
-    };
-  }
-
-  return {
-    vendorId,
-    products: [],
-    pagination: {
-      total_records: 0,
-      total_pages: 1,
-      page_size: 10,
-      current_page: 1,
-    },
-  };
-}
