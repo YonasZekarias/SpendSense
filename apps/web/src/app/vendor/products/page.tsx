@@ -1,67 +1,58 @@
 import {
-  Bell,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Lightbulb,
   Pencil,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { apiClient, ApiError } from "@/lib/api";
-import { formatMoney, VendorProduct } from "../_lib/vendor-api";
+import { ApiError } from "@/lib/api";
+import { formatMoney } from "../_lib/vendor-api";
+import { ProductImage } from "./_components/product-image";
+import { ProductsControls } from "./_components/products-controls";
+import {
+  getVendorProductCategories,
+  getVendorProducts,
+  type VendorProductWithStock,
+} from "./_lib/get-vendor-products";
 
 export default async function VendorProductsPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
-  const currentPage = searchParams?.page ? Number(searchParams.page) : 1;
+  const currentPage = Math.max(1, Number(searchParams?.page ?? 1));
+  const q = getParam(searchParams, "q");
+  const category = getParam(searchParams, "category") || "all";
+  const sort = getParam(searchParams, "sort") || "recently_added";
 
   let vendorId = "";
-  let products: VendorProduct[] = [];
-  let loading = true;
+  let products: VendorProductWithStock[] = [];
   let error = "";
-  
+  let categories: string[] = [];
   let paginationInfo = {
     total_records: 0,
     total_pages: 1,
     page_size: 10,
-    current_page: 1,
+    current_page: currentPage,
   };
 
   try {
-    // Get current user profile server-side to determine vendor id
-    const profile = await apiClient<Record<string, unknown>>({ method: "GET", endpoint: "/api/users/me/" });
-
-    // Try multiple common locations for vendor id
-    // profile.vendor_info?.vendor_id || profile.vendor_id || profile.vendor?.id
-    const p = profile as any;
-    vendorId = p?.vendor_info?.vendor_id || p?.vendor_id || (p?.vendor && (p.vendor.id || p.vendor.vendor_id)) || "";
-
-    if (vendorId) {
-      const data = await apiClient<unknown>({ 
-        method: "GET", 
-        endpoint: `/api/ecommerce/vendors/${vendorId}/listings/?page=${currentPage}` 
-      });
-      if (Array.isArray(data)) {
-        products = data as VendorProduct[];
-        paginationInfo.total_records = products.length;
-      } else if (typeof data === "object" && data && Array.isArray((data as any).results)) {
-        products = (data as any).results as VendorProduct[];
-        if ((data as any).pagination) {
-          paginationInfo = (data as any).pagination;
-        } else {
-          // fallback if no pagination object
-          paginationInfo.total_records = products.length;
-        }
-      } else {
-        products = [];
-      }
-    }
+    const [vendorProducts, serverCategories] = await Promise.all([
+      getVendorProducts({
+        page: currentPage,
+        q,
+        category,
+        sort,
+      }),
+      getVendorProductCategories(),
+    ]);
+    vendorId = vendorProducts.vendorId;
+    products = vendorProducts.products;
+    paginationInfo = vendorProducts.pagination;
+    categories = serverCategories;
   } catch (err: unknown) {
-    loading = false;
     if (err instanceof ApiError) {
       error = err.message;
     } else if (err instanceof Error) {
@@ -69,14 +60,12 @@ export default async function VendorProductsPage(props: {
     } else {
       error = "Failed to load products";
     }
-  } finally {
-    loading = false;
   }
 
-  const totalListings = paginationInfo.total_records || products.length;
-  const lowStock = Math.min(products.length, 18); // calculated for current page
-  const outOfStock = products.filter((item) => item.availability === false).length; // calculated for current page
-  const inventoryValue = products.reduce((sum, item) => sum + Number(item.price || 0), 0); // calculated for current page
+  const totalListings = paginationInfo.total_records;
+  const lowStock = products.filter((item) => getStockCount(item) > 0 && getStockCount(item) < 10).length;
+  const outOfStock = products.filter((item) => getStockCount(item) === 0).length;
+  const inventoryValue = products.reduce((sum, item) => sum + Number(item.price || 0), 0);
   const tableRows = products;
 
   return (
@@ -116,30 +105,7 @@ export default async function VendorProductsPage(props: {
             />
           </div>
 
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-4">
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-              <FilterChip label="All Products" active />
-              <FilterChip label="Traditional Wear" />
-              <FilterChip label="Leather Goods" />
-              <FilterChip label="Handicrafts" />
-              <FilterChip label="Spices" />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                <span>Sort by:</span>
-                <select className="cursor-pointer border-none bg-transparent p-0 pr-6 text-[#135bec] outline-none">
-                  <option>Recently Added</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Stock Level</option>
-                </select>
-              </div>
-              <button className="rounded-lg p-2 transition-colors hover:bg-[#f0f2f4]" type="button">
-                <Filter className="text-slate-500" size={18} />
-              </button>
-            </div>
-          </div>
+          <ProductsControls categories={categories} />
 
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">
             <div className="overflow-x-auto">
@@ -154,27 +120,16 @@ export default async function VendorProductsPage(props: {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/40">
-                  {loading ? (
-                    <tr>
-                      <td className="px-6 py-6 text-sm text-slate-500" colSpan={5}>Loading products...</td>
-                    </tr>
-                  ) : null}
-
-                  {!loading && !tableRows.length ? (
+                  {!tableRows.length ? (
                     <tr>
                       <td className="px-6 py-6 text-sm text-slate-500" colSpan={5}>No products returned from /api/ecommerce/vendors/{'{vendor_id}'}/listings/.</td>
                     </tr>
                   ) : null}
 
-                  {tableRows.map((product, idx) => {
-                    const preview = [
-                      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=140&h=140&fit=crop",
-                      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=140&h=140&fit=crop",
-                      "https://images.unsplash.com/photo-1612196808214-b7e239e5f0b4?w=140&h=140&fit=crop",
-                      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=140&h=140&fit=crop",
-                    ][idx % 4];
-
-                    const stockState = product.availability === false ? "Out of Stock" : idx % 3 === 1 ? "Low Stock" : "In Stock";
+                  {tableRows.map((product) => {
+                    const stockCount = getStockCount(product);
+                    const stockState =
+                      stockCount === 0 ? "Out of Stock" : stockCount > 0 && stockCount < 10 ? "Low Stock" : "In Stock";
                     const stockClass = stockState === "Out of Stock"
                       ? "bg-[#e73908]"
                       : stockState === "Low Stock"
@@ -191,21 +146,21 @@ export default async function VendorProductsPage(props: {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#f0f2f4]">
-                              <img
-                                alt={product.title}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                src={preview}
-                              />
+                              <ProductImage alt={product.item_name} src={product.image} />
                             </div>
                             <div>
-                              <p className="mb-0.5 text-sm font-bold leading-tight">{product.title}</p>
-                              <p className="font-mono text-[10px] text-slate-500">SKU: ETH-{product.price}</p>
+                              <p className="mb-0.5 flex items-center gap-1 text-sm font-bold leading-tight">
+                                <span>{product.item_name}</span>
+                                {product.is_verified ? <CheckCircle2 size={14} className="text-[#135bec]" aria-label="Verified product" /> : null}
+                              </p>
+                              <p className="font-mono text-[10px] text-slate-500">SKU: ETH-{product.id}</p>
+                              <p className="text-[10px] text-slate-500">{formatDate(product.date)}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="rounded bg-[#dbe1ff] px-2 py-1 text-[10px] font-bold text-[#111318]">
-                            {product.category || "General"}
+                            {product.unit || "General"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -223,7 +178,7 @@ export default async function VendorProductsPage(props: {
                           <div className="flex items-center justify-center gap-2">
                             <Link
                               className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f0f2f4] text-slate-500 transition-all hover:bg-[#e2e6ff] hover:text-[#135bec]"
-                              href={`/admin/vendor/products/${product.id}/edit`}
+                              href={`/vendor/products/${product.id}/edit`}
                             >
                               <Pencil size={16} />
                             </Link>
@@ -250,7 +205,7 @@ export default async function VendorProductsPage(props: {
               <div className="flex items-center gap-2">
                 {paginationInfo.current_page > 1 ? (
                   <Link 
-                    href={`/vendor/products?page=${paginationInfo.current_page - 1}`}
+                    href={buildPageHref(searchParams, paginationInfo.current_page - 1)}
                     className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-slate-500 hover:bg-[#e2e6ff] hover:text-[#135bec]"
                   >
                     <ChevronLeft size={14} />
@@ -267,7 +222,7 @@ export default async function VendorProductsPage(props: {
                     const content = (
                       <Link 
                         key={page}
-                        href={`/vendor/products?page=${page}`}
+                        href={buildPageHref(searchParams, page)}
                         className={`flex h-8 w-8 items-center justify-center rounded text-xs font-bold ${page === paginationInfo.current_page ? 'bg-[#135bec] text-white' : 'bg-[#f0f2f4] text-slate-600 hover:bg-[#e2e6ff] hover:text-[#135bec]'}`}
                       >
                         {page}
@@ -287,7 +242,7 @@ export default async function VendorProductsPage(props: {
 
                 {paginationInfo.current_page < paginationInfo.total_pages ? (
                   <Link 
-                    href={`/vendor/products?page=${paginationInfo.current_page + 1}`}
+                    href={buildPageHref(searchParams, paginationInfo.current_page + 1)}
                     className="flex h-8 w-8 items-center justify-center rounded bg-[#f0f2f4] text-slate-500 hover:bg-[#e2e6ff] hover:text-[#135bec]"
                   >
                     <ChevronRight size={14} />
@@ -323,19 +278,50 @@ export default async function VendorProductsPage(props: {
       </main>
   );
 }
+function getStockCount(product: VendorProductWithStock): number {
+  return product.stock_count ?? product.quantity ?? -1;
+}
 
-function FilterChip({ label, active }: { label: string; active?: boolean }) {
-  return (
-    <button
-      className={[
-        "whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold transition-colors",
-        active ? "bg-[#135bec] text-white" : "bg-[#f0f2f4] text-slate-500 hover:bg-slate-300/40",
-      ].join(" ")}
-      type="button"
-    >
-      {label}
-    </button>
-  );
+function getParam(
+  searchParams: { [key: string]: string | string[] | undefined } | undefined,
+  key: string,
+): string {
+  const raw = searchParams?.[key];
+  return Array.isArray(raw) ? raw[0] || "" : raw || "";
+}
+
+function buildPageHref(
+  searchParams: { [key: string]: string | string[] | undefined } | undefined,
+  page: number,
+): string {
+  const params = new URLSearchParams();
+  if (!searchParams) {
+    params.set("page", String(page));
+    return `/vendor/products?${params.toString()}`;
+  }
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (key === "page") continue;
+    if (Array.isArray(value)) {
+      if (value[0]) params.set(key, value[0]);
+      continue;
+    }
+    if (value) params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/vendor/products?${params.toString()}`;
+}
+
+function formatDate(dateValue: string): string {
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return dateValue;
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
 }
 
 function StatCard({

@@ -410,7 +410,14 @@ export async function getVendorRecommendations(query: {
   return Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
 }
 
-export function formatMoney(amount: number | undefined, currency = "ETB"): string {
-  const value = Number.isFinite(amount) ? Number(amount) : 0;
-  return `${currency} ${value.toLocaleString()}`;
+export function formatMoney(amount: number | string | undefined, currency = "ETB"): string {
+  const numeric = typeof amount === "string" ? Number(amount) : amount;
+  const value = Number.isFinite(numeric) ? Number(numeric) : 0;
+
+  return new Intl.NumberFormat("en-ET", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
