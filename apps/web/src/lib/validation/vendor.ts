@@ -5,8 +5,18 @@ export const vendorPriceSchema = z.object({
   item: z.number(),
   item_name: z.string(),
   unit: z.string(),
+  category: z.string().optional(),
   price: z.number().or(z.string().transform((v) => Number(v))),
   image: z.string().nullable(),
+  images: z
+    .array(
+      z.object({
+        id: z.number(),
+        url: z.string(),
+        position: z.number(),
+      }),
+    )
+    .optional(),
   date: z.string(),
   is_verified: z.boolean(),
 });

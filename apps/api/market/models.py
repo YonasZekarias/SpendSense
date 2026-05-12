@@ -45,6 +45,16 @@ class VendorPrice(models.Model):
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
 
+
+class VendorPriceImage(models.Model):
+    vendor_price = models.ForeignKey(VendorPrice, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='listings/')
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('position', 'id')
+
 class Forecast(models.Model): 
     item = models.ForeignKey(Item, on_delete=models.CASCADE) 
     forecast_date = models.DateField()

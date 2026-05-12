@@ -77,19 +77,19 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
         if getattr(self, 'swagger_fake_view', False):
             return VendorPrice.objects.none()
         v = self.get_vendor()
-        return VendorPrice.objects.filter(vendor=v).select_related('item', 'vendor').order_by('-date', '-id')
+        return VendorPrice.objects.filter(vendor=v).select_related('item', 'vendor').prefetch_related('images').order_by('-date', '-id')
 
     def perform_create(self, serializer):
         v = self.get_vendor()
         serializer.save(vendor=v)
 
 
-class VendorListingUpdateView(generics.UpdateAPIView):
+class VendorListingUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
-    http_method_names = ['patch', 'head', 'options']
+    http_method_names = ['get', 'patch', 'head', 'options']
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -98,7 +98,7 @@ class VendorListingUpdateView(generics.UpdateAPIView):
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return VendorPrice.objects.none()
-        qs = VendorPrice.objects.select_related('vendor')
+        qs = VendorPrice.objects.select_related('vendor', 'item').prefetch_related('images')
         user = self.request.user
         if IsAdminRole().has_permission(self.request, self):
             return qs

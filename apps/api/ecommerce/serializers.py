@@ -6,7 +6,7 @@ from django.db.models import Avg
 from django.conf import settings
 from rest_framework import serializers
 
-from market.models import VendorPrice
+from market.models import VendorPrice, VendorPriceImage
 from users.models import User, Vendor
 
 from .chapa import ChapaInitError, initialize_chapa_checkout
@@ -44,13 +44,64 @@ class VendorRegisterSerializer(serializers.ModelSerializer):
 class VendorPriceSerializer(serializers.ModelSerializer):
     item_name = serializers.CharField(source='item.name', read_only=True)
     unit = serializers.CharField(source='item.unit', read_only=True)
+    category = serializers.CharField(source='item.category', read_only=True)
+    images = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VendorPrice
-        fields = ('id', 'item', 'item_name', 'unit', 'price', 'image', 'date', 'is_verified')
+        fields = ('id', 'item', 'item_name', 'unit', 'category', 'price', 'image', 'images', 'date', 'is_verified')
         # Listing verification is managed by the system/admin flow, not vendor input.
         read_only_fields = ('id', 'date', 'is_verified')
         ref_name = "EcommerceVendorPrice"
+
+    def get_images(self, obj):
+        request = self.context.get('request')
+        images = []
+        for listing_image in obj.images.all():
+            image_url = listing_image.image.url if listing_image.image else ""
+            if request and image_url:
+                image_url = request.build_absolute_uri(image_url)
+            images.append({
+                'id': listing_image.id,
+                'url': image_url,
+                'position': listing_image.position,
+            })
+        return images
+
+    def _replace_images(self, vendor_price, files):
+        vendor_price.images.all().delete()
+        for index, file_obj in enumerate(files):
+            VendorPriceImage.objects.create(
+                vendor_price=vendor_price,
+                image=file_obj,
+                position=index,
+            )
+        if files:
+            files[0].seek(0)
+            vendor_price.image = files[0]
+            vendor_price.save(update_fields=['image'])
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        vendor_price = super().create(validated_data)
+        files = request.FILES.getlist('images') if request else []
+        if files:
+            self._replace_images(vendor_price, files)
+        elif vendor_price.image:
+            VendorPriceImage.objects.create(
+                vendor_price=vendor_price,
+                image=vendor_price.image,
+                position=0,
+            )
+        return vendor_price
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        vendor_price = super().update(instance, validated_data)
+        files = request.FILES.getlist('images') if request else []
+        if files:
+            self._replace_images(vendor_price, files)
+        return vendor_price
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:

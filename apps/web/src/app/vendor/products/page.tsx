@@ -48,6 +48,7 @@ export default async function VendorProductsPage(props: {
       }),
       getVendorProductCategories(),
     ]);
+    console.log("vendorProducts", vendorProducts)
     vendorId = vendorProducts.vendorId;
     products = vendorProducts.products;
     paginationInfo = vendorProducts.pagination;

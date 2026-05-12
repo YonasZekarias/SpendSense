@@ -8,8 +8,14 @@ export interface VendorPriceResponse {
   item: number;
   item_name: string;
   unit: string;
+  category: string;
   price: number;
   image: string | null;
+  images?: {
+    id: number;
+    url: string;
+    position: number;
+  }[];
   date: string;
   is_verified: boolean;
 }

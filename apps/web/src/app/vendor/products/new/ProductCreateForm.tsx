@@ -23,13 +23,18 @@ interface ProductCreateFormProps {
   vendorId: string | null;
 }
 
+type LocalImage = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
 export default function ProductCreateForm({ initialItems, initialCategories, vendorId }: ProductCreateFormProps) {
   // const [vendorId, setVendorId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedItemId, setSelectedItemId] = useState<number | "">("");
   const [price, setPrice] = useState<string>("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [images, setImages] = useState<LocalImage[]>([]);
   const [saving, setSaving] = useState(false);
 
   // useEffect(() => {
@@ -47,24 +52,55 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
   }, [selectedItemId, initialItems]);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (!selectedFiles.length) return;
+
+    const validFiles = selectedFiles.filter((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
-        return;
+        toast.error(`${file.name}: image size must be less than 5MB`);
+        return false;
       }
-      setImageFile(file);
+      return true;
+    });
+
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImages((prev) => [
+          ...prev,
+          {
+            id: `${file.name}-${file.lastModified}-${prev.length}`,
+            file,
+            preview: reader.result as string,
+          },
+        ]);
       };
       reader.readAsDataURL(file);
-    }
+    });
+
+    e.target.value = "";
   }
 
-  function removeImage() {
-    setImageFile(null);
-    setImagePreview(null);
+  function removeImage(index: number) {
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed?.preview.startsWith("data:") === false) {
+        // Since we are using file reader data URLs, revoking isn't strictly necessary for FileReader.
+        // But if we ever switch to createObjectURL, this prevents memory leaks.
+        URL.revokeObjectURL(removed.preview);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
+  }
+
+  function moveImage(index: number, direction: "left" | "right") {
+    setImages((prev) => {
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -90,8 +126,11 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
     const formData = new FormData();
     formData.append("item", String(selectedItemId));
     formData.append("price", String(priceNum));
-    if (imageFile) {
-      formData.append("image", imageFile);
+    if (images[0]?.file) {
+      formData.append("image", images[0].file);
+    }
+    for (const image of images) {
+      formData.append("images", image.file);
     }
 
     try {
@@ -102,7 +141,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         });
         setSelectedItemId("");
         setPrice("");
-        removeImage();
+        setImages([]);
       } else {
         toast.error("Failed to create listing", {
           description: result.message,
@@ -311,32 +350,45 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
               Product Media
             </h3>
             
-            {imagePreview ? (
-              <div className="relative group">
-                <div className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100 border border-slate-200 shadow-inner">
-                  <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
-                </div>
-                <button 
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full text-red-500 shadow-sm hover:bg-white transition-colors"
-                >
-                  <X size={16} />
-                </button>
-                <div className="mt-3 text-center">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate px-4">{imageFile?.name}</p>
-                </div>
+            <div className="grid gap-2">
+              {images[0] && (
+                <img
+                  alt="Product cover image"
+                  className="aspect-square w-full rounded-md object-cover border border-slate-200"
+                  src={images[0].preview}
+                />
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                {images.map((img, index) => (
+                  <div key={img.id} className="relative aspect-square">
+                    <img
+                      alt="Uploaded image"
+                      className="border border-slate-200 aspect-square w-full rounded-md object-cover"
+                      src={img.preview}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors z-10"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+                
+                <label className="cursor-pointer hover:bg-slate-100 ease-in duration-100 flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 group">
+                  <Upload className="h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  <span className="sr-only">Upload Images</span>
+                </label>
               </div>
-            ) : (
-              <label className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-[#f0f2f4]/30 p-8 text-center transition-all hover:border-[#135bec] hover:bg-white shadow-sm">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#135bec]/10 text-[#135bec] transition-transform group-hover:scale-110 shadow-inner">
-                  <Upload size={24} />
-                </div>
-                <p className="text-sm font-bold text-slate-700">Upload Image</p>
-                <p className="mt-1 text-[11px] text-slate-400 font-medium">JPG, PNG or WEBP (Max 5MB)</p>
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-              </label>
-            )}
+            </div>
           </div>
 
           <div className="rounded-xl bg-gradient-to-br from-[#135bec] to-blue-700 p-6 text-white shadow-xl shadow-[#135bec]/30 border border-white/10">
@@ -357,7 +409,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                 PRICING DETAILS
               </div>
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                {imageFile ? <CheckCircle2 size={16} className="text-emerald-400" /> : <div className="h-4 w-4 rounded-full border-2 border-white/20" />}
+                {images.length > 0 ? <CheckCircle2 size={16} className="text-emerald-400" /> : <div className="h-4 w-4 rounded-full border-2 border-white/20" />}
                 MEDIA ASSETS
               </div>
             </div>

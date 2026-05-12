@@ -14,6 +14,7 @@ export async function createListingAction(
   const item = formData.get("item");
   const price = formData.get("price");
   const image = formData.get("image");
+  const images = formData.getAll("images");
 
   if (!item || !price) {
     return { success: false, message: "Item and price are required." };
@@ -28,6 +29,11 @@ export async function createListingAction(
     if (image && image instanceof File && image.size > 0) {
       serverFormData.append("image", image);
     }
+    for (const imageFile of images) {
+      if (imageFile instanceof File && imageFile.size > 0) {
+        serverFormData.append("images", imageFile);
+      }
+    }
 
     const data = await apiClient<VendorPriceResponse>({
       method: "POST",
@@ -38,8 +44,8 @@ export async function createListingAction(
     // Validate with Zod
     const validated = vendorPriceSchema.parse(data);
 
-    revalidateTag("vendor-products");
-    revalidateTag("market-items");
+    revalidateTag("vendor-products", "max");
+    revalidateTag("market-items", "max");
 
     return { success: true, data: validated };
   } catch (err: unknown) {
@@ -57,5 +63,61 @@ export async function createListingAction(
       return { success: false, message: err.message };
     }
     return { success: false, message: "An unexpected error occurred while creating the listing." };
+  }
+}
+
+export async function updateListingAction(
+  listingId: string,
+  formData: FormData
+): Promise<ActionResult<VendorPriceResponse>> {
+  const item = formData.get("item");
+  const price = formData.get("price");
+  const image = formData.get("image");
+  const images = formData.getAll("images");
+
+  if (!item || !price) {
+    return { success: false, message: "Item and price are required." };
+  }
+
+  try {
+    const serverFormData = new FormData();
+    serverFormData.append("item", String(item));
+    serverFormData.append("price", String(price));
+
+    if (image && image instanceof File && image.size > 0) {
+      serverFormData.append("image", image);
+    }
+    for (const imageFile of images) {
+      if (imageFile instanceof File && imageFile.size > 0) {
+        serverFormData.append("images", imageFile);
+      }
+    }
+
+    const data = await apiClient<VendorPriceResponse>({
+      method: "PATCH",
+      endpoint: `/api/ecommerce/listings/${listingId}/`,
+      body: serverFormData,
+    });
+
+    const validated = vendorPriceSchema.parse(data);
+
+    revalidateTag("vendor-products", "max");
+    revalidateTag("market-items", "max");
+
+    return { success: true, data: validated };
+  } catch (err: unknown) {
+    console.error("Update listing error:", err);
+    if (err instanceof ApiError) {
+      const payload = err.payload as Record<string, unknown> | null;
+      const detail =
+        (payload?.detail as string) ||
+        (payload?.non_field_errors as string[])?.join(", ") ||
+        err.message;
+      return { success: false, message: detail };
+    }
+    if (err instanceof Error) {
+      return { success: false, message: err.message };
+    }
+    return { success: false, message: "An unexpected error occurred while updating the listing." };
   }
 }
