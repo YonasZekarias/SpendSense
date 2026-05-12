@@ -12,6 +12,9 @@ import {
   type Review,
   type Vendor,
   type VendorListing,
+  type Product,
+  type Category,
+  type StaticMetaResponse,
 } from "@/lib/ecommerce-types";
 import {
   addToCartSchema,
@@ -63,12 +66,17 @@ function toEcommerceApiError(error: unknown): EcommerceApiError {
     const fallbackMessage =
       error.status >= 500
         ? "A server error occurred. Please try again."
-        : error.message || "Request failed. Please verify your input and retry.";
+        : error.message ||
+          "Request failed. Please verify your input and retry.";
 
     return new EcommerceApiError(fallbackMessage, error.status, error.payload);
   }
 
-  return new EcommerceApiError("Unexpected network error. Please try again.", 0, null);
+  return new EcommerceApiError(
+    "Unexpected network error. Please try again.",
+    0,
+    null,
+  );
 }
 
 async function readCartFromCookie(): Promise<Cart> {
@@ -97,7 +105,9 @@ async function writeCartToCookie(cart: Cart): Promise<void> {
   });
 }
 
-export async function getRecommendations(input: RecommendationQuerySchema): Promise<Recommendation[]> {
+export async function getRecommendations(
+  input: RecommendationQuerySchema,
+): Promise<Recommendation[]> {
   const query = recommendationQuerySchema.parse(input);
 
   try {
@@ -108,7 +118,10 @@ export async function getRecommendations(input: RecommendationQuerySchema): Prom
       cache: "force-cache",
       next: {
         revalidate: 120,
-        tags: [CACHE_TAGS.recommendations, `${CACHE_TAGS.recommendations}:${query.item_id}`],
+        tags: [
+          CACHE_TAGS.recommendations,
+          `${CACHE_TAGS.recommendations}:${query.item_id}`,
+        ],
       },
     });
   } catch (error) {
@@ -116,7 +129,9 @@ export async function getRecommendations(input: RecommendationQuerySchema): Prom
   }
 }
 
-export async function getProducts(input: RecommendationQuerySchema): Promise<Recommendation[]> {
+export async function getProducts(
+  input: RecommendationQuerySchema,
+): Promise<Recommendation[]> {
   return getRecommendations(input);
 }
 
@@ -126,7 +141,10 @@ export async function getProductById(id: string): Promise<Recommendation> {
     throw new EcommerceApiError("Product ID must be a positive integer.", 400);
   }
 
-  const recommendations = await getRecommendations({ item_id: itemId, limit: 1 });
+  const recommendations = await getRecommendations({
+    item_id: itemId,
+    limit: 1,
+  });
   if (!recommendations.length) {
     throw new EcommerceApiError("Product not found.", 404);
   }
@@ -138,7 +156,7 @@ export async function getVendors(): Promise<Vendor[]> {
   try {
     const response = await apiClient<Vendor[]>({
       method: "GET",
-      endpoint: "/api/ecommerce/admin/vendors/",
+      endpoint: "/api/market/vendors/",
       cache: "force-cache",
       next: {
         revalidate: 300,
@@ -147,6 +165,27 @@ export async function getVendors(): Promise<Vendor[]> {
     });
 
     return normalizeCollection(response);
+  } catch (error) {
+    throw toEcommerceApiError(error);
+  }
+}
+
+export async function getStaticMeta(): Promise<StaticMetaResponse> {
+  try {
+    const response = await apiClient<StaticMetaResponse>({
+      method: "GET",
+      endpoint: "/api/finance/expenses/",
+      query: { include_products: 1 },
+      cache: "force-cache",
+      next: { revalidate: 300 },
+    });
+
+    const products = Array.isArray(response.products) ? response.products : [];
+    const categories = Array.isArray(response.categories)
+      ? response.categories
+      : [];
+
+    return { products, categories };
   } catch (error) {
     throw toEcommerceApiError(error);
   }
@@ -168,7 +207,9 @@ export async function getVendorById(id: string): Promise<Vendor> {
   }
 }
 
-export async function registerVendor(input: VendorRegisterSchema): Promise<Vendor> {
+export async function registerVendor(
+  input: VendorRegisterSchema,
+): Promise<Vendor> {
   const payload = vendorRegisterSchema.parse(input);
 
   try {
@@ -188,7 +229,9 @@ export async function registerVendor(input: VendorRegisterSchema): Promise<Vendo
   }
 }
 
-export async function getVendorListings(vendorId: string): Promise<VendorListing[]> {
+export async function getVendorListings(
+  vendorId: string,
+): Promise<VendorListing[]> {
   try {
     const response = await apiClient<VendorListing[]>({
       method: "GET",
@@ -206,7 +249,9 @@ export async function getVendorListings(vendorId: string): Promise<VendorListing
   }
 }
 
-export async function createVendorListing(input: VendorListingCreateSchema): Promise<VendorListing> {
+export async function createVendorListing(
+  input: VendorListingCreateSchema,
+): Promise<VendorListing> {
   const payload = vendorListingCreateSchema.parse(input);
 
   try {
@@ -216,6 +261,7 @@ export async function createVendorListing(input: VendorListingCreateSchema): Pro
       body: {
         item: payload.item,
         price: payload.price,
+        stock_count: payload.stock_count,
       },
       cache: "no-store",
     });
@@ -287,13 +333,19 @@ export async function addToCart(input: AddToCartSchema): Promise<Cart> {
   try {
     const currentCart = await readCartFromCookie();
     const existingItem = currentCart.items.find(
-      (item) => item.listing_id === payload.listing_id && item.vendor_id === payload.vendor_id,
+      (item) =>
+        item.listing_id === payload.listing_id &&
+        item.vendor_id === payload.vendor_id,
     );
 
     const nextItems = existingItem
       ? currentCart.items.map((item) =>
-          item.listing_id === payload.listing_id && item.vendor_id === payload.vendor_id
-            ? { ...item, quantity: Math.min(item.quantity + payload.quantity, 999) }
+          item.listing_id === payload.listing_id &&
+          item.vendor_id === payload.vendor_id
+            ? {
+                ...item,
+                quantity: Math.min(item.quantity + payload.quantity, 999),
+              }
             : item,
         )
       : [
@@ -308,7 +360,10 @@ export async function addToCart(input: AddToCartSchema): Promise<Cart> {
           },
         ];
 
-    const total = nextItems.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+    const total = nextItems.reduce(
+      (sum, item) => sum + item.unit_price * item.quantity,
+      0,
+    );
     const nextCart: Cart = {
       items: nextItems,
       total,
@@ -392,7 +447,9 @@ export async function getOrderById(id: string): Promise<Purchase> {
   }
 }
 
-export async function updateOrderStatus(input: PurchaseStatusUpdateSchema): Promise<Purchase> {
+export async function updateOrderStatus(
+  input: PurchaseStatusUpdateSchema,
+): Promise<Purchase> {
   const payload = purchaseStatusUpdateSchema.parse(input);
 
   try {

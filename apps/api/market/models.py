@@ -41,8 +41,20 @@ class VendorPrice(models.Model):
     vendor = models.ForeignKey('users.Vendor', on_delete=models.CASCADE) 
     item = models.ForeignKey(Item, on_delete=models.CASCADE) 
     price = models.DecimalField(max_digits=10, decimal_places=2) 
+    stock_count = models.PositiveIntegerField(default=0)
     date = models.DateField(auto_now_add=True) 
+    image = models.ImageField(upload_to='listings/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
+
+
+class VendorPriceImage(models.Model):
+    vendor_price = models.ForeignKey(VendorPrice, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='listings/')
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('position', 'id')
 
 class Forecast(models.Model): 
     item = models.ForeignKey(Item, on_delete=models.CASCADE) 

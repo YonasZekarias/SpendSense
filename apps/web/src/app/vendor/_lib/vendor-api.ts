@@ -16,6 +16,10 @@ export interface VendorProfile {
   role?: string;
   household_size?: number;
   income_bracket?: string;
+  avatar?: string;
+  image?: string;
+  theme_image?: string;
+  shop_name?: string;
 }
 
 export interface VendorProduct {
@@ -25,7 +29,9 @@ export interface VendorProduct {
   unit?: string;
   price: number;
   availability?: boolean;
+  image?: string;
   updated_at?: string;
+
 }
 
 export interface MarketItem {
@@ -251,11 +257,15 @@ export async function getVendorProducts(vendorId: string): Promise<VendorProduct
     method: "GET",
   });
 
-  if (!Array.isArray(data)) {
-    return [];
+  if (Array.isArray(data)) {
+    return data.map((item) => normalizeProduct((item as Record<string, unknown>) || {}));
   }
 
-  return data.map((item) => normalizeProduct((item as Record<string, unknown>) || {}));
+  if (data && typeof data === "object" && "results" in data && Array.isArray((data as any).results)) {
+    return (data as any).results.map((item: any) => normalizeProduct(item));
+  }
+
+  return [];
 }
 
 export async function getMarketItems(): Promise<MarketItem[]> {
@@ -280,12 +290,35 @@ export async function getMarketItems(): Promise<MarketItem[]> {
     .filter((item) => Number.isFinite(item.id) && item.id > 0);
 }
 
+export async function getMarketCategories(): Promise<{ name: string }[]> {
+  const data = await requestJson<unknown>("/api/market/categories/", {
+    method: "GET",
+  });
+
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((item) => {
+    const source = (item as Record<string, unknown>) || {};
+    return {
+      name: String(source.name ?? ""),
+    };
+  });
+}
+
+
 export async function createVendorProduct(
   vendorId: string,
-  payload:
-    | { item: number; price: number }
-    | { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
+  payload: FormData | { item: number; price: number } | { item_name: string; category: string; unit: string; price_value: number; availability: boolean },
 ): Promise<Record<string, unknown>> {
+  if (payload instanceof FormData) {
+    return requestJson<Record<string, unknown>>(`/api/ecommerce/vendors/${vendorId}/listings/`, {
+      method: "POST",
+      body: payload,
+    });
+  }
+
   const body =
     "item" in payload
       ? { item: payload.item, price: payload.price }
@@ -302,6 +335,7 @@ export async function createVendorProduct(
     body: JSON.stringify(body),
   });
 }
+
 
 export async function updateVendorProduct(
   listingId: string,
@@ -376,7 +410,14 @@ export async function getVendorRecommendations(query: {
   return Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
 }
 
-export function formatMoney(amount: number | undefined, currency = "ETB"): string {
-  const value = Number.isFinite(amount) ? Number(amount) : 0;
-  return `${currency} ${value.toLocaleString()}`;
+export function formatMoney(amount: number | string | undefined, currency = "ETB"): string {
+  const numeric = typeof amount === "string" ? Number(amount) : amount;
+  const value = Number.isFinite(numeric) ? Number(numeric) : 0;
+
+  return new Intl.NumberFormat("en-ET", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }

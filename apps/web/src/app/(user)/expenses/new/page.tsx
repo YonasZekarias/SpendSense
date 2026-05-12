@@ -27,16 +27,17 @@ import {
   SelectValue,
 } from "@repo/ui/components/select";
 import { createExpenseAction } from "@/actions/finance";
-import { getVendors, getProducts } from "@/actions/ecommerce";
-import { Vendor, Product } from "@/lib/ecommerce-types";
+import { getVendors, getStaticMeta } from "@/actions/ecommerce";
+import { Vendor, Product, Category } from "@/lib/ecommerce-types";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 export default function ExpenseNewPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   
-  const [category, setCategory] = useState("Dining & Client Meals");
+  const [category, setCategory] = useState("Cereals & Grains");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
@@ -48,19 +49,18 @@ export default function ExpenseNewPage() {
 
   const [availableVendors, setAvailableVendors] = useState<Vendor[]>([]);
   const [availableItems, setAvailableItems] = useState<Product[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [itemQuery, setItemQuery] = useState("");
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(true);
 
   useEffect(() => {
     async function fetchMetadata() {
       try {
-        const [vendorsData, itemsData] = await Promise.all([
-          getVendors(),
-          // Passing dummy ID just to get a list if getProducts requires it 
-          // or if getProducts works without input in some variation
-          getProducts({ item_id: 1, limit: 100 }) 
-        ]);
+        const [vendorsData, meta] = await Promise.all([getVendors(), getStaticMeta()]);
         setAvailableVendors(vendorsData);
-        setAvailableItems(itemsData);
+        setAvailableItems(meta.products || []);
+        setAvailableCategories(meta.categories || []);
       } catch (err) {
         console.error("Failed to fetch metadata", err);
       } finally {
@@ -148,29 +148,57 @@ export default function ExpenseNewPage() {
             {/* Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                   <LayoutGrid className="size-4" />
                   Category
                 </label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-full bg-slate-50 border-none rounded-xl h-12">
+                    <SelectTrigger className="w-full bg-slate-50 border-none rounded-xl h-12">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Business Travel">Business Travel</SelectItem>
-                    <SelectItem value="Office Supplies">Office Supplies</SelectItem>
-                    <SelectItem value="Dining & Client Meals">Dining & Client Meals</SelectItem>
-                    <SelectItem value="Utilities & Rent">Utilities & Rent</SelectItem>
-                    <SelectItem value="Software Subscriptions">Software Subscriptions</SelectItem>
-                    <SelectItem value="Logistics & Shipping">Logistics & Shipping</SelectItem>
-                    <SelectItem value="Groceries & Personal">Groceries & Personal</SelectItem>
-                    <SelectItem value="Electronics">Electronics</SelectItem>
-                  </SelectContent>
+                    <SelectContent>
+                      <div className="p-2 sticky top-0 bg-white border-b z-10">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                          <Input
+                            placeholder="Search categories..."
+                            value={categoryQuery}
+                            onChange={(e) => setCategoryQuery(e.target.value)}
+                            className="w-full h-8 pl-7 text-xs bg-slate-50 border-none"
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto mt-2">
+                        {availableCategories
+                          .filter((c) => c.name.toLowerCase().includes(categoryQuery.toLowerCase()))
+                          .map((c) => (
+                            <SelectItem key={c.name} value={c.name}>
+                              <div className="flex items-center gap-3 py-1">
+                                <div className="size-8 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200 shadow-sm">
+                                  <img 
+                                    src={c.image_url} 
+                                    className="w-full h-full object-cover" 
+                                    alt="" 
+                                    onError={(e) => (e.currentTarget.src = "https://api.spendsense.app/static/categories/default.jpg")}
+                                  />
+                                </div>
+                                <span className="font-medium text-slate-700">{c.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        {availableCategories.filter((c) => c.name.toLowerCase().includes(categoryQuery.toLowerCase())).length === 0 && (
+                          <div className="p-4 text-center text-xs text-slate-500">
+                            No categories found
+                          </div>
+                        )}
+                      </div>
+                    </SelectContent>
                 </Select>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                   <CreditCard className="size-4" />
                   Payment Method
                 </label>
@@ -190,7 +218,7 @@ export default function ExpenseNewPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                   <Calendar className="size-4" />
                   Transaction Date
                 </label>
@@ -203,24 +231,58 @@ export default function ExpenseNewPage() {
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                   <ShoppingCart className="size-4" />
                   Market Item (Optional)
                 </label>
-                <Select 
-                  value={itemId?.toString() || "none"} 
+                <Select
+                  value={itemId?.toString() || "none"}
                   onValueChange={(val) => setItemId(val === "none" ? undefined : parseInt(val))}
                 >
                   <SelectTrigger className="w-full bg-slate-50 border-none rounded-xl h-12">
                     <SelectValue placeholder="Select item" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {availableItems.map((item) => (
-                      <SelectItem key={item.item_id} value={item.item_id.toString()}>
-                        {item.item_name}
-                      </SelectItem>
-                    ))}
+                    <div className="p-2 sticky top-0 bg-white border-b z-10">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                        <Input
+                          placeholder="Search items..."
+                          value={itemQuery}
+                          onChange={(e) => setItemQuery(e.target.value)}
+                          className="w-full h-8 pl-7 text-xs bg-slate-50 border-none"
+                          onKeyDown={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto mt-2">
+                      <SelectItem value="none">None</SelectItem>
+                      {availableItems
+                        .filter((it) => it.item_name.toLowerCase().includes(itemQuery.toLowerCase()))
+                        .map((item) => (
+                          <SelectItem key={item.item_id} value={item.item_id.toString()}>
+                            <div className="flex items-center gap-3 py-1">
+                                <div className="size-8 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200 shadow-sm">
+                                  <img 
+                                    src={item.image_url} 
+                                    className="w-full h-full object-cover" 
+                                    alt="" 
+                                    onError={(e) => (e.currentTarget.src = "https://api.spendsense.app/static/products/default.jpg")}
+                                  />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-medium text-slate-700">{item.item_name}</span>
+                                    <span className="text-[10px] text-slate-400 capitalize">{item.category} • {item.unit}</span>
+                                </div>
+                              </div>
+                          </SelectItem>
+                        ))}
+                      {availableItems.filter((it) => it.item_name.toLowerCase().includes(itemQuery.toLowerCase())).length === 0 && (
+                        <div className="p-4 text-center text-xs text-slate-500">
+                          No items found
+                        </div>
+                      )}
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
@@ -228,7 +290,7 @@ export default function ExpenseNewPage() {
 
             {/* Merchant / Vendor */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                 <Store className="size-4" />
                 Linked Vendor (Optional)
               </label>

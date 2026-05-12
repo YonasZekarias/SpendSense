@@ -3,7 +3,7 @@
 import React, { FormEvent, useState } from "react";
 import type { VendorProfile } from "../_lib/vendor-api";
 import { updateCurrentUserProfile } from "../_lib/vendor-api";
-import { updateProfile } from "@/actions/vendor/updateProfile";
+import { updateProfile, updateVendorProfile } from "@/actions/vendor/updateProfile";
 
 export default function VendorProfileClient({ initialProfile }: { initialProfile: VendorProfile | null }) {
   const [profile, setProfile] = useState<VendorProfile | null>(initialProfile);
@@ -12,6 +12,9 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialProfile?.image || null);
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,8 +25,8 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
     setError("");
 
     try {
-      // Call server action which uses server-side apiClient
-      const result = await updateProfile({
+      // 1. Update User Profile (names, phone, etc.)
+      const userResult = await updateProfile({
         full_name: profile.full_name,
         phone: profile.phone,
         city: profile.city,
@@ -31,16 +34,41 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
         household_size: profile.household_size,
       });
 
-      if (result?.success) {
-        setProfile(result.data || null);
-        setMessage("Profile updated successfully.");
+      if (!userResult.success) {
+        setError(userResult.message);
+        return;
+      }
+
+      // 2. Update Vendor Profile (images, shop_name)
+      const vendorFormData = new FormData();
+      if (profile.shop_name) vendorFormData.append("shop_name", profile.shop_name);
+      if (profile.city) vendorFormData.append("city", profile.city);
+      if (imageFile) vendorFormData.append("image", imageFile);
+
+      const vendorResult = await updateVendorProfile(vendorFormData);
+      
+      if (vendorResult.success) {
+        setProfile({ ...userResult.data, ...vendorResult.data });
+        setMessage("Profile and images updated successfully.");
       } else {
-        setError(result?.message || "Unable to save profile.");
+        setError("User info saved, but vendor details failed: " + vendorResult.message);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unable to save profile.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -53,8 +81,12 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
               <img
                 alt="Business logo"
                 className="h-full w-full object-cover"
-                src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=240&h=240&fit=crop"
+                src={imagePreview || "https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=240&h=240&fit=crop"}
               />
+              <label className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="text-[10px] font-bold text-white uppercase">Change Logo</span>
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+              </label>
             </div>
           </div>
 
@@ -92,6 +124,16 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
             <div className="grid grid-cols-2 gap-6">
               <div className="col-span-2 md:col-span-1">
                 <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Official Business Name</label>
+                <input
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, shop_name: event.target.value } : prev))}
+                  type="text"
+                  value={profile?.shop_name || ""}
+                />
+              </div>
+
+              <div className="col-span-2 md:col-span-1">
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Owner Name</label>
                 <input
                   className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
                   onChange={(event) => setProfile((prev) => (prev ? { ...prev, full_name: event.target.value } : prev))}

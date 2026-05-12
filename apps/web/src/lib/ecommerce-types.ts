@@ -20,8 +20,22 @@ export interface VendorListing {
   item_name: string;
   unit: string;
   price: number | string;
+  stock_count: number;
   date: string;
   is_verified: boolean;
+}
+
+export interface Product {
+  item_id: number;
+  item_name: string;
+  unit: string;
+  category: string;
+  image_url: string;
+}
+
+export interface Category {
+  name: string;
+  image_url: string;
 }
 
 export interface Recommendation {
@@ -82,6 +96,11 @@ export type CollectionLike<T> = T[] | ApiCollection<T>;
 export type Product = Recommendation;
 export type Order = Purchase;
 
+export interface StaticMetaResponse {
+  products: Product[];
+  categories: Category[];
+}
+
 export interface CartItem {
   listing_id: number;
   vendor_id: string;
@@ -120,7 +139,12 @@ export function normalizeCollection<T>(payload: CollectionLike<T>): T[] {
 
 export function normalizeCart(payload: unknown): Cart {
   if (!payload || typeof payload !== "object") {
-    return { items: [], total: 0, currency: "ETB", updated_at: new Date().toISOString() };
+    return {
+      items: [],
+      total: 0,
+      currency: "ETB",
+      updated_at: new Date().toISOString(),
+    };
   }
 
   const cart = payload as Partial<Cart>;
@@ -130,7 +154,10 @@ export function normalizeCart(payload: unknown): Cart {
     items,
     total,
     currency: typeof cart.currency === "string" ? cart.currency : "ETB",
-    updated_at: typeof cart.updated_at === "string" ? cart.updated_at : new Date().toISOString(),
+    updated_at:
+      typeof cart.updated_at === "string"
+        ? cart.updated_at
+        : new Date().toISOString(),
   };
 }
 

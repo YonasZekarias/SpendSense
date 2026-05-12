@@ -8,7 +8,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +18,7 @@ from users.models import Notification
 
 from .models import Budget, Expense
 from .serializers import BudgetSerializer, ExpenseSerializer
+from .static_products import PRODUCTS as STATIC_PRODUCTS
 
 
 class BudgetListCreateView(generics.ListCreateAPIView):
@@ -25,6 +26,8 @@ class BudgetListCreateView(generics.ListCreateAPIView):
     serializer_class = BudgetSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Budget.objects.none()
         return Budget.objects.filter(user=self.request.user).prefetch_related('categories').order_by('-year', '-month')
 
 
@@ -33,6 +36,8 @@ class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BudgetSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Budget.objects.none()
         return Budget.objects.filter(user=self.request.user).prefetch_related('categories')
 
 
@@ -133,8 +138,21 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ExpenseSerializer
 
+    def get_permissions(self):
+        """ Allow public access to the list view ONLY if include_products query is present,
+            to support searching the catalog without login context if needed.
+        """
+        if self.request.method == 'GET' and self.request.query_params.get('include_products'):
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get_queryset(self):
-        qs = Expense.objects.filter(user=self.request.user).order_by('-date', '-id')
+        user = self.request.user if self.request.user.is_authenticated else None
+        if user:
+            qs = Expense.objects.filter(user=user).order_by('-date', '-id')
+        else:
+            qs = Expense.objects.none()
+            
         category = self.request.query_params.get('category')
         df = self.request.query_params.get('date_from')
         dt = self.request.query_params.get('date_to')
@@ -188,7 +206,22 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
             'current_page': page_obj.number,
         }
 
-        return Response({'pagination': pagination, 'results': serializer.data})
+        resp = {'pagination': pagination, 'results': serializer.data}
+
+        # Optionally include a lightweight static product catalogue for
+        # client-side expense entry. Pass `?include_products=1` to receive it.
+        include_products = request.query_params.get('include_products')
+        if include_products and include_products not in ('0', 'false', 'False'):
+            resp['products'] = STATIC_PRODUCTS
+            # also include categories for client-side selects
+            try:
+                from .static_products import CATEGORIES as STATIC_CATEGORIES
+
+                resp['categories'] = STATIC_CATEGORIES
+            except Exception:
+                resp['categories'] = []
+
+        return Response(resp)
 
     def perform_create(self, serializer):
         expense = serializer.save()
@@ -244,6 +277,8 @@ class ExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ExpenseSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Expense.objects.none()
         return Expense.objects.filter(user=self.request.user)
 
 

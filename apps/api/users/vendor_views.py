@@ -34,6 +34,8 @@ class VendorUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = VendorSerializer
 
     def get_object(self):
+        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+            return Vendor()
         try:
             return Vendor.objects.get(owner=self.request.user)
         except Vendor.DoesNotExist:

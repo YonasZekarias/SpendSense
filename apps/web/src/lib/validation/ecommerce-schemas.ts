@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-const identifierSchema = z.union([z.string().min(1), z.number().int().positive()]);
+const identifierSchema = z.union([
+  z.string().min(1),
+  z.number().int().positive(),
+]);
 const uuidSchema = z.string().uuid();
 
 export const addToCartSchema = z.object({
@@ -42,6 +45,7 @@ export const vendorListingCreateSchema = z.object({
   vendor_id: uuidSchema,
   item: z.number().int().positive(),
   price: z.number().positive(),
+  stock_count: z.number().int().min(0),
 });
 
 export const vendorRegisterSchema = z.object({
@@ -62,10 +66,16 @@ export const reviewCreateSchema = z.object({
 export type AddToCartSchema = z.infer<typeof addToCartSchema>;
 export type CheckoutSchema = z.infer<typeof checkoutSchema>;
 export type PaymentSchema = z.infer<typeof paymentSchema>;
-export type RecommendationQuerySchema = z.infer<typeof recommendationQuerySchema>;
-export type PurchaseStatusUpdateSchema = z.infer<typeof purchaseStatusUpdateSchema>;
+export type RecommendationQuerySchema = z.infer<
+  typeof recommendationQuerySchema
+>;
+export type PurchaseStatusUpdateSchema = z.infer<
+  typeof purchaseStatusUpdateSchema
+>;
 export type ReviewCreateSchema = z.infer<typeof reviewCreateSchema>;
-export type VendorListingCreateSchema = z.infer<typeof vendorListingCreateSchema>;
+export type VendorListingCreateSchema = z.infer<
+  typeof vendorListingCreateSchema
+>;
 export type VendorRegisterSchema = z.infer<typeof vendorRegisterSchema>;
 
 export { identifierSchema };
