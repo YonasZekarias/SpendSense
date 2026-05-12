@@ -84,12 +84,12 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
         serializer.save(vendor=v)
 
 
-class VendorListingUpdateView(generics.RetrieveUpdateAPIView):
+class VendorListingUpdateView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
-    http_method_names = ['get', 'patch', 'head', 'options']
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):

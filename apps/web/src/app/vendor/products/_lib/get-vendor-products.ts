@@ -1,6 +1,10 @@
 import { apiClient } from "@/lib/api";
 import { PaginatedResponse } from "@/lib/types/pagination";
-import { marketCategorySchema, paginatedSchema, vendorPriceSchema } from "@/lib/validation/vendor";
+import {
+  marketCategorySchema,
+  paginatedSchema,
+  vendorPriceSchema,
+} from "@/lib/validation/vendor";
 import { type VendorPriceResponse } from "@/types/api/vendor";
 import { z } from "zod";
 
@@ -23,7 +27,6 @@ const userProfileSchema = z
 
 const vendorPriceWithStockSchema = vendorPriceSchema
   .extend({
-    stock_count: z.number().optional(),
     quantity: z.number().optional(),
   })
   .passthrough();
@@ -41,7 +44,6 @@ const legacyPaginatedListingsSchema = z.object({
 });
 
 export type VendorProductWithStock = VendorPriceResponse & {
-  stock_count?: number;
   quantity?: number;
 };
 
@@ -106,7 +108,9 @@ function mapSortToOrdering(sort: string): string {
   }
 }
 
-export async function getVendorProducts(filters: VendorProductsFilters): Promise<VendorProductsResult> {
+export async function getVendorProducts(
+  filters: VendorProductsFilters,
+): Promise<VendorProductsResult> {
   const profileRaw = await apiClient<unknown>({
     method: "GET",
     endpoint: "/api/users/me/",
@@ -141,10 +145,9 @@ export async function getVendorProducts(filters: VendorProductsFilters): Promise
     query,
   });
 
-    return {
-      vendorId,
-      products: dataRaw.results,
-      pagination: dataRaw.pagination
-    };
-  }
-
+  return {
+    vendorId,
+    products: dataRaw.results,
+    pagination: dataRaw.pagination,
+  };
+}

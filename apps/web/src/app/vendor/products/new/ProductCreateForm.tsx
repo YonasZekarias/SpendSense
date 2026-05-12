@@ -1,15 +1,15 @@
 "use client";
 
-import { 
-  CheckCircle2, 
-  ChevronRight, 
-  Info, 
-  Image as ImageIcon, 
-  Verified, 
-  Upload, 
-  ChevronDown, 
+import {
+  CheckCircle2,
+  ChevronRight,
+  Info,
+  Image as ImageIcon,
+  Verified,
+  Upload,
+  ChevronDown,
   Circle,
-  X
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -29,11 +29,16 @@ type LocalImage = {
   preview: string;
 };
 
-export default function ProductCreateForm({ initialItems, initialCategories, vendorId }: ProductCreateFormProps) {
+export default function ProductCreateForm({
+  initialItems,
+  initialCategories,
+  vendorId,
+}: ProductCreateFormProps) {
   // const [vendorId, setVendorId] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedItemId, setSelectedItemId] = useState<number | "">("");
   const [price, setPrice] = useState<string>("");
+  const [stockCount, setStockCount] = useState<string>("");
   const [images, setImages] = useState<LocalImage[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -44,11 +49,11 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
 
   const filteredItems = useMemo(() => {
     if (!selectedCategoryId) return initialItems;
-    return initialItems.filter(item => item.category === selectedCategoryId);
+    return initialItems.filter((item) => item.category === selectedCategoryId);
   }, [selectedCategoryId, initialItems]);
 
   const selectedItem = useMemo(() => {
-    return initialItems.find(item => item.id === selectedItemId) || null;
+    return initialItems.find((item) => item.id === selectedItemId) || null;
   }, [selectedItemId, initialItems]);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -105,9 +110,11 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    
+
     if (!vendorId) {
-      toast.error("Vendor ID is missing. Please make sure you are registered as a vendor.");
+      toast.error(
+        "Vendor ID is missing. Please make sure you are registered as a vendor.",
+      );
       return;
     }
 
@@ -122,10 +129,17 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
       return;
     }
 
+    const stockNum = Number(stockCount);
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
+      toast.error("Please enter a valid stock value of zero or more.");
+      return;
+    }
+
     setSaving(true);
     const formData = new FormData();
     formData.append("item", String(selectedItemId));
     formData.append("price", String(priceNum));
+    formData.append("stock_count", String(stockNum));
     if (images[0]?.file) {
       formData.append("image", images[0].file);
     }
@@ -141,6 +155,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         });
         setSelectedItemId("");
         setPrice("");
+        setStockCount("");
         setImages([]);
       } else {
         toast.error("Failed to create listing", {
@@ -161,7 +176,10 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
       {/* Breadcrumbs & Header */}
       <div className="mb-8">
         <nav className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-400">
-          <Link className="transition-colors hover:text-[#135bec]" href="/vendor/products">
+          <Link
+            className="transition-colors hover:text-[#135bec]"
+            href="/vendor/products"
+          >
             Products
           </Link>
           <ChevronRight size={12} />
@@ -169,18 +187,28 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         </nav>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight">New Product</h2>
-            <p className="mt-1 text-slate-500">Provide details to showcase your product on the SpendSense marketplace.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight">
+              New Product
+            </h2>
+            <p className="mt-1 text-slate-500">
+              Provide details to showcase your product on the SpendSense
+              marketplace.
+            </p>
             {vendorId && (
               <div className="mt-2 flex items-center gap-1.5">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Active Vendor: <span className="text-[#135bec]">{vendorId.slice(0, 8)}…</span>
+                  Active Vendor:{" "}
+                  <span className="text-[#135bec]">
+                    {vendorId.slice(0, 8)}…
+                  </span>
                 </p>
               </div>
             )}
             {!vendorId && (
-              <p className="mt-2 text-xs font-medium text-red-500">⚠ Vendor ID not found. Please register as a vendor first.</p>
+              <p className="mt-2 text-xs font-medium text-red-500">
+                ⚠ Vendor ID not found. Please register as a vendor first.
+              </p>
             )}
           </div>
           <div className="flex gap-3">
@@ -209,18 +237,24 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         </div>
       </div>
 
-      <form id="product-form" className="grid grid-cols-1 gap-6 lg:grid-cols-3" onSubmit={onSubmit}>
+      <form
+        id="product-form"
+        className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+        onSubmit={onSubmit}
+      >
         {/* Main Info Card */}
         <div className="space-y-6 lg:col-span-2">
           <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm">
             <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
               General Information
             </h3>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">Filter By Category</label>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">
+                    Filter By Category
+                  </label>
                   <div className="relative">
                     <select
                       className="w-full cursor-pointer appearance-none rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-[#135bec]/20"
@@ -232,28 +266,44 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                     >
                       <option value="">All Categories</option>
                       {initialCategories.map((cat) => (
-                        <option key={cat.name} value={cat.name}>{cat.name}</option>
+                        <option key={cat.name} value={cat.name}>
+                          {cat.name}
+                        </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <ChevronDown
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={18}
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">Select Product</label>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">
+                    Select Product
+                  </label>
                   <div className="relative">
                     <select
                       className="w-full cursor-pointer appearance-none rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-[#135bec]/20"
                       required
                       value={selectedItemId}
-                      onChange={(e) => setSelectedItemId(e.target.value ? Number(e.target.value) : "")}
+                      onChange={(e) =>
+                        setSelectedItemId(
+                          e.target.value ? Number(e.target.value) : "",
+                        )
+                      }
                     >
                       <option value="">-- Choose Product --</option>
                       {filteredItems.map((item) => (
-                        <option key={item.id} value={item.id}>{item.name}</option>
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <ChevronDown
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={18}
+                    />
                   </div>
                 </div>
               </div>
@@ -264,7 +314,11 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                     {selectedItem.image ? (
                       <div className="h-10 w-10 rounded-full overflow-hidden bg-blue-100 shadow-inner">
                         <img
-                          src={selectedItem.image.startsWith("http") ? selectedItem.image : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${selectedItem.image}`}
+                          src={
+                            selectedItem.image.startsWith("http")
+                              ? selectedItem.image
+                              : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${selectedItem.image}`
+                          }
                           alt={selectedItem.name}
                           className="h-full w-full object-cover"
                         />
@@ -275,21 +329,34 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                       </div>
                     )}
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{selectedItem.name}</p>
-                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-tight">Category: {selectedItem.category} • Unit: {selectedItem.unit}</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {selectedItem.name}
+                      </p>
+                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-tight">
+                        Category: {selectedItem.category} • Unit:{" "}
+                        {selectedItem.unit}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-blue-600 uppercase">Catalog Item</p>
-                    <p className="text-sm font-mono font-bold text-slate-700">#{selectedItem.id}</p>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase">
+                      Catalog Item
+                    </p>
+                    <p className="text-sm font-mono font-bold text-slate-700">
+                      #{selectedItem.id}
+                    </p>
                   </div>
                 </div>
               )}
 
               <div className="pt-2">
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">Base Price (ETB)</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Base Price (ETB)
+                </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">ETB</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                    ETB
+                  </span>
                   <input
                     className="w-full rounded-lg border-none bg-[#f0f2f4] pl-12 pr-4 py-3 text-sm font-bold transition-all focus:ring-2 focus:ring-[#135bec]/20"
                     type="number"
@@ -306,6 +373,26 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                   Enter the price per {selectedItem?.unit || "unit"}.
                 </p>
               </div>
+
+              <div className="pt-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Stock Quantity
+                </label>
+                <input
+                  className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm font-bold transition-all focus:ring-2 focus:ring-[#135bec]/20"
+                  type="number"
+                  step="1"
+                  min="0"
+                  required
+                  placeholder="0"
+                  value={stockCount}
+                  onChange={(e) => setStockCount(e.target.value)}
+                />
+                <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <Info size={12} className="text-[#135bec]" />
+                  Enter how many units are available for sale.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -317,25 +404,54 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Base Listing Price</span>
-                  <span className="font-bold text-slate-700">{price ? `ETB ${parseFloat(price).toFixed(2)}` : "-"}</span>
+                  <span className="text-slate-500 font-medium">
+                    Base Listing Price
+                  </span>
+                  <span className="font-bold text-slate-700">
+                    {price ? `ETB ${parseFloat(price).toFixed(2)}` : "-"}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Service Fee (2.5%)</span>
-                  <span className="text-red-500 font-bold">-{price ? `ETB ${(parseFloat(price) * 0.025).toFixed(2)}` : "-"}</span>
+                  <span className="text-slate-500 font-medium">
+                    Available Stock
+                  </span>
+                  <span className="font-bold text-slate-700">
+                    {stockCount
+                      ? `${stockCount} ${selectedItem?.unit || "units"}`
+                      : "-"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-500 font-medium">
+                    Service Fee (2.5%)
+                  </span>
+                  <span className="text-red-500 font-bold">
+                    -
+                    {price
+                      ? `ETB ${(parseFloat(price) * 0.025).toFixed(2)}`
+                      : "-"}
+                  </span>
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
                   <span className="font-bold text-slate-800">Your Earning</span>
-                  <span className="text-xl font-black text-emerald-600">{price ? `ETB ${(parseFloat(price) * 0.975).toFixed(2)}` : "-"}</span>
+                  <span className="text-xl font-black text-emerald-600">
+                    {price
+                      ? `ETB ${(parseFloat(price) * 0.975).toFixed(2)}`
+                      : "-"}
+                  </span>
                 </div>
               </div>
               <div className="bg-[#f0f2f4]/50 rounded-xl p-5 flex flex-col justify-center border border-slate-100">
                 <div className="flex items-center gap-2 mb-2 text-[#135bec]">
                   <Verified size={18} />
-                  <span className="text-[10px] font-black uppercase tracking-wider">SpendSense Marketplace</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider">
+                    SpendSense Marketplace
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                  Listings with clear images and competitive pricing are 4x more likely to convert into sales. We recommend setting prices based on current market trends.
+                  Listings with clear images and competitive pricing are 4x more
+                  likely to convert into sales. We recommend setting prices
+                  based on current market trends.
                 </p>
               </div>
             </div>
@@ -346,10 +462,12 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
         <div className="space-y-6">
           <div className="rounded-xl bg-white p-8 shadow-sm">
             <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-slate-800">
-              <span className="text-[#135bec]"><ImageIcon size={20} /></span>
+              <span className="text-[#135bec]">
+                <ImageIcon size={20} />
+              </span>
               Product Media
             </h3>
-            
+
             <div className="grid gap-2">
               {images[0] && (
                 <img
@@ -375,7 +493,7 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
                     </button>
                   </div>
                 ))}
-                
+
                 <label className="cursor-pointer hover:bg-slate-100 ease-in duration-100 flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 group">
                   <Upload className="h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
                   <input
@@ -397,31 +515,56 @@ export default function ProductCreateForm({ initialItems, initialCategories, ven
               Listing Readiness
             </h4>
             <p className="mb-5 text-[11px] leading-relaxed opacity-80 font-medium">
-              Your product will be live immediately after saving. Ensure all details are correct.
+              Your product will be live immediately after saving. Ensure all
+              details are correct.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                {selectedItemId ? <CheckCircle2 size={16} className="text-emerald-400" /> : <div className="h-4 w-4 rounded-full border-2 border-white/20" />}
+                {selectedItemId ? (
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-white/20" />
+                )}
                 PRODUCT SELECTION
               </div>
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                {price && parseFloat(price) > 0 ? <CheckCircle2 size={16} className="text-emerald-400" /> : <div className="h-4 w-4 rounded-full border-2 border-white/20" />}
+                {price && parseFloat(price) > 0 ? (
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-white/20" />
+                )}
                 PRICING DETAILS
               </div>
               <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                {images.length > 0 ? <CheckCircle2 size={16} className="text-emerald-400" /> : <div className="h-4 w-4 rounded-full border-2 border-white/20" />}
+                {stockCount !== "" && Number(stockCount) >= 0 ? (
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-white/20" />
+                )}
+                STOCK VALUE
+              </div>
+              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
+                {images.length > 0 ? (
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                ) : (
+                  <div className="h-4 w-4 rounded-full border-2 border-white/20" />
+                )}
                 MEDIA ASSETS
               </div>
             </div>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-100 bg-white/50">
-             <div className="flex items-start gap-3">
-                <Info size={16} className="text-[#135bec] mt-0.5 shrink-0" />
-                <p className="text-[10px] leading-relaxed text-slate-500 font-medium">
-                  Need help? Contact our vendor support team or visit our <Link href="/help" className="text-[#135bec] underline">Help Center</Link> for listing guidelines.
-                </p>
-             </div>
+            <div className="flex items-start gap-3">
+              <Info size={16} className="text-[#135bec] mt-0.5 shrink-0" />
+              <p className="text-[10px] leading-relaxed text-slate-500 font-medium">
+                Need help? Contact our vendor support team or visit our{" "}
+                <Link href="/help" className="text-[#135bec] underline">
+                  Help Center
+                </Link>{" "}
+                for listing guidelines.
+              </p>
+            </div>
           </div>
         </div>
       </form>

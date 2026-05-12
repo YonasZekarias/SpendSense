@@ -41,6 +41,7 @@ class VendorPrice(models.Model):
     vendor = models.ForeignKey('users.Vendor', on_delete=models.CASCADE) 
     item = models.ForeignKey(Item, on_delete=models.CASCADE) 
     price = models.DecimalField(max_digits=10, decimal_places=2) 
+    stock_count = models.PositiveIntegerField(default=0)
     date = models.DateField(auto_now_add=True) 
     image = models.ImageField(upload_to='listings/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)

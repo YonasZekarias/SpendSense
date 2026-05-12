@@ -80,6 +80,9 @@ export default function ProductEditForm({
   const [price, setPrice] = useState<string>(
     String(initialProduct.price ?? ""),
   );
+  const [stockCount, setStockCount] = useState<string>(
+    String(initialProduct.stock_count ?? 0),
+  );
   const [images, setImages] = useState<EditableImage[]>(() =>
     getInitialImages(initialProduct),
   );
@@ -156,9 +159,17 @@ export default function ProductEditForm({
         return;
       }
 
+      const stockNum = Number(stockCount);
+      if (!Number.isInteger(stockNum) || stockNum < 0) {
+        toast.error("Enter a valid stock value of zero or more.");
+        setSaving(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("item", String(selectedItemId));
       formData.append("price", String(priceNum));
+      formData.append("stock_count", String(stockNum));
       const newImages = images.filter(
         (image): image is Extract<EditableImage, { source: "local" }> =>
           image.source === "local",
@@ -175,6 +186,7 @@ export default function ProductEditForm({
         setSourceProduct(result.data);
         setSelectedItemId(result.data.item);
         setPrice(String(result.data.price));
+        setStockCount(String(result.data.stock_count));
         setImages(getInitialImages(result.data));
         toast.success("Product updated successfully", {
           description: `Listing #${result.data.id} — ${result.data.item_name} at ETB ${result.data.price}`,
@@ -332,6 +344,26 @@ export default function ProductEditForm({
                 <Info size={12} className="text-[#135bec]" />
                 Enter the price per{" "}
                 {selectedItem?.unit || sourceProduct.unit || "unit"}.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-slate-500">
+                Stock Quantity
+              </label>
+              <input
+                className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm font-bold transition-all focus:ring-2 focus:ring-[#135bec]/20"
+                type="number"
+                step="1"
+                min="0"
+                required
+                placeholder="0"
+                value={stockCount}
+                onChange={(e) => setStockCount(e.target.value)}
+              />
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-400">
+                <Info size={12} className="text-[#135bec]" />
+                Update how many units are available for sale.
               </p>
             </div>
           </section>

@@ -70,7 +70,8 @@ export default async function VendorProductsPage(props: {
     (item) => getStockCount(item) === 0,
   ).length;
   const inventoryValue = products.reduce(
-    (sum, item) => sum + Number(item.price || 0),
+    (sum, item) =>
+      sum + Number(item.price || 0) * Math.max(getStockCount(item), 0),
     0,
   );
   const tableRows = products;
@@ -256,6 +257,11 @@ export default async function VendorProductsPage(props: {
                             {stockState}
                           </span>
                         </div>
+                        <p className="mt-1 text-[10px] font-semibold text-slate-500">
+                          {stockCount >= 0
+                            ? `${stockCount} ${product.unit || "units"} available`
+                            : "Stock not set"}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">

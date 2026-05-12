@@ -15,11 +15,12 @@ export async function createListingAction(
 ): Promise<ActionResult<VendorPriceResponse>> {
   const item = formData.get("item");
   const price = formData.get("price");
+  const stockCount = formData.get("stock_count");
   const image = formData.get("image");
   const images = formData.getAll("images");
 
-  if (!item || !price) {
-    return { success: false, message: "Item and price are required." };
+  if (!item || !price || stockCount === null) {
+    return { success: false, message: "Item, price, and stock are required." };
   }
 
   try {
@@ -27,6 +28,7 @@ export async function createListingAction(
     const serverFormData = new FormData();
     serverFormData.append("item", String(item));
     serverFormData.append("price", String(price));
+    serverFormData.append("stock_count", String(stockCount));
 
     if (image && image instanceof File && image.size > 0) {
       serverFormData.append("image", image);
@@ -77,17 +79,19 @@ export async function updateListingAction(
 ): Promise<ActionResult<VendorPriceResponse>> {
   const item = formData.get("item");
   const price = formData.get("price");
+  const stockCount = formData.get("stock_count");
   const image = formData.get("image");
   const images = formData.getAll("images");
 
-  if (!item || !price) {
-    return { success: false, message: "Item and price are required." };
+  if (!item || !price || stockCount === null) {
+    return { success: false, message: "Item, price, and stock are required." };
   }
 
   try {
     const serverFormData = new FormData();
     serverFormData.append("item", String(item));
     serverFormData.append("price", String(price));
+    serverFormData.append("stock_count", String(stockCount));
 
     if (image && image instanceof File && image.size > 0) {
       serverFormData.append("image", image);

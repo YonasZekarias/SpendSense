@@ -7,6 +7,10 @@ export const vendorPriceSchema = z.object({
   unit: z.string(),
   category: z.string().default(""),
   price: z.number().or(z.string().transform((v) => Number(v))),
+  stock_count: z
+    .number()
+    .or(z.string().transform((v) => Number(v)))
+    .default(0),
   image: z.string().nullable(),
   images: z
     .array(

@@ -10,6 +10,7 @@ export interface VendorPriceResponse {
   unit: string;
   category: string;
   price: number;
+  stock_count: number;
   image: string | null;
   images?: {
     id: number;
