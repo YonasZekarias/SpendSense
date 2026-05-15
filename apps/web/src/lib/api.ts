@@ -52,6 +52,24 @@ function normalizeHeaders(headers: HeadersInit | undefined): Record<string, stri
   return { ...headers };
 }
 
+function getErrorMessage(parsedError: unknown, status: number, contentType: string) {
+  if (contentType.includes("text/html")) {
+    return `Request failed with status ${status}`;
+  }
+
+  const errorObject =
+    parsedError && typeof parsedError === "object"
+      ? (parsedError as Record<string, unknown>)
+      : null;
+
+  return (
+    (errorObject?.message as string | undefined) ||
+    (errorObject?.error as string | undefined) ||
+    (typeof parsedError === "string" ? parsedError : undefined) ||
+    `Request failed with status ${status}`
+  );
+}
+
 export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
   const {
     method,
@@ -124,16 +142,7 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
       parsedError = null;
     }
 
-    const errorObject =
-      parsedError && typeof parsedError === "object"
-        ? (parsedError as Record<string, unknown>)
-        : null;
-
-    const message =
-      (errorObject?.message as string | undefined) ||
-      (errorObject?.error as string | undefined) ||
-      (typeof parsedError === "string" ? parsedError : undefined) ||
-      `Request failed with status ${response.status}`;
+    const message = getErrorMessage(parsedError, response.status, contentType);
 
     throw new ApiError(message, response.status, parsedError);
   }

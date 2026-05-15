@@ -46,7 +46,11 @@ export default async function ExpensesPageRoute({ searchParams }: PageProps) {
 async function ExpensesSummaryWrapper() {
   try {
     const [expensesRaw, budgetsRaw] = await Promise.all([
-      apiClient<any>({ method: "GET", endpoint: "/api/finance/expenses/" }).catch(() => []),
+      apiClient<PaginatedResponse<ExpenseRecord>>({
+      method: "GET",
+      endpoint: "/api/finance/expenses/",
+      query: { pageSize: 100 },
+    }).catch(() => []),
       apiClient<any>({ method: "GET", endpoint: "/api/finance/budgets/" }).catch(() => []),
     ]);
 
@@ -56,14 +60,14 @@ async function ExpensesSummaryWrapper() {
     // We can't easily fetch "all" for summary anymore due to pagination,
     // but the summary cards usually reflect "this month".
     // For now, let's fetch a small recent batch or use a summary endpoint if exists.
-    const expenses = await apiClient<PaginatedResponse<ExpenseRecord>>({
-      method: "GET",
-      endpoint: "/api/finance/expenses/",
-      query: { pageSize: 100 },
-    });
+    // const expenses = await apiClient<PaginatedResponse<ExpenseRecord>>({
+    //   method: "GET",
+    //   endpoint: "/api/finance/expenses/",
+    //   query: { pageSize: 100 },
+    // });
 
     // Reuse the summary logic (simplified)
-    const summary = calculateSummary(expenses.results, budgets);
+    const summary = calculateSummary(expenses, budgets);
 
     return <ExpensesSummaryCards summary={summary} />;
   } catch (err) {

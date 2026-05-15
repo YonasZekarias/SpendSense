@@ -86,3 +86,166 @@ class VendorPriceSerializer(serializers.ModelSerializer):
         model = VendorPrice
         fields = ('id', 'vendor_id', 'vendor_name', 'city', 'rating_avg', 'is_verified', 'price', 'date')
         ref_name = "MarketVendorPrice"
+
+from users.models import Vendor
+
+class MarketVendorListCardSerializer(serializers.ModelSerializer):
+    vendorName = serializers.CharField(source='owner.full_name', read_only=True)
+    shopName = serializers.CharField(source='shop_name', read_only=True)
+    location = serializers.CharField(source='address', read_only=True)
+    region = serializers.CharField(source='city', read_only=True)
+    rating = serializers.FloatField(source='rating_avg', read_only=True)
+    reviewCount = serializers.IntegerField(source='rating_count', read_only=True)
+    verifiedStatus = serializers.SerializerMethodField()
+    contactInfo = serializers.CharField(source='contact_phone', read_only=True)
+    itemsListed = serializers.SerializerMethodField()
+    priceRangeMin = serializers.SerializerMethodField()
+    priceRangeMax = serializers.SerializerMethodField()
+    imageUrl = serializers.SerializerMethodField()
+    topItems = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source='joined_at', read_only=True)
+    competitivenessScore = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Vendor
+        fields = (
+            'id', 'vendorName', 'shopName', 'location', 'region',
+            'latitude', 'longitude', 'rating', 'reviewCount', 'competitivenessScore',
+            'verifiedStatus', 'contactInfo', 'itemsListed', 'priceRangeMin',
+            'priceRangeMax', 'topItems', 'imageUrl', 'createdAt'
+        )
+
+    def get_verifiedStatus(self, obj):
+        return "Verified" if obj.is_verified else "Unverified"
+
+    def get_itemsListed(self, obj):
+        return VendorPrice.objects.filter(vendor=obj).count()
+
+    def get_priceRangeMin(self, obj):
+        prices = VendorPrice.objects.filter(vendor=obj).values_list('price', flat=True)
+        return float(min(prices)) if prices else 0.0
+
+    def get_priceRangeMax(self, obj):
+        prices = VendorPrice.objects.filter(vendor=obj).values_list('price', flat=True)
+        return float(max(prices)) if prices else 0.0
+
+    def get_topItems(self, obj):
+        top_prices = VendorPrice.objects.filter(vendor=obj).select_related('item').order_by('price')[:3]
+        return [
+            {
+                "itemName": vp.item.name,
+                "price": float(vp.price),
+                "unit": getattr(vp.item, 'unit', '')
+            }
+            for vp in top_prices
+        ]
+
+    def get_imageUrl(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return None
+
+    def get_competitivenessScore(self, obj):
+        return 95  # Static for now as requested
+
+
+class VendorDetailSerializer(MarketVendorListCardSerializer):
+    description = serializers.SerializerMethodField()
+    businessHours = serializers.SerializerMethodField()
+    deliveryAvailable = serializers.SerializerMethodField()
+    deliveryEstimate = serializers.SerializerMethodField()
+    paymentMethods = serializers.SerializerMethodField()
+    totalSales = serializers.SerializerMethodField()
+    memberSince = serializers.DateTimeField(source='joined_at', read_only=True)
+    responseTimeMinutes = serializers.SerializerMethodField()
+    socialLinks = serializers.SerializerMethodField()
+
+    class Meta(MarketVendorListCardSerializer.Meta):
+        fields = MarketVendorListCardSerializer.Meta.fields + (
+            'description', 'businessHours', 'deliveryAvailable', 'deliveryEstimate',
+            'paymentMethods', 'totalSales', 'memberSince', 'responseTimeMinutes', 'socialLinks'
+        )
+
+    def get_description(self, obj):
+        return f"{obj.shop_name} is a trusted vendor in {obj.city}. We provide high-quality items with excellent customer service."
+
+    def get_businessHours(self, obj):
+        return "Mon - Sat: 8:00 AM - 6:00 PM"
+
+    def get_deliveryAvailable(self, obj):
+        return True
+
+    def get_deliveryEstimate(self, obj):
+        return "1 - 2 days"
+
+    def get_paymentMethods(self, obj):
+        return ["Chapa", "Cash on Delivery", "Telebirr"]
+
+    def get_totalSales(self, obj):
+        return getattr(obj, 'rating_count', 0) * 12 + 50
+
+    def get_responseTimeMinutes(self, obj):
+        return 15
+
+    def get_socialLinks(self, obj):
+        return {"facebook": "#", "telegram": "#"}
+
+
+class VendorProductSerializer(serializers.ModelSerializer):
+    itemId = serializers.CharField(source='item.id', read_only=True)
+    itemName = serializers.CharField(source='item.name', read_only=True)
+    category = serializers.CharField(source='item.category', read_only=True)
+    imageUrl = serializers.SerializerMethodField()
+    unit = serializers.CharField(source='item.unit', read_only=True)
+    comparePrice = serializers.SerializerMethodField()
+    stockStatus = serializers.SerializerMethodField()
+    stockQuantity = serializers.SerializerMethodField()
+    priceTrend = serializers.SerializerMethodField()
+    nationalAveragePrice = serializers.SerializerMethodField()
+    nationalAverageDiff = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source='date', read_only=True)
+    updatedAt = serializers.DateTimeField(source='date', read_only=True)
+
+    class Meta:
+        model = VendorPrice
+        fields = (
+            'id', 'itemId', 'itemName', 'category', 'imageUrl', 'price', 'unit',
+            'comparePrice', 'stockStatus', 'stockQuantity', 'priceTrend',
+            'nationalAveragePrice', 'nationalAverageDiff', 'createdAt', 'updatedAt'
+        )
+
+    def get_imageUrl(self, obj):
+        if obj.item and obj.item.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.item.image.url) if request else obj.item.image.url
+        return None
+
+    def get_comparePrice(self, obj):
+        return float(obj.price) * 1.15
+
+    def get_stockStatus(self, obj):
+        return "InStock"
+
+    def get_stockQuantity(self, obj):
+        return 50
+
+    def get_priceTrend(self, obj):
+        return -2.5
+
+    def get_nationalAveragePrice(self, obj):
+        return float(obj.price) * 1.05
+
+    def get_nationalAverageDiff(self, obj):
+        return -5.0
+
+
+class VendorReviewSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    userName = serializers.CharField()
+    userInitial = serializers.CharField()
+    rating = serializers.IntegerField()
+    comment = serializers.CharField()
+    date = serializers.DateTimeField()
+    helpfulCount = serializers.IntegerField()
+    verifiedPurchase = serializers.BooleanField()

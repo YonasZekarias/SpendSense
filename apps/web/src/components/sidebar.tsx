@@ -63,12 +63,12 @@ const navItems = [
     href: "/notifications",
     matchPaths: ["/notifications"],
   },
-  {
-    icon: Settings,
-    label: "Settings",
-    href: "/settings",
-    matchPaths: ["/settings"],
-  },
+  // {
+  //   icon: Settings,
+  //   label: "Settings",
+  //   href: "/settings",
+  //   matchPaths: ["/settings"],
+  // },
   {
     icon: UserCircle,
     label: "Profile",

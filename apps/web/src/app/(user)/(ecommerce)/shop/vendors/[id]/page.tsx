@@ -1,7 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -42,74 +39,41 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-export default function VendorProfile() {
-  const params = useParams<{ id: string }>();
-  const vendorId = params?.id ?? "";
-  const [vendor, setVendor] = useState<Vendor | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [listings, setListings] = useState<VendorListing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default async function VendorProfile({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadVendor() {
-      if (!vendorId) {
-        setLoading(false);
-        setError("Missing vendor identifier.");
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [vendorData, reviewData, listingData] = await Promise.all([
-          getVendorById(vendorId),
-          getVendorReviews(vendorId),
-          getVendorListings(vendorId),
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        setVendor(vendorData);
-        setReviews(reviewData);
-        setListings(listingData);
-      } catch {
-        if (active) {
-          setError("Unable to load vendor profile.");
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadVendor();
-
-    return () => {
-      active = false;
-    };
-  }, [vendorId]);
-
-  if (loading) {
+  if (!id) {
     return (
-      <div className="max-w-7xl mx-auto p-8 space-y-8 text-sm text-muted-foreground">
-        Loading vendor profile...
+      <div className="max-w-7xl mx-auto p-8 space-y-8 text-sm text-destructive">
+        Missing vendor identifier.
       </div>
     );
   }
 
-  if (error || !vendor) {
+  let vendor: Vendor | null = null;
+  let reviews: Review[] = [];
+  let listings: VendorListing[] = [];
+
+  try {
+    const [vendorData, reviewData, listingData] = await Promise.all([
+      getVendorById(id),
+      getVendorReviews(id),
+      getVendorListings(id),
+    ]);
+    
+    vendor = vendorData;
+    reviews = reviewData;
+    listings = listingData;
+  } catch (error) {
     return (
       <div className="max-w-7xl mx-auto p-8 space-y-8 text-sm text-destructive">
-        {error ?? "Unable to load vendor profile."}
+        Unable to load vendor profile. Please try again later.
       </div>
     );
+  }
+
+  if (!vendor) {
+    notFound();
   }
 
   return (
