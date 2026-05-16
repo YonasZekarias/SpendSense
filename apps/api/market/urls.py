@@ -28,3 +28,11 @@ urlpatterns.extend([
     path('vendors/locations/', VendorLocationListView.as_view(), name='vendors-locations-list'),
     path('vendors/prices/', ItemVendorPricesView.as_view(), name='vendors-prices-list'),
 ])
+
+
+from .vendor_views import VendorDetailView, VendorProductListView, VendorReviewListView
+urlpatterns.extend([
+    path('vendors/<uuid:pk>/', VendorDetailView.as_view(), name='vendor-detail'),
+    path('vendors/<uuid:pk>/products/', VendorProductListView.as_view(), name='vendor-products'),
+    path('vendors/<uuid:pk>/reviews/', VendorReviewListView.as_view(), name='vendor-reviews'),
+])

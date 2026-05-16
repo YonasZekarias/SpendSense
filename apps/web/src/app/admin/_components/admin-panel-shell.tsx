@@ -36,10 +36,10 @@ const NAV = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
   { key: "verification", label: "Vendor Verification", href: "/admin/vendor-verification", icon: <ShieldCheck size={18} /> },
   { key: "moderation", label: "Price Moderation", href: "/admin/price-moderation", icon: <Gavel size={18} /> },
-  { key: "settings", label: "System Settings", href: "/admin/system-settings", icon: <Settings2 size={18} /> },
+  // { key: "settings", label: "System Settings", href: "/admin/system-settings", icon: <Settings2 size={18} /> },
   // { key: "categories", label: "Categories", href: "/admin/categories", icon: <Shapes size={18} /> },
   { key: "ml", label: "ML Monitoring", href: "/admin/ml-monitoring", icon: <Bot size={18} /> },
-  { key: "audit", label: "Audit Logs", href: "/admin/audit-logs", icon: <ReceiptText size={18} /> },
+  // { key: "audit", label: "Audit Logs", href: "/admin/audit-logs", icon: <ReceiptText size={18} /> },
 ] as const;
 
 export default function AdminPanelShell({ title, subtitle, activeTab, children }: AdminPanelShellProps) {

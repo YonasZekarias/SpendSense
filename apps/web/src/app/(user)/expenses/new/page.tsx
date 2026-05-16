@@ -61,6 +61,7 @@ export default function ExpenseNewPage() {
         setAvailableVendors(vendorsData);
         setAvailableItems(meta.products || []);
         setAvailableCategories(meta.categories || []);
+        // console.log(meta.products);
       } catch (err) {
         console.error("Failed to fetch metadata", err);
       } finally {

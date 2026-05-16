@@ -93,7 +93,7 @@ export interface ApiCollection<T> {
 
 export type CollectionLike<T> = T[] | ApiCollection<T>;
 
-export type Product = Recommendation;
+// export type Product = Recommendation;
 export type Order = Purchase;
 
 export interface StaticMetaResponse {
@@ -161,7 +161,7 @@ export function normalizeCart(payload: unknown): Cart {
   };
 }
 
-export function toDisplayProductName(product: Product): string {
+export function toDisplayProductName(product: { item_name?: string; listing_id?: number }): string {
   return String(product.item_name || `Listing #${product.listing_id}`);
 }
 

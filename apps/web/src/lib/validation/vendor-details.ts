@@ -1,0 +1,106 @@
+import { z } from "zod";
+import { topItemSchema, vendorPaginationSchema } from "./vendors";
+
+export const vendorDetailSchema = z.object({
+  id: z.string(),
+  vendorName: z.string(),
+  shopName: z.string(),
+  location: z.string(),
+  region: z.string(),
+  latitude: z.coerce.number().nullable(),
+  longitude: z.coerce.number().nullable(),
+  rating: z.coerce.number(),
+  reviewCount: z.coerce.number(),
+  competitivenessScore: z.coerce.number(),
+  verifiedStatus: z.enum(["Verified", "Unverified", "Pending"]),
+  contactInfo: z.string(),
+  itemsListed: z.coerce.number(),
+  priceRangeMin: z.coerce.number(),
+  priceRangeMax: z.coerce.number(),
+  topItems: z.array(topItemSchema),
+  imageUrl: z.string().nullable(),
+  createdAt: z.string(),
+  description: z.string(),
+  businessHours: z.string(),
+  deliveryAvailable: z.boolean(),
+  deliveryEstimate: z.string().nullable(),
+  paymentMethods: z.array(z.string()),
+  totalSales: z.coerce.number(),
+  memberSince: z.string(),
+  responseTimeMinutes: z.coerce.number(),
+  socialLinks: z.record(z.string(), z.string()).nullable(),
+});
+
+export const vendorProductSchema = z.object({
+  id: z.coerce.string(),
+  item: z.coerce.string(),
+  item_name: z.string(),
+  category: z.string().nullable().default("Uncategorized"),
+  image: z.string().nullable(),
+  price: z.coerce.number(),
+  unit: z.string(),
+  stock_count: z.coerce.number(),
+  date: z.string(),
+  is_verified: z.boolean().optional(),
+}).transform((data) => ({
+  id: data.id,
+  itemId: data.item,
+  itemName: data.item_name,
+  category: data.category || "Uncategorized",
+  imageUrl: data.image,
+  price: data.price,
+  unit: data.unit,
+  comparePrice: null,
+  stockStatus: (data.stock_count > 10 ? "InStock" : data.stock_count > 0 ? "LowStock" : "OutOfStock") as "InStock" | "LowStock" | "OutOfStock",
+  stockQuantity: data.stock_count,
+  priceTrend: 0,
+  nationalAveragePrice: 0,
+  nationalAverageDiff: 0,
+  createdAt: data.date,
+  updatedAt: data.date,
+}));
+
+export const vendorProductListSchema = z.object({
+  results: z.array(vendorProductSchema),
+  pagination: vendorPaginationSchema,
+}).transform((data) => {
+  const products = data.results;
+  const prices = products.map((p) => p.price);
+  return {
+    products,
+    pagination: data.pagination,
+    categories: Array.from(new Set(products.map((p) => p.category))),
+    priceRange: { 
+      min: prices.length ? Math.min(...prices) : 0, 
+      max: prices.length ? Math.max(...prices) : 0 
+    }
+  };
+});
+
+export const vendorReviewSchema = z.object({
+  id: z.string(),
+  userName: z.string(),
+  userInitial: z.string(),
+  rating: z.number(),
+  comment: z.string(),
+  date: z.string(),
+  helpfulCount: z.number(),
+  verifiedPurchase: z.boolean(),
+});
+
+export const vendorReviewListSchema = z.object({
+  reviews: z.array(vendorReviewSchema),
+  pagination: vendorPaginationSchema,
+  averageRating: z.number(),
+  totalReviews: z.number(),
+  distribution: z.record(z.string(), z.number()),
+});
+
+export const productSearchParamsSchema = z.object({
+  q: z.string().optional(),
+  category: z.string().optional(),
+  minPrice: z.coerce.number().optional(),
+  maxPrice: z.coerce.number().optional(),
+  sortBy: z.enum(["popularity", "price", "newest"]).optional(),
+  page: z.coerce.number().optional(),
+});

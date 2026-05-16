@@ -1,15 +1,52 @@
 import { z } from "zod";
 
-export const vendorSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  category: z.string().optional(),
-  city: z.string().optional(),
-  status: z.string().optional(),
-  products: z.number().optional(),
+export const topItemSchema = z.object({
+  itemName: z.string(),
+  price: z.number(),
+  unit: z.string(),
 });
 
-export const vendorListSchema = z.array(vendorSchema);
-export type Vendor = z.infer<typeof vendorSchema>;
+export const verifiedStatusSchema = z.enum(["Verified", "Unverified", "Pending"]);
 
-// Note: Replace with MCP-generated types when available and keep Zod for runtime validation.
+export const vendorSchema = z.object({
+  id: z.string(),
+  vendorName: z.string(),
+  shopName: z.string(),
+  location: z.string(),
+  region: z.string(),
+  latitude: z.coerce.number().nullable(),
+  longitude: z.coerce.number().nullable(),
+  rating: z.number().min(0).max(5),
+  reviewCount: z.number().nonnegative(),
+  competitivenessScore: z.number().min(0).max(100),
+  verifiedStatus: verifiedStatusSchema,
+  contactInfo: z.string(),
+  itemsListed: z.number().nonnegative(),
+  priceRangeMin: z.number().nonnegative(),
+  priceRangeMax: z.number().nonnegative(),
+  topItems: z.array(topItemSchema),
+  imageUrl: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const vendorPaginationSchema = z.object({
+  total_records: z.number().nonnegative(),
+  total_pages: z.number().nonnegative(),
+  page_size: z.number().nonnegative(),
+  current_page: z.number().nonnegative(),
+});
+
+export const vendorListSchema = z.object({
+  pagination: vendorPaginationSchema,
+  results: z.array(vendorSchema),
+});
+
+export const vendorSearchParamsSchema = z.object({
+  q: z.string().optional(),
+  category: z.string().optional(),
+  region: z.string().optional(),
+  sortBy: z.enum(["popularity", "price", "rating", "nearest"]).default("popularity").optional(),
+  page: z.coerce.number().default(1).optional(),
+  pageSize: z.coerce.number().default(12).optional(),
+});
+

@@ -309,9 +309,7 @@ export default function MarketSubmitPage() {
 
               {/* Footer Actions */}
               <div className="flex justify-end items-center gap-6 border-t border-[#cbd5e1]/30 bg-white p-6 md:p-8">
-                <button className="text-sm font-bold text-[#111318] hover:text-[#135bec] transition-colors">
-                  Save as Draft
-                </button>
+              
                 <Button
                   disabled={saving}
                   onClick={handleSubmit}

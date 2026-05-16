@@ -8,7 +8,7 @@ from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -53,17 +53,23 @@ class VendorDetailView(generics.RetrieveAPIView):
 
 
 class VendorListingListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     pagination_class = StandardResultsSetPagination
 
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_vendor(self):
         if getattr(self, 'swagger_fake_view', False):
             return Vendor.objects.first() or Vendor()
         vendor_id = self.kwargs.get('vendor_id')
         vendor = get_object_or_404(Vendor, pk=vendor_id)
+
+        if self.request.method in SAFE_METHODS:
+            return vendor
         
         if not self.request or not self.request.user or not self.request.user.is_authenticated:
             return vendor

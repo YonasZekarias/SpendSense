@@ -28,7 +28,7 @@ export async function createExpenseAction(input: CreateExpenseInput): Promise<Ac
   const result = createExpenseSchema.safeParse(input);
   
   if (!result.success) {
-    return { success: false, message: result.error.errors[0].message };
+    return { success: false, message: result.error.issues[0].message };
   }
 
   try {
@@ -37,10 +37,11 @@ export async function createExpenseAction(input: CreateExpenseInput): Promise<Ac
       endpoint: "/api/finance/expenses/",
       body: result.data,
     });
-
-    revalidateTag("expenses");
+    console.log(data)
+    revalidateTag("expenses","max");
     return { success: true, data };
   } catch (error) {
+      // console.log(error)
     if (error instanceof ApiError) {
       return { success: false, message: error.message };
     }

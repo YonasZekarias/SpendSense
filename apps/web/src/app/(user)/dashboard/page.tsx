@@ -84,7 +84,7 @@ export default async function UsersPage() {
             <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                  Good morning, {user?.full_name?.split(" ")?.[0] ?? "Abebe"}
+                  Welcome, {user?.full_name?.split(" ")?.[0] ?? "Abebe"}
                 </h2>
                 <p className="text-muted-foreground">Here is your financial overview for today.</p>
               </div>

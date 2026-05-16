@@ -63,12 +63,12 @@ const navItems = [
     href: "/notifications",
     matchPaths: ["/notifications"],
   },
-  {
-    icon: Settings,
-    label: "Settings",
-    href: "/settings",
-    matchPaths: ["/settings"],
-  },
+  // {
+  //   icon: Settings,
+  //   label: "Settings",
+  //   href: "/settings",
+  //   matchPaths: ["/settings"],
+  // },
   {
     icon: UserCircle,
     label: "Profile",
@@ -90,15 +90,15 @@ const navItems = [
   {
     icon: Store,
     label: "Shop",
-    href: "/shop",
-    matchPaths: ["/shop"],
+    href: "/vendors",
+    matchPaths: ["/vendors"],
   },
-  {
-    icon: Store,
-    label: "Vendor Directory",
-    href: "/shop/vendors",
-    matchPaths: ["/shop/vendors"],
-  },
+  // {
+  //   icon: Store,
+  //   label: "Vendor Directory",
+  //   href: "/shop/vendors",
+  //   matchPaths: ["/shop/vendors"],
+  // },
   {
     icon: ShoppingCart,
     label: "Cart",
@@ -117,12 +117,12 @@ const navItems = [
     href: "/orders",
     matchPaths: ["/orders"],
   },
-  {
-    icon: Star,
-    label: "Write Review",
-    href: "/reviews/new",
-    matchPaths: ["/reviews", "/reviews/new"],
-  },
+  // {
+  //   icon: Star,
+  //   label: "Write Review",
+  //   href: "/reviews/new",
+  //   matchPaths: ["/reviews", "/reviews/new"],
+  // },
 ];
 
 interface SidebarProps {
