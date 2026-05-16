@@ -31,7 +31,7 @@ export function VendorPagination({ total, page, pageSize, totalPages }: VendorPa
         <Button
           variant="outline"
           size="sm"
-          onClick={() => startTransition(() => setPageParam(page > 1 ? page - 1 : null))}
+          onClick={() => startTransition(() => { setPageParam(page > 1 ? page - 1 : null); })}
           disabled={page <= 1 || isPending}
         >
           <ChevronLeft className="h-4 w-4 mr-1" /> Previous
@@ -48,7 +48,7 @@ export function VendorPagination({ total, page, pageSize, totalPages }: VendorPa
                   variant={p === page ? "default" : "outline"}
                   size="sm"
                   className={`w-9 h-9 p-0 ${p === page ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}`}
-                  onClick={() => startTransition(() => setPageParam(p === 1 ? null : p))}
+                  onClick={() => startTransition(() => { setPageParam(p === 1 ? null : p); })}
                   disabled={isPending || p === page}
                 >
                   {p}
@@ -65,7 +65,7 @@ export function VendorPagination({ total, page, pageSize, totalPages }: VendorPa
         <Button
           variant="outline"
           size="sm"
-          onClick={() => startTransition(() => setPageParam(page < totalPages ? page + 1 : null))}
+          onClick={() => startTransition(() => { setPageParam(page < totalPages ? page + 1 : null); })}
           disabled={page >= totalPages || isPending}
         >
           Next <ChevronRight className="h-4 w-4 ml-1" />

@@ -5,9 +5,8 @@ import Link from "next/link";
 
 
 
-export function ExpensesHeader() {
+export function ExpensesHeader({ onExportCsv }: { onExportCsv?: () => void }) {
   const now = new Date();
-  const onExportCsv = () => {};
   return (
     <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
       <div>

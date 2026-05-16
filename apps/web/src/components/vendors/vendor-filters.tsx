@@ -45,7 +45,7 @@ export function VendorFilters() {
           <Input
             placeholder="Search vendor name, shop, items..."
             value={q || ""}
-            onChange={(e) => startTransition(() => setQ(e.target.value || null))}
+            onChange={(e) => startTransition(() => { setQ(e.target.value || null); })}
             className="pl-9 w-full"
           />
         </div>
@@ -54,7 +54,7 @@ export function VendorFilters() {
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           <Select
             value={category || "all"}
-            onValueChange={(val) => startTransition(() => setCategory(val === "all" ? null : val))}
+            onValueChange={(val) => startTransition(() => { setCategory(val === "all" ? null : val); })}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Category" />
@@ -69,7 +69,7 @@ export function VendorFilters() {
 
           <Select
             value={region || "all"}
-            onValueChange={(val) => startTransition(() => setRegion(val === "all" ? null : val))}
+            onValueChange={(val) => startTransition(() => { setRegion(val === "all" ? null : val); })}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Region" />
@@ -84,7 +84,7 @@ export function VendorFilters() {
 
           <Select
             value={sortBy || "popularity"}
-            onValueChange={(val) => startTransition(() => setSortBy(val === "popularity" ? null : val))}
+            onValueChange={(val) => startTransition(() => { setSortBy(val === "popularity" ? null : val); })}
           >
             <SelectTrigger className="w-[160px]">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -106,25 +106,25 @@ export function VendorFilters() {
           {q && (
             <Badge variant="secondary" className="px-2 py-1 gap-1 flex items-center">
               Search: {q}
-              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => setQ(null))} />
+              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => { setQ(null); })} />
             </Badge>
           )}
           {category && (
             <Badge variant="secondary" className="px-2 py-1 gap-1 flex items-center">
               Category: {category}
-              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => setCategory(null))} />
+              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => { setCategory(null); })} />
             </Badge>
           )}
           {region && (
             <Badge variant="secondary" className="px-2 py-1 gap-1 flex items-center">
               Region: {region}
-              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => setRegion(null))} />
+              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => { setRegion(null); })} />
             </Badge>
           )}
           {sortBy !== "popularity" && (
             <Badge variant="secondary" className="px-2 py-1 gap-1 flex items-center">
               Sort: {sortOptions.find((s) => s.value === sortBy)?.label}
-              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => setSortBy(null))} />
+              <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => startTransition(() => { setSortBy(null); })} />
             </Badge>
           )}
           <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 text-xs px-2 text-muted-foreground hover:text-foreground">

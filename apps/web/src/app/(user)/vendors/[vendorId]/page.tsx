@@ -2,6 +2,7 @@ import { getVendorDetail, getVendorProducts, getVendorReviews } from "@/lib/vend
 import { notFound } from "next/navigation";
 import { Star, MapPin, Phone, MessageCircle, Heart, Share2, CheckCircle, Package } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ApiError } from "@/lib/api";
 import type { VendorProductListResponse, VendorReviewListResponse } from "@/types/api/vendor-details";
 
@@ -171,14 +172,18 @@ export default async function VendorDetailsPage({ params, searchParams }: PagePr
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {vendorProducts.products.map(product => (
-                  <div key={product.id} className="border rounded-xl p-4 bg-card hover:shadow-md transition">
-                     <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center text-xs text-muted-foreground">
-                        Image
+                  <Link href={`/products/${product.itemId}`} key={product.id} className="border rounded-xl p-4 bg-card hover:shadow-md transition block">
+                     <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center text-xs text-muted-foreground overflow-hidden">
+                        {product.imageUrl ? (
+                          <img src={product.imageUrl} alt={product.itemName} className="w-full h-full object-cover" />
+                        ) : (
+                          "Image"
+                        )}
                      </div>
                      <p className="font-semibold truncate">{product.itemName}</p>
                      <p className="text-sm text-muted-foreground">{product.category}</p>
                      <p className="text-lg font-bold mt-2">{product.price} ETB / {product.unit}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

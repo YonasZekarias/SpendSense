@@ -28,7 +28,7 @@ export async function createExpenseAction(input: CreateExpenseInput): Promise<Ac
   const result = createExpenseSchema.safeParse(input);
   
   if (!result.success) {
-    return { success: false, message: result.error.errors[0].message };
+    return { success: false, message: result.error.issues[0].message };
   }
 
   try {
