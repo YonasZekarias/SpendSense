@@ -30,7 +30,8 @@ for vd in vendor_data:
             "owner": demo_admin,
             "city": vd["city"],
             "rating_avg": vd["rating_avg"],
-            "is_verified": vd["is_verified"]
+            "is_verified": vd["is_verified"],
+            "verification_status": "verified" if vd["is_verified"] else "unrequested"
         }
     )
     vendors.append(v)

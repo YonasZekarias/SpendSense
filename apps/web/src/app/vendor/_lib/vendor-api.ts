@@ -20,6 +20,8 @@ export interface VendorProfile {
   image?: string;
   theme_image?: string;
   shop_name?: string;
+  address?: string;
+  contact_phone?: string;
 }
 
 export interface VendorProduct {
@@ -220,6 +222,8 @@ export async function getCurrentUserProfile(): Promise<VendorProfile> {
     method: "GET",
   });
 
+  const vendorInfo = profile.vendor_info as Record<string, any> | undefined;
+
   return {
     id: profile.id ? String(profile.id) : undefined,
     full_name: profile.full_name ? String(profile.full_name) : undefined,
@@ -229,6 +233,13 @@ export async function getCurrentUserProfile(): Promise<VendorProfile> {
     role: profile.role ? String(profile.role) : undefined,
     household_size: profile.household_size ? Number(profile.household_size) : undefined,
     income_bracket: profile.income_bracket ? String(profile.income_bracket) : undefined,
+    onboarding_completed: Boolean(profile.onboarding_completed),
+    avatar: profile.avatar ? String(profile.avatar) : undefined,
+    shop_name: vendorInfo?.shop_name,
+    address: vendorInfo?.address,
+    contact_phone: vendorInfo?.contact_phone,
+    image: vendorInfo?.image,
+    theme_image: vendorInfo?.theme_image,
   };
 }
 
@@ -240,6 +251,8 @@ export async function updateCurrentUserProfile(
     body: JSON.stringify(payload),
   });
 
+  const vendorInfo = profile.vendor_info as Record<string, any> | undefined;
+
   return {
     id: profile.id ? String(profile.id) : undefined,
     full_name: profile.full_name ? String(profile.full_name) : undefined,
@@ -249,6 +262,13 @@ export async function updateCurrentUserProfile(
     role: profile.role ? String(profile.role) : undefined,
     household_size: profile.household_size ? Number(profile.household_size) : undefined,
     income_bracket: profile.income_bracket ? String(profile.income_bracket) : undefined,
+    onboarding_completed: Boolean(profile.onboarding_completed),
+    avatar: profile.avatar ? String(profile.avatar) : undefined,
+    shop_name: vendorInfo?.shop_name,
+    address: vendorInfo?.address,
+    contact_phone: vendorInfo?.contact_phone,
+    image: vendorInfo?.image,
+    theme_image: vendorInfo?.theme_image,
   };
 }
 

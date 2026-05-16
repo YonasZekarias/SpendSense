@@ -34,9 +34,33 @@ class VendorUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = VendorSerializer
 
     def get_object(self):
-        if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
+        user = self.request.user
+        if getattr(self, 'swagger_fake_view', False) or not user.is_authenticated:
             return Vendor()
-        try:
-            return Vendor.objects.get(owner=self.request.user)
-        except Vendor.DoesNotExist:
-            raise Http404("Vendor profile not found.")
+        
+        # 1. Try to get existing vendor first
+        vendor = Vendor.objects.filter(owner=user).first()
+        if vendor:
+            # Ensure the user has the 'vendor' role if they have a vendor record
+            if user.role == 'user':
+                user.role = 'vendor'
+                user.save(update_fields=['role'])
+            return vendor
+            
+        # 2. If not found, create a default record. 
+        # This prevents 404 errors and supports automatic vendor onboarding.
+        vendor, created = Vendor.objects.get_or_create(
+            owner=user,
+            defaults={
+                'shop_name': user.full_name or "My Business",
+                'city': user.city or "Addis Ababa",
+                'contact_phone': user.phone or ""
+            }
+        )
+        
+        # Ensure user role is updated
+        if user.role == 'user':
+            user.role = 'vendor'
+            user.save(update_fields=['role'])
+            
+        return vendor

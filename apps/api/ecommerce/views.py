@@ -320,9 +320,14 @@ class VendorReviewListCreateView(generics.ListCreateAPIView):
 class AdminVendorListView(generics.ListAPIView):
     permission_classes = [IsAdminRole]
     serializer_class = VendorPublicSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return Vendor.objects.select_related('owner').order_by('-joined_at')
+        qs = Vendor.objects.select_related('owner').order_by('-joined_at')
+        status = self.request.query_params.get('status')
+        if status:
+            qs = qs.filter(verification_status=status)
+        return qs
 
 
 class AdminVendorVerifyView(APIView):
@@ -331,7 +336,15 @@ class AdminVendorVerifyView(APIView):
     def post(self, request, pk):
         v = get_object_or_404(Vendor, pk=pk)
         v.is_verified = True
-        v.save(update_fields=['is_verified'])
+        v.verification_status = 'verified'
+        v.save(update_fields=['is_verified', 'verification_status'])
+        
+        Notification.objects.create(
+            user=v.owner,
+            type='vendor_verified',
+            message='Your business account has been verified! You can now start listing products.',
+        )
+        
         AuditLog.objects.create(
             actor=request.user,
             action='vendor_verify',
@@ -346,18 +359,24 @@ class AdminVendorRejectView(APIView):
 
     def post(self, request, pk):
         v = get_object_or_404(Vendor, pk=pk)
-        if Transaction.objects.filter(vendor=v).exists():
-            return Response(
-                {'detail': 'Cannot remove vendor with existing purchases.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        owner_id = v.owner_id
-        v.delete()
-        User.objects.filter(pk=owner_id).update(role='user')
+        
+        v.is_verified = False
+        v.verification_status = 'rejected'
+        v.save(update_fields=['is_verified', 'verification_status'])
+        
+        reason = request.data.get('reason', 'Provided documents were insufficient or invalid.')
+        
+        Notification.objects.create(
+            user=v.owner,
+            type='vendor_rejected',
+            message=f'Your verification request was rejected. Reason: {reason}',
+        )
+        
         AuditLog.objects.create(
             actor=request.user,
             action='vendor_reject',
             resource='vendor',
             resource_id=str(pk),
+            detail={'reason': reason},
         )
-        return Response({'detail': 'Vendor rejected and profile removed.'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'Vendor verification rejected.'}, status=status.HTTP_200_OK)

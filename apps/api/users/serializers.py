@@ -58,23 +58,36 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'email', 'role', 'created_at')
 
     def get_vendor_info(self, obj):
-        if obj.role == 'vendor':
-            vendor = obj.vendor_set.first()
-            if vendor:
-                return {
-                    'vendor_id': vendor.id,
-                    'shop_name': vendor.shop_name,
-                    'city': vendor.city,
-                    'address': vendor.address,
-                    'contact_phone': vendor.contact_phone,
-                    'is_verified': vendor.is_verified,
-                    'rating_avg': str(vendor.rating_avg),
-                    'rating_count': vendor.rating_count,
-                    'latitude': str(vendor.latitude) if vendor.latitude else None,
-                    'longitude': str(vendor.longitude) if vendor.longitude else None,
-                    'image': vendor.image.url if vendor.image else None,
-                }
+        from .vendor_serializers import VendorSerializer
+        vendor = obj.vendor_set.first()
+        if vendor:
+            return VendorSerializer(vendor).data
         return None
+
+    def update(self, instance, validated_data):
+        # Support updating vendor fields directly via this serializer for convenience
+        from .models import Vendor
+        from .vendor_serializers import VendorSerializer
+        
+        # Extract vendor fields from initial_data (since they might not be in validated_data)
+        vendor_fields = ['shop_name', 'address', 'contact_phone', 'image', 'theme_image', 'business_license', 'tin_number']
+        vendor_data = {}
+        for field in vendor_fields:
+            if field in self.initial_data:
+                vendor_data[field] = self.initial_data[field]
+        
+        # Also check for nested vendor_info
+        nested_vendor_info = self.initial_data.get('vendor_info')
+        if isinstance(nested_vendor_info, dict):
+            vendor_data.update(nested_vendor_info)
+
+        if vendor_data:
+            vendor, _ = Vendor.objects.get_or_create(owner=instance)
+            vendor_serializer = VendorSerializer(vendor, data=vendor_data, partial=True)
+            if vendor_serializer.is_valid():
+                vendor_serializer.save()
+        
+        return super().update(instance, validated_data)
 
 
 class UserPreferencesSerializer(serializers.ModelSerializer):
