@@ -18,7 +18,7 @@ export async function getVendorProducts(vendorId: string, params?: ProductQueryP
   const query = productSearchParamsSchema.parse(params || {});
   const rawData = await apiClient<VendorProductListResponse>({
     method: "GET",
-    endpoint: `/api/market/vendors/${vendorId}/products/`,
+    endpoint: `/api/ecommerce/vendors/${vendorId}/listings/`,
     query: query as Record<string, string | number | boolean | null | undefined>,
     next: { tags: [`vendor:${vendorId}:products`], revalidate: 60 },
   });

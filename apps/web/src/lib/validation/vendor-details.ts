@@ -33,27 +33,48 @@ export const vendorDetailSchema = z.object({
 
 export const vendorProductSchema = z.object({
   id: z.coerce.string(),
-  itemId: z.coerce.string(),
-  itemName: z.string(),
-  category: z.string(),
-  imageUrl: z.string().nullable(),
+  item: z.coerce.string(),
+  item_name: z.string(),
+  category: z.string().nullable().default("Uncategorized"),
+  image: z.string().nullable(),
   price: z.coerce.number(),
   unit: z.string(),
-  comparePrice: z.coerce.number().nullable(),
-  stockStatus: z.enum(["InStock", "LowStock", "OutOfStock"]),
-  stockQuantity: z.coerce.number(),
-  priceTrend: z.coerce.number(),
-  nationalAveragePrice: z.coerce.number(),
-  nationalAverageDiff: z.coerce.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+  stock_count: z.coerce.number(),
+  date: z.string(),
+  is_verified: z.boolean().optional(),
+}).transform((data) => ({
+  id: data.id,
+  itemId: data.item,
+  itemName: data.item_name,
+  category: data.category || "Uncategorized",
+  imageUrl: data.image,
+  price: data.price,
+  unit: data.unit,
+  comparePrice: null,
+  stockStatus: (data.stock_count > 10 ? "InStock" : data.stock_count > 0 ? "LowStock" : "OutOfStock") as "InStock" | "LowStock" | "OutOfStock",
+  stockQuantity: data.stock_count,
+  priceTrend: 0,
+  nationalAveragePrice: 0,
+  nationalAverageDiff: 0,
+  createdAt: data.date,
+  updatedAt: data.date,
+}));
 
 export const vendorProductListSchema = z.object({
-  products: z.array(vendorProductSchema),
+  results: z.array(vendorProductSchema),
   pagination: vendorPaginationSchema,
-  categories: z.array(z.string()),
-  priceRange: z.object({ min: z.coerce.number(), max: z.coerce.number() }),
+}).transform((data) => {
+  const products = data.results;
+  const prices = products.map((p) => p.price);
+  return {
+    products,
+    pagination: data.pagination,
+    categories: Array.from(new Set(products.map((p) => p.category))),
+    priceRange: { 
+      min: prices.length ? Math.min(...prices) : 0, 
+      max: prices.length ? Math.max(...prices) : 0 
+    }
+  };
 });
 
 export const vendorReviewSchema = z.object({
