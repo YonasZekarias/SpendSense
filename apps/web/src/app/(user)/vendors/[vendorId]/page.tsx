@@ -171,20 +171,47 @@ export default async function VendorDetailsPage({ params, searchParams }: PagePr
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {vendorProducts.products.map(product => (
-                  <Link href={`/products/${product.itemId}`} key={product.id} className="border rounded-xl p-4 bg-card hover:shadow-md transition block">
+                {vendorProducts.products.map(product => {
+                  const vendorParams = new URLSearchParams({
+                    vendorId: vendorDetail.id,
+                    listingId: product.id,
+                    vendorPrice: String(product.price),
+                    vendorName: vendorDetail.shopName,
+                    vendorLocation: vendorDetail.location,
+                    vendorRegion: vendorDetail.region,
+                    vendorRating: String(vendorDetail.rating),
+                    vendorVerified: String(vendorDetail.verifiedStatus === "Verified"),
+                    stockQty: String(product.stockQuantity),
+                    stockStatus: product.stockStatus,
+                  });
+                  if (vendorDetail.imageUrl) vendorParams.set("vendorImageUrl", vendorDetail.imageUrl);
+                  const productUrl = `/products/${product.itemId}?${vendorParams.toString()}`;
+
+                  return (
+                  <Link href={productUrl} key={product.id} className="border rounded-xl p-4 bg-card hover:shadow-md transition-all hover:-translate-y-0.5 block group">
                      <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center text-xs text-muted-foreground overflow-hidden">
                         {product.imageUrl ? (
-                          <img src={product.imageUrl} alt={product.itemName} className="w-full h-full object-cover" />
+                          <img src={product.imageUrl} alt={product.itemName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         ) : (
-                          "Image"
+                          <span className="text-2xl font-bold text-muted-foreground/40">{product.itemName.charAt(0)}</span>
                         )}
                      </div>
                      <p className="font-semibold truncate">{product.itemName}</p>
                      <p className="text-sm text-muted-foreground">{product.category}</p>
-                     <p className="text-lg font-bold mt-2">{product.price} ETB / {product.unit}</p>
+                     <div className="flex items-center justify-between mt-2">
+                       <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{product.price.toFixed(2)} ETB</p>
+                       <p className="text-xs text-muted-foreground">/ {product.unit}</p>
+                     </div>
+                     <p className={`text-xs mt-1 font-medium ${
+                       product.stockStatus === "InStock" ? "text-green-600" :
+                       product.stockStatus === "LowStock" ? "text-amber-600" : "text-red-500"
+                     }`}>
+                       {product.stockStatus === "InStock" ? "✓ In Stock" :
+                        product.stockStatus === "LowStock" ? "⚠ Low Stock" : "✗ Out of Stock"}
+                     </p>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

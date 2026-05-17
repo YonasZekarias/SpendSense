@@ -40,6 +40,12 @@ const navItems = [
     matchPaths: ["/budget"],
   },
   {
+    icon: ReceiptText,
+    label: "Expenses",
+    href: "/expenses",
+    matchPaths: ["/expenses"],
+  },
+  {
     icon: Store,
     label: "Shop",
     href: "/vendors",
