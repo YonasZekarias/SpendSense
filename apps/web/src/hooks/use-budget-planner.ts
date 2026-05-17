@@ -1,10 +1,14 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useAuth } from "@/providers/auth-provider";
 import { createApiClient } from "@/lib/finance-utils";
-import { 
-  BudgetRecord, BudgetSummary, ExpenseRecord, EditableCategory, 
-  BudgetSuggestionResponse, BudgetSummaryCategory 
+import { useAuth } from "@/providers/auth-provider";
+import {
+    BudgetRecord,
+    BudgetSuggestionResponse,
+    BudgetSummary,
+    BudgetSummaryCategory,
+    EditableCategory,
+    ExpenseRecord
 } from "@/types/finance";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type InitialBudgetData = {
   budget?: BudgetRecord | null;
@@ -41,24 +45,55 @@ export function useBudgetPlanner(initial?: InitialBudgetData) {
 
     try {
       const [budgetsRes, expensesRes] = await Promise.all([
-        api.get<BudgetRecord[]>("/api/finance/budgets/"),
-        api.get<ExpenseRecord[]>("/api/finance/expenses/"),
+        // DRF pagination is enabled globally, so this endpoint may return {results: []}.
+        api.get<any>("/api/finance/budgets/"),
+        // Custom response shape: { pagination, results, categories?, products? }
+        api.get<any>("/api/finance/expenses/", { params: { include_products: 1, pageSize: 6 } }),
       ]);
 
-      const budgets = budgetsRes.data;
-      setExpenses(expensesRes.data.slice(0, 6));
+      const budgetsData = budgetsRes.data;
+      const budgets: BudgetRecord[] = Array.isArray(budgetsData)
+        ? budgetsData
+        : (budgetsData?.results ?? []);
+
+      const expensesData = expensesRes.data;
+      const expenseRows: ExpenseRecord[] = Array.isArray(expensesData)
+        ? expensesData
+        : (expensesData?.results ?? []);
+      setExpenses(expenseRows.slice(0, 6));
+
+      const allCategoryNames: string[] = Array.isArray(expensesData?.categories)
+        ? expensesData.categories
+            .map((c: any) => c?.name)
+            .filter((n: unknown): n is string => typeof n === "string" && n.trim().length > 0)
+        : [];
 
       if (budgets.length > 0) {
-        const latestBudget = budgets[0];
-        setBudget(latestBudget);
+        const now = new Date();
+        const currentBudget =
+          budgets.find((b) => b.month === now.getMonth() + 1 && b.year === now.getFullYear()) ?? budgets[0];
+
+        setBudget(currentBudget);
         setSuggestedMonth(null);
 
-        const summaryRes = await api.get<BudgetSummary>(`/api/finance/budgets/${latestBudget.id}/summary/`);
+        const summaryRes = await api.get<BudgetSummary>(`/api/finance/budgets/${currentBudget.id}/summary/`);
         const detail = summaryRes.data;
-        
         setSummary(detail);
+
+        const limitsByName = new Map<string, string>();
+        for (const c of detail.by_category ?? []) {
+          limitsByName.set(String(c.category_name).toLowerCase(), String(c.limit_amount));
+        }
+
+        const namesToRender = allCategoryNames.length
+          ? allCategoryNames
+          : (detail.by_category ?? []).map((c) => c.category_name);
+
         setDraftCategories(
-          detail.by_category.map((c) => ({ category_name: c.category_name, limit_amount: c.limit_amount }))
+          namesToRender.map((name) => ({
+            category_name: name,
+            limit_amount: limitsByName.get(String(name).toLowerCase()) ?? "0.00",
+          }))
         );
       } else {
         setBudget(null);
@@ -68,10 +103,23 @@ export function useBudgetPlanner(initial?: InitialBudgetData) {
         const suggestionRes = await api.get<BudgetSuggestionResponse>("/api/finance/budgets/suggestions/", {
           params: { month: now.getMonth() + 1, year: now.getFullYear() },
         });
-        
+
         setSuggestedMonth({ month: suggestionRes.data.month, year: suggestionRes.data.year });
+
+        const suggestedLimits = new Map<string, string>();
+        for (const c of suggestionRes.data.categories ?? []) {
+          suggestedLimits.set(String(c.category_name).toLowerCase(), String(c.limit_amount));
+        }
+
+        const namesToRender = allCategoryNames.length
+          ? allCategoryNames
+          : (suggestionRes.data.categories ?? []).map((c) => c.category_name);
+
         setDraftCategories(
-          suggestionRes.data.categories.map((c) => ({ category_name: c.category_name, limit_amount: c.limit_amount }))
+          namesToRender.map((name) => ({
+            category_name: name,
+            limit_amount: suggestedLimits.get(String(name).toLowerCase()) ?? "0.00",
+          }))
         );
       }
     } catch (err) {
