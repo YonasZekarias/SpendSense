@@ -1,9 +1,8 @@
 "use server";
 
 import { apiClient, ApiError } from "@/lib/api";
-import { revalidatePath } from "next/cache";
-import { vendorVerificationRequestSchema } from "@/lib/validation/vendor-profile";
 import { VendorProfileResponse } from "@/types/api/vendor-profile";
+import { revalidatePath } from "next/cache";
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -28,6 +27,7 @@ export async function requestVerification(
 
     return { success: true, data: flattened };
   } catch (error) {
+    console.log("Error: ", error);
     if (error instanceof ApiError) {
       return { success: false, message: error.message };
     }

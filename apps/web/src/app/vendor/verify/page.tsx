@@ -30,7 +30,7 @@ export default async function VendorVerifyPage() {
                   Go to Dashboard
                 </Link>
               </>
-            ) : vStatus === 'requested' || vStatus === 'pending' ? (
+            ) : vStatus === 'requested'? (
               <>
                 <div className="mx-auto w-20 h-20 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6">
                   <Clock size={40} />
