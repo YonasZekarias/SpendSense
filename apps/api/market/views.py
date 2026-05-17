@@ -8,6 +8,7 @@ from django.db.models import Avg, Count, Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +24,7 @@ from .serializers import (
     AdminSubmissionListSerializer,
     AdminSubmissionUpdateSerializer,
     ItemSerializer,
+    MySubmissionSerializer,
     PriceSubmissionSerializer,
 )
 
@@ -68,6 +70,7 @@ class AdminItemCreateView(generics.CreateAPIView):
 class SubmitPriceView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PriceSubmissionSerializer
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -142,15 +145,50 @@ class PriceAveragesView(APIView):
 
 
 class AdminPendingSubmissionsView(generics.ListAPIView):
+    """GET /api/market/admin/submissions/ — supports ?status=pending|approved|rejected, ?outlier=true, pagination."""
     permission_classes = [IsAdminRole]
     serializer_class = AdminSubmissionListSerializer
 
     def get_queryset(self):
-        return (
-            PriceSubmission.objects.filter(status="pending")
-            .select_related("item", "user")
-            .order_by("created_at")
-        )
+        status_filter = self.request.query_params.get('status', 'pending')
+        outlier = self.request.query_params.get('outlier')
+        search = self.request.query_params.get('search', '')
+
+        qs = PriceSubmission.objects.select_related("item", "user").order_by("created_at")
+
+        if status_filter in ('pending', 'approved', 'rejected'):
+            qs = qs.filter(status=status_filter)
+
+        if outlier and outlier.lower() in ('true', '1'):
+            qs = qs.filter(outlier_flag=True)
+
+        if search:
+            qs = qs.filter(
+                Q(item__name__icontains=search) |
+                Q(market_location__icontains=search) |
+                Q(city__icontains=search) |
+                Q(user__email__icontains=search)
+            )
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = min(int(request.query_params.get('page_size', 12)), 50)
+        start = (page - 1) * page_size
+        end = start + page_size
+        total = queryset.count()
+        items = queryset[start:end]
+        serializer = self.get_serializer(items, many=True, context={'request': request})
+        return Response({
+            'results': serializer.data,
+            'pagination': {
+                'total_records': total,
+                'total_pages': (total + page_size - 1) // page_size if total else 1,
+                'page_size': page_size,
+                'current_page': page,
+            }
+        })
 
 
 class AdminSubmissionDetailView(generics.RetrieveUpdateAPIView):
@@ -169,18 +207,19 @@ class AdminSubmissionApproveView(APIView):
 
     def post(self, request, pk):
         try:
-            sub = PriceSubmission.objects.get(pk=pk)
+            sub = PriceSubmission.objects.select_related("item", "user").get(pk=pk)
         except PriceSubmission.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         sub.status = "approved"
-        sub.save(update_fields=["status"])
+        sub.rejection_reason = ""
+        sub.save(update_fields=["status", "rejection_reason"])
         AuditLog.objects.create(
             actor=request.user,
             action="submission_approve",
             resource="price_submission",
             resource_id=str(sub.id),
         )
-        return Response(AdminSubmissionListSerializer(sub).data)
+        return Response(AdminSubmissionListSerializer(sub, context={"request": request}).data)
 
 
 class AdminSubmissionRejectView(APIView):
@@ -188,18 +227,46 @@ class AdminSubmissionRejectView(APIView):
 
     def post(self, request, pk):
         try:
-            sub = PriceSubmission.objects.get(pk=pk)
+            sub = PriceSubmission.objects.select_related("item", "user").get(pk=pk)
         except PriceSubmission.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        reason = request.data.get("reason", "")
         sub.status = "rejected"
-        sub.save(update_fields=["status"])
+        sub.rejection_reason = reason
+        sub.save(update_fields=["status", "rejection_reason"])
         AuditLog.objects.create(
             actor=request.user,
             action="submission_reject",
             resource="price_submission",
             resource_id=str(sub.id),
+            detail={"reason": reason},
         )
-        return Response(AdminSubmissionListSerializer(sub).data)
+        return Response(AdminSubmissionListSerializer(sub, context={"request": request}).data)
+
+
+class AdminModerationStatsView(APIView):
+    """GET /api/market/admin/moderation-stats/ — quick counts for the queue header."""
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        today = date.today()
+        pending = PriceSubmission.objects.filter(status='pending').count()
+        approved_today = PriceSubmission.objects.filter(
+            status='approved', created_at__date=today
+        ).count()
+        rejected_today = PriceSubmission.objects.filter(
+            status='rejected', created_at__date=today
+        ).count()
+        outlier_flagged = PriceSubmission.objects.filter(
+            status='pending', outlier_flag=True
+        ).count()
+        return Response({
+            'pending': pending,
+            'approved_today': approved_today,
+            'rejected_today': rejected_today,
+            'outlier_flagged': outlier_flagged,
+        })
+
 
 
 class PriceTrendsView(APIView):
@@ -525,3 +592,195 @@ class AdminMLStatusView(APIView):
                 "created_at": run.created_at,
             }
         )
+
+
+class MySubmissionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """PATCH/DELETE own submission — pending or rejected only (edit/resubmit/delete)."""
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+
+    def get_queryset(self):
+        return PriceSubmission.objects.filter(user=self.request.user).select_related("item")
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return PriceSubmissionSerializer
+        return MySubmissionSerializer
+
+    def perform_update(self, serializer):
+        serializer.save(status="pending", rejection_reason="")
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status not in ("pending", "rejected"):
+            return Response(
+                {"detail": "Only pending or rejected submissions can be edited."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != "pending":
+            return Response(
+                {"detail": "Only pending submissions can be deleted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class MySubmissionsListView(generics.ListAPIView):
+    """GET /api/market/prices/my-submissions/ — current user's own submissions."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = MySubmissionSerializer
+
+    def get_queryset(self):
+        qs = PriceSubmission.objects.filter(
+            user=self.request.user
+        ).select_related('item').order_by('-created_at')
+        status_filter = self.request.query_params.get('status')
+        if status_filter and status_filter in ('pending', 'approved', 'rejected'):
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        start = (page - 1) * page_size
+        end = start + page_size
+        total = queryset.count()
+        items = queryset[start:end]
+        serializer = self.get_serializer(items, many=True)
+        return Response({
+            'results': serializer.data,
+            'pagination': {
+                'total_records': total,
+                'total_pages': (total + page_size - 1) // page_size,
+                'page_size': page_size,
+                'current_page': page,
+            }
+        })
+
+
+class ContributorStatsView(APIView):
+    """GET /api/market/prices/contributor-stats/ — gamification stats for current user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        total = PriceSubmission.objects.filter(user=user).count()
+        approved = PriceSubmission.objects.filter(user=user, status='approved').count()
+        pending = PriceSubmission.objects.filter(user=user, status='pending').count()
+        rejected = PriceSubmission.objects.filter(user=user, status='rejected').count()
+
+        # Points: 10 per approved, 2 per pending
+        points = approved * 10 + pending * 2
+
+        # Contributor level
+        if approved >= 100:
+            level = 'Top Contributor'
+            badge_color = 'gold'
+        elif approved >= 25:
+            level = 'Active Contributor'
+            badge_color = 'silver'
+        else:
+            level = 'New Contributor'
+            badge_color = 'bronze'
+
+        # Rank progress to next level
+        if approved >= 100:
+            rank_progress = 100
+        elif approved >= 25:
+            rank_progress = min(100, int((approved - 25) / 75 * 100))
+        else:
+            rank_progress = min(100, int(approved / 25 * 100))
+
+        # Weekly stats
+        week_ago = date.today() - timedelta(days=7)
+        week_submissions = PriceSubmission.objects.filter(
+            user=user, created_at__date__gte=week_ago
+        ).count()
+        total_week_submissions = PriceSubmission.objects.filter(
+            created_at__date__gte=week_ago
+        ).count()
+
+        # Unique items and markets covered
+        items_covered = PriceSubmission.objects.filter(user=user).values('item').distinct().count()
+        markets_covered = PriceSubmission.objects.filter(user=user).values('market_location').distinct().count()
+
+        return Response({
+            'total_submissions': total,
+            'approved': approved,
+            'pending': pending,
+            'rejected': rejected,
+            'points': points,
+            'level': level,
+            'badge_color': badge_color,
+            'rank_progress': rank_progress,
+            'week_submissions': week_submissions,
+            'total_week_submissions': total_week_submissions,
+            'items_covered': items_covered,
+            'markets_covered': markets_covered,
+        })
+
+
+class ItemAveragesView(APIView):
+    """GET /api/market/prices/item-averages/ — price context for a specific item."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        item_id = request.query_params.get('item_id')
+        if not item_id:
+            return Response({'detail': 'item_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        location = request.query_params.get('location')
+        city = request.query_params.get('city')
+
+        # National average
+        national_qs = PriceSubmission.objects.filter(item_id=item_id, status='approved')
+        national_avg = national_qs.aggregate(avg=Avg('price_value'))['avg']
+
+        # City average
+        city_avg = None
+        if city:
+            city_qs = national_qs.filter(city__iexact=city)
+            city_avg = city_qs.aggregate(avg=Avg('price_value'))['avg']
+
+        # Location average
+        location_avg = None
+        if location:
+            loc_qs = national_qs.filter(market_location__icontains=location)
+            if city:
+                loc_qs = loc_qs.filter(city__iexact=city)
+            location_avg = loc_qs.aggregate(avg=Avg('price_value'))['avg']
+
+        # Recent submissions for same item/location
+        recent_qs = PriceSubmission.objects.filter(
+            item_id=item_id, status='approved'
+        ).order_by('-date_observed')
+        if location:
+            recent_qs = recent_qs.filter(market_location__icontains=location)
+        recent = recent_qs[:3]
+        recent_data = [
+            {
+                'price': str(s.price_value),
+                'date': s.date_observed.isoformat(),
+                'location': s.market_location,
+                'city': s.city,
+            }
+            for s in recent
+        ]
+
+        # Total submission count
+        total_count = national_qs.count()
+
+        return Response({
+            'item_id': int(item_id),
+            'national_average': str(round(national_avg, 2)) if national_avg else None,
+            'city_average': str(round(city_avg, 2)) if city_avg else None,
+            'location_average': str(round(location_avg, 2)) if location_avg else None,
+            'recent_submissions': recent_data,
+            'total_submissions': total_count,
+        })

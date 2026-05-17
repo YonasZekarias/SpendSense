@@ -50,6 +50,8 @@ export interface VendorProductResponse {
   nationalAverageDiff: number;
   createdAt: string;
   updatedAt: string;
+  vendorId?: string;
+  vendorName?: string;
 }
 
 export interface VendorPagination {

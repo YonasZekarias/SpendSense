@@ -11,6 +11,10 @@ urlpatterns = [
     path('admin/items/', views.AdminItemCreateView.as_view(), name='admin-item-create'),
     path('prices/submit/', views.SubmitPriceView.as_view(), name='price-submit'),
     path('prices/averages/', views.PriceAveragesView.as_view(), name='price-averages'),
+    path('prices/my-submissions/', views.MySubmissionsListView.as_view(), name='my-submissions'),
+    path('prices/my-submissions/<int:pk>/', views.MySubmissionDetailView.as_view(), name='my-submission-detail'),
+    path('prices/contributor-stats/', views.ContributorStatsView.as_view(), name='contributor-stats'),
+    path('prices/item-averages/', views.ItemAveragesView.as_view(), name='item-averages'),
     path('trends/', views.PriceTrendsView.as_view(), name='price-trends'),
     path('forecasts/', views.PriceForecastsView.as_view(), name='price-forecasts'),
     path('inflation/', views.InflationView.as_view(), name='inflation'),
@@ -19,6 +23,7 @@ urlpatterns = [
     path('admin/submissions/<int:pk>/', views.AdminSubmissionDetailView.as_view(), name='admin-submission-detail'),
     path('admin/submissions/<int:pk>/approve/', views.AdminSubmissionApproveView.as_view(), name='admin-submission-approve'),
     path('admin/submissions/<int:pk>/reject/', views.AdminSubmissionRejectView.as_view(), name='admin-submission-reject'),
+    path('admin/moderation-stats/', views.AdminModerationStatsView.as_view(), name='admin-moderation-stats'),
 ]
 
 # Import new views
