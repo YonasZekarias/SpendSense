@@ -352,12 +352,29 @@ class MarketCategoriesView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        names = (
+        db_names = list(
             Item.objects.values_list("category", flat=True)
             .distinct()
-            .order_by("category")
         )
-        return Response([{"name": c} for c in names if c])
+
+        # Fallback/union: include the canonical CSA category list so the client can
+        # always render a complete category selector even if items are not seeded yet.
+        try:
+            from finance.static_products import CATEGORIES as STATIC_CATEGORIES
+
+            static_names = [c.get("name") for c in STATIC_CATEGORIES if isinstance(c, dict)]
+        except Exception:
+            static_names = []
+
+        all_names = set()
+        for name in [*db_names, *static_names]:
+            if not name:
+                continue
+            cleaned = str(name).strip()
+            if cleaned:
+                all_names.add(cleaned)
+
+        return Response([{"name": c} for c in sorted(all_names)])
 
 
 class NationalPriceListView(APIView):
