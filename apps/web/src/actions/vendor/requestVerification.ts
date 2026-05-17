@@ -15,16 +15,12 @@ export async function requestVerification(
   try {
     const rawData = await apiClient<any>({
       method: "PATCH",
-      endpoint: "/api/users/me/",
+      endpoint: "/api/users/vendors/verify/",
       body: formData,
     });
 
-    // Flatten the vendor_info from the response for UI compatibility
-    const vendorInfo = rawData.vendor_info || {};
-    const flattened: VendorProfileResponse = {
-      ...rawData,
-      ...vendorInfo,
-    };
+    // The response is already the vendor profile (VendorSerializer)
+    const flattened: VendorProfileResponse = rawData;
 
     revalidatePath("/vendor/verify");
     revalidatePath("/vendor/dashboard");

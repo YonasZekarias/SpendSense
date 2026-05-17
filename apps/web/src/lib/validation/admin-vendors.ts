@@ -9,7 +9,7 @@ export const adminVendorSchema = z.object({
   latitude: z.string().nullable(),
   longitude: z.string().nullable(),
   is_verified: z.boolean(),
-  verification_status: z.enum(["unrequested", "pending", "verified", "rejected"]),
+  verification_status: z.enum(["unrequested", "requested", "pending", "verified", "rejected"]),
   business_license: z.string().nullable(),
   tin_number: z.string(),
   rating_avg: z.string(),

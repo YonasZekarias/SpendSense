@@ -7,7 +7,7 @@ export interface AdminVendor {
   latitude: string | null;
   longitude: string | null;
   is_verified: boolean;
-  verification_status: "unrequested" | "pending" | "verified" | "rejected";
+  verification_status: "unrequested" | "requested" | "pending" | "verified" | "rejected";
   business_license: string | null;
   tin_number: string;
   rating_avg: string;

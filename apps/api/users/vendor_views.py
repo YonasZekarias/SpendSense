@@ -64,3 +64,37 @@ class VendorUpdateView(generics.RetrieveUpdateAPIView):
             user.save(update_fields=['role'])
             
         return vendor
+
+class VendorVerifyRequestView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = VendorSerializer
+
+    def get_object(self):
+        user = self.request.user
+        vendor, created = Vendor.objects.get_or_create(
+            owner=user,
+            defaults={
+                'shop_name': user.full_name or "My Business",
+                'city': user.city or "Addis Ababa",
+                'contact_phone': user.phone or ""
+            }
+        )
+        if user.role == 'user':
+            user.role = 'vendor'
+            user.save(update_fields=['role'])
+        return vendor
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', True) # allow partial updates
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        # Update verification_status to "requested"
+        serializer.validated_data['verification_status'] = 'requested'
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)

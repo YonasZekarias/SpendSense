@@ -7,7 +7,7 @@ export interface VendorProfileResponse {
   address: string;
   contact_phone: string;
   is_verified: boolean;
-  verification_status: 'unrequested' | 'pending' | 'verified' | 'rejected';
+  verification_status: 'unrequested' | 'requested' | 'pending' | 'verified' | 'rejected';
   business_license: string | null;
   tin_number: string;
   rating_avg: number;

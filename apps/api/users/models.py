@@ -67,6 +67,7 @@ class Vendor(models.Model):
     contact_phone = models.CharField(max_length=30, blank=True, default='')
     VERIFICATION_STATUS_CHOICES = (
         ('unrequested', 'Unrequested'),
+        ('requested', 'Requested'),
         ('pending', 'Pending'),
         ('verified', 'Verified'),
         ('rejected', 'Rejected'),

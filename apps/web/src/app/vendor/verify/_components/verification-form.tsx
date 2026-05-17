@@ -13,12 +13,14 @@ export function VerificationForm() {
     setIsPending(true);
     try {
       const result = await requestVerification(formData);
+      console.log(result);
       if (result.success) {
         toast.success("Verification request submitted successfully!");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
+      console.log(error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsPending(false);
