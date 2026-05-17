@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.utils import timezone
+from datetime import timedelta
 
 from .models import Item, PriceSubmission
 
@@ -30,22 +32,72 @@ class AdminItemCreateSerializer(serializers.ModelSerializer):
 
 class PriceSubmissionSerializer(serializers.ModelSerializer):
     item_id = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), source='item')
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_category = serializers.CharField(source='item.category', read_only=True)
     outlier_warning = serializers.SerializerMethodField()
 
     class Meta:
         model = PriceSubmission
         fields = (
-            'id', 'item_id', 'price_value', 'market_location', 'city',
-            'date_observed', 'status', 'image', 'created_at', 'outlier_warning',
+            'id', 'item_id', 'item_name', 'item_category',
+            'price_value', 'unit', 'market_location', 'city', 'vendor_name',
+            'date_observed', 'time_observed', 'quality_grade',
+            'quantity_available', 'notes',
+            'status', 'rejection_reason', 'outlier_flag',
+            'image', 'created_at', 'outlier_warning',
         )
-        read_only_fields = ('id', 'status', 'created_at')
+        read_only_fields = ('id', 'status', 'rejection_reason', 'outlier_flag', 'created_at')
 
     def get_outlier_warning(self, obj):
         return getattr(obj, '_outlier_warning', None)
 
+    def validate_date_observed(self, value):
+        today = timezone.now().date()
+        max_past = today - timedelta(days=7)
+        if value > today:
+            raise serializers.ValidationError("Future dates are not allowed.")
+        if value < max_past:
+            raise serializers.ValidationError("Observation date must be within the last 7 days.")
+        return value
+
+    def validate_price_value(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be a positive number.")
+        if value > 999999:
+            raise serializers.ValidationError("Price cannot exceed 999,999 ETB.")
+        return value
+
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
+        # Copy item unit as default if not provided
+        item = validated_data.get('item')
+        if not validated_data.get('unit') and item:
+            validated_data['unit'] = item.unit
         return super().create(validated_data)
+
+
+class MySubmissionSerializer(serializers.ModelSerializer):
+    """Serializer for listing the current user's own submissions."""
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_category = serializers.CharField(source='item.category', read_only=True)
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PriceSubmission
+        fields = (
+            'id', 'item_name', 'item_category',
+            'price_value', 'unit', 'market_location', 'city', 'vendor_name',
+            'date_observed', 'time_observed', 'quality_grade',
+            'quantity_available', 'notes',
+            'status', 'rejection_reason', 'outlier_flag',
+            'image_url', 'created_at',
+        )
+
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return None
 
 
 class AdminSubmissionListSerializer(serializers.ModelSerializer):
@@ -56,8 +108,10 @@ class AdminSubmissionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceSubmission
         fields = (
-            'id', 'item', 'item_name', 'price_value', 'market_location', 'city',
-            'date_observed', 'status', 'image', 'created_at', 'submitter_email',
+            'id', 'item', 'item_name', 'price_value', 'unit', 'market_location', 'city',
+            'vendor_name', 'date_observed', 'time_observed', 'quality_grade',
+            'quantity_available', 'notes', 'status', 'rejection_reason', 'outlier_flag',
+            'image', 'created_at', 'submitter_email',
         )
 
 
@@ -70,10 +124,14 @@ class AdminSubmissionUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceSubmission
         fields = (
-            'item', 'price_value', 'market_location', 'city', 'date_observed', 'status', 'image',
+            'item', 'price_value', 'unit', 'market_location', 'city', 'vendor_name',
+            'date_observed', 'time_observed', 'quality_grade', 'quantity_available',
+            'notes', 'status', 'rejection_reason', 'outlier_flag', 'image',
         )
 
+
 from .models import VendorPrice
+
 
 class VendorPriceSerializer(serializers.ModelSerializer):
     vendor_id = serializers.UUIDField(source='vendor.id', read_only=True)
@@ -87,7 +145,9 @@ class VendorPriceSerializer(serializers.ModelSerializer):
         fields = ('id', 'vendor_id', 'vendor_name', 'city', 'rating_avg', 'is_verified', 'price', 'date')
         ref_name = "MarketVendorPrice"
 
+
 from users.models import Vendor
+
 
 class MarketVendorListCardSerializer(serializers.ModelSerializer):
     vendorName = serializers.CharField(source='owner.full_name', read_only=True)

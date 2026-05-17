@@ -54,8 +54,8 @@ const navItems = [
   {
     icon: TrendingUp,
     label: "Live Prices",
-    href: "/market",
-    matchPaths: ["/market", "/live-prices", "/price-trends"],
+    href: "/live-price",
+    matchPaths: [ "/live-prices", "/price-trends"],
   },
 
   // {

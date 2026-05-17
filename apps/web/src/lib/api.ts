@@ -102,9 +102,13 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
   }
   const url = `${baseUrlAndEndpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
-  console.log("Prepared url: ", url)
-  console.log("Method: ", method)
-  console.log("Body: ", JSON.stringify(body))
+  if (process.env.NODE_ENV === "development") {
+    const bodyLog =
+      body instanceof FormData
+        ? Object.fromEntries(body.entries())
+        : body;
+    console.log("Prepared url:", url, "Method:", method, "Body:", bodyLog);
+  }
   
   const headers = normalizeHeaders(fetchOptions?.headers);
   let requestBody: BodyInit | undefined;

@@ -17,10 +17,22 @@ with connection.cursor() as cursor:
     except Exception as e:
         pass
         
-    try:
-        cursor.execute("ALTER TABLE market_pricesubmission ADD COLUMN image varchar(100) DEFAULT NULL;")
-    except Exception as e:
-        pass
+    price_submission_columns = [
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS unit varchar(30) NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS vendor_name varchar(120) NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS time_observed varchar(20) NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS quality_grade varchar(60) NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS quantity_available numeric(10, 2) NULL;",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS notes text NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS rejection_reason text NOT NULL DEFAULT '';",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS outlier_flag boolean NOT NULL DEFAULT false;",
+        "ALTER TABLE market_pricesubmission ADD COLUMN IF NOT EXISTS image varchar(100) NULL;",
+    ]
+    for sql in price_submission_columns:
+        try:
+            cursor.execute(sql)
+        except Exception:
+            pass
 
 from django.core.management import call_command
 call_command('seed_items')
