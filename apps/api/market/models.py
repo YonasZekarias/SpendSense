@@ -63,12 +63,19 @@ class Forecast(models.Model):
     model_used = models.CharField(max_length=50) 
     confidence_low = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) 
     confidence_high = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) 
+    
+    # New SARIMA-specific tracking fields
+    sarima_order = models.CharField(max_length=100, null=True, blank=True)
+    seasonal_order = models.CharField(max_length=100, null=True, blank=True)
+    mse = models.FloatField(null=True, blank=True)
+    
     generated_at = models.DateTimeField(auto_now_add=True)
 
 
 class ForecastRun(models.Model):
-    model_used = models.CharField(max_length=50, default='moving_average')
-    status = models.CharField(max_length=20, default='success')
+    model_used = models.CharField(max_length=50, default='sarima')
+    status = models.CharField(max_length=20, default='pending')
     item_count = models.PositiveIntegerField(default=0)
     detail = models.JSONField(default=dict, blank=True)
+    error_log = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

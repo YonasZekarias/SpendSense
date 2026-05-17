@@ -1,6 +1,9 @@
+import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
+import numpy as np
+import pandas as pd
 from django.db.models import Avg, Count, Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -8,7 +11,10 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from users.models import AuditLog
+
+logger = logging.getLogger(__name__)
 
 from core_api.permissions import IsAdminRole
 from .models import Forecast, ForecastRun, Item, NationalPrice, PriceSubmission
@@ -418,48 +424,83 @@ class AdminMLRetrainView(APIView):
         weeks = int(request.data.get("forecast_weeks", 4))
         rows_created = 0
         item_count = 0
+        
         for item in Item.objects.all():
-            hist = list(
+            # Gather historical data
+            submissions = (
                 PriceSubmission.objects.filter(item=item, status="approved")
-                .order_by("-date_observed")
-                .values_list("price_value", flat=True)[:8]
+                .order_by("date_observed")
+                .values("date_observed", "price_value")
             )
-            if not hist:
+            
+            if len(submissions) < 10:  # SARIMA needs a minimum amount of data
                 continue
+            
             item_count += 1
-            avg = sum([Decimal(str(x)) for x in hist]) / Decimal(len(hist))
-            base = avg.quantize(Decimal("0.01"))
-            Forecast.objects.filter(item=item).delete()
-            for i in range(1, weeks + 1):
-                drift = Decimal("1.00") + (Decimal("0.01") * Decimal(i - 1))
-                pred = (base * drift).quantize(Decimal("0.01"))
-                low = (pred * Decimal("0.96")).quantize(Decimal("0.01"))
-                high = (pred * Decimal("1.04")).quantize(Decimal("0.01"))
-                Forecast.objects.create(
-                    item=item,
-                    forecast_date=date.today() + timedelta(weeks=i),
-                    predicted_price=pred,
-                    confidence_low=low,
-                    confidence_high=high,
-                    model_used="moving_average_v1",
+            df = pd.DataFrame(list(submissions))
+            df['date_observed'] = pd.to_datetime(df['date_observed'])
+            df.set_index('date_observed', inplace=True)
+            # Re-sample to daily and interpolate to fill gaps for time series continuity
+            df = df.resample('D').mean()
+            df['price_value'] = df['price_value'].astype(float).interpolate(method='linear')
+
+            try:
+                # Basic SARIMA model: (p,d,q) x (P,D,Q,s)
+                # s=7 for weekly seasonality if using daily data
+                model = SARIMAX(
+                    df['price_value'], 
+                    order=(1, 1, 1), 
+                    seasonal_order=(1, 1, 1, 7),
+                    enforce_stationarity=False,
+                    enforce_invertibility=False
                 )
-                rows_created += 1
+                results = model.fit(disp=False)
+                
+                # Predict
+                forecast_res = results.get_forecast(steps=weeks * 7)
+                forecast_mean = forecast_res.predicted_mean
+                conf_int = forecast_res.conf_int()
+                
+                Forecast.objects.filter(item=item).delete()
+                
+                # Save weekly snapshots
+                start_date = date.today()
+                for i in range(1, weeks + 1):
+                    target_date = start_date + timedelta(weeks=i)
+                    # Get prediction closest to target date
+                    # Use index slicing or nearest date
+                    pred_price = forecast_mean.iloc[min(i*7-1, len(forecast_mean)-1)]
+                    low = conf_int.iloc[min(i*7-1, len(conf_int)-1), 0]
+                    high = conf_int.iloc[min(i*7-1, len(conf_int)-1), 1]
+                    
+                    Forecast.objects.create(
+                        item=item,
+                        forecast_date=target_date,
+                        predicted_price=Decimal(str(round(pred_price, 2))),
+                        confidence_low=Decimal(str(round(low, 2))),
+                        confidence_high=Decimal(str(round(high, 2))),
+                        model_used="sarima_v1",
+                        sarima_order="(1,1,1)",
+                        seasonal_order="(1,1,1,7)",
+                        mse=float(results.mse)
+                    )
+                    rows_created += 1
+                    
+            except Exception as e:
+                logger.error(f"Failed to train SARIMA for item {item.name}: {str(e)}")
+                continue
+
+        # Create a ForecastRun record
         run = ForecastRun.objects.create(
-            model_used="moving_average_v1",
+            model_used="sarima_v1",
             status="success",
             item_count=item_count,
             detail={"rows_created": rows_created, "forecast_weeks": weeks},
         )
-        AuditLog.objects.create(
-            actor=request.user,
-            action="ml_retrain",
-            resource="forecast",
-            resource_id=str(run.id),
-            detail=run.detail,
-        )
+        
         return Response(
             {
-                "detail": "Forecast retraining completed.",
+                "detail": "SARIMA retraining completed.",
                 "rows_created": rows_created,
                 "item_count": item_count,
             },
