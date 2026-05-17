@@ -9,6 +9,7 @@ const uuidSchema = z.string().uuid();
 export const addToCartSchema = z.object({
   listing_id: z.number().int().positive(),
   vendor_id: uuidSchema,
+  vendor_name: z.string().trim().max(200).optional(),
   item_name: z.string().trim().min(1).max(200),
   unit_price: z.number().positive(),
   unit: z.string().trim().min(1).max(40).optional(),

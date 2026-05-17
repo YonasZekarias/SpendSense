@@ -173,10 +173,10 @@ export default async function VendorDetailsPage({ params, searchParams }: PagePr
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {vendorProducts.products.map(product => {
                   const vendorParams = new URLSearchParams({
-                    vendorId: vendorDetail.id,
+                    vendorId: product.vendorId ?? vendorDetail.id,
                     listingId: product.id,
                     vendorPrice: String(product.price),
-                    vendorName: vendorDetail.shopName,
+                    vendorName: product.vendorName ?? vendorDetail.shopName,
                     vendorLocation: vendorDetail.location,
                     vendorRegion: vendorDetail.region,
                     vendorRating: String(vendorDetail.rating),

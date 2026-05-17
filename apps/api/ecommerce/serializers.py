@@ -50,12 +50,18 @@ class VendorPriceSerializer(serializers.ModelSerializer):
     item_name = serializers.CharField(source='item.name', read_only=True)
     unit = serializers.CharField(source='item.unit', read_only=True)
     category = serializers.CharField(source='item.category', read_only=True)
+    # Vendor identity — exposed on every listing so consumers can display the shop name
+    vendor_id = serializers.UUIDField(source='vendor.id', read_only=True)
+    vendor_name = serializers.CharField(source='vendor.shop_name', read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = VendorPrice
-        fields = ('id', 'item', 'item_name', 'unit', 'category', 'price', 'stock_count', 'image', 'images', 'date', 'is_verified')
-        # Listing verification is managed by the system/admin flow, not vendor input.
+        fields = (
+            'id', 'item', 'item_name', 'unit', 'category',
+            'vendor_id', 'vendor_name',
+            'price', 'stock_count', 'image', 'images', 'date', 'is_verified',
+        )
         read_only_fields = ('id', 'date', 'is_verified')
         ref_name = "EcommerceVendorPrice"
 
@@ -107,6 +113,7 @@ class VendorPriceSerializer(serializers.ModelSerializer):
         if files:
             self._replace_images(vendor_price, files)
         return vendor_price
+
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:

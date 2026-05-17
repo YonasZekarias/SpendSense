@@ -104,6 +104,7 @@ export interface StaticMetaResponse {
 export interface CartItem {
   listing_id: number;
   vendor_id: string;
+  vendor_name?: string;
   item_name: string;
   unit?: string;
   quantity: number;

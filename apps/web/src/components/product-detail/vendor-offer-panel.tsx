@@ -65,6 +65,7 @@ export function VendorOfferPanel({ offer, vendorId }: VendorOfferPanelProps) {
         await addToCart({
           listing_id: offer.listingId,
           vendor_id: offer.vendorId,
+          vendor_name: offer.vendorName,
           item_name: offer.itemName,
           unit: offer.unit,
           quantity,

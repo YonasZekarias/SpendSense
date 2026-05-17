@@ -42,6 +42,8 @@ export const vendorProductSchema = z.object({
   stock_count: z.coerce.number(),
   date: z.string(),
   is_verified: z.boolean().optional(),
+  vendor_id: z.string().optional(),
+  vendor_name: z.string().optional(),
 }).transform((data) => ({
   id: data.id,
   itemId: data.item,
@@ -58,6 +60,8 @@ export const vendorProductSchema = z.object({
   nationalAverageDiff: 0,
   createdAt: data.date,
   updatedAt: data.date,
+  vendorId: data.vendor_id,
+  vendorName: data.vendor_name,
 }));
 
 export const vendorProductListSchema = z.object({

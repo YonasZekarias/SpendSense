@@ -353,6 +353,7 @@ export async function addToCart(input: AddToCartSchema): Promise<Cart> {
           {
             listing_id: payload.listing_id,
             vendor_id: payload.vendor_id,
+            vendor_name: payload.vendor_name,
             item_name: payload.item_name,
             unit: payload.unit,
             quantity: payload.quantity,
