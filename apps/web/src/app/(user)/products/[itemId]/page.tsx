@@ -57,13 +57,13 @@ export default async function ProductDetailsPage({ params, searchParams }: Produ
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
           <div className="lg:col-span-8 bg-white dark:bg-[#1e2330] rounded-3xl border border-[#e5e7eb] dark:border-[#2a3140] p-6 lg:p-8 shadow-sm flex flex-col">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-bold text-[#111318] dark:text-white">Price History & Forecast</h3>
                 <p className="text-sm text-[#616f89] mt-1">Track price changes over time</p>
               </div>
               <ChartTimeRange />
-            </div>
+            </div> */}
             
             <div className="flex-1 min-h-[350px]">
               <PriceHistoryChart history={history} currentPrice={product.currentAveragePrice} />

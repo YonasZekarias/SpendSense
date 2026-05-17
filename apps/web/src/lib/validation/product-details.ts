@@ -1,26 +1,40 @@
 import { z } from 'zod';
 
+// Matches GET /api/market/items/<pk>/
+export const itemResponseSchema = z.object({
+  id: z.coerce.number(),
+  name: z.string(),
+  category: z.string(),
+  unit: z.string(),
+  description: z.string().default(''),
+  image: z.string().nullable().default(null),
+});
+
+// Composed product detail schema
 export const productDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
   category: z.string(),
-  subcategory: z.string().nullable(),
-  standardUnit: z.string(),
-  origin: z.string().nullable(),
+  unit: z.string(),
   description: z.string(),
   imageUrls: z.array(z.string()),
-  csaTracked: z.boolean(),
   currentAveragePrice: z.coerce.number(),
   priceTrend: z.coerce.number(),
   priceTrendDirection: z.enum(['up', 'down', 'stable']),
-  volatility: z.enum(['high', 'medium', 'low']),
   lastUpdated: z.string(),
-  lowestPrice: z.object({ price: z.coerce.number(), vendorName: z.string(), location: z.string() }),
-  highestPrice: z.object({ price: z.coerce.number(), vendorName: z.string(), location: z.string() }),
-  predictedInflation: z.coerce.number().nullable(),
+  lowestPrice: z.object({ price: z.coerce.number(), vendorName: z.string(), location: z.string() }).nullable(),
+  highestPrice: z.object({ price: z.coerce.number(), vendorName: z.string(), location: z.string() }).nullable(),
   nationalAveragePrice: z.coerce.number(),
 });
 
+// Matches GET /api/market/trends/?item_id=X data points
+export const priceTrendPointSchema = z.object({
+  date: z.string(),
+  average_price: z.string(),
+  count: z.coerce.number(),
+});
+
+// Composed price history schema
 export const priceHistorySchema = z.object({
   itemId: z.string(),
   timeRange: z.string(),
@@ -36,44 +50,41 @@ export const priceHistorySchema = z.object({
   })),
 });
 
+// Matches GET /api/market/vendors/prices/?item_id=X (MarketVendorPrice serializer)
 export const vendorPriceComparisonSchema = z.object({
-  vendorId: z.string(),
-  vendorName: z.string(),
-  shopName: z.string(),
-  location: z.string(),
-  region: z.string(),
-  price: z.coerce.number(),
-  unit: z.string(),
-  trend7d: z.coerce.number(),
-  distanceKm: z.coerce.number().nullable(),
-  inStock: z.boolean(),
-  lastUpdated: z.string(),
+  id: z.coerce.number(),
+  vendor_id: z.string(),
+  vendor_name: z.string(),
+  city: z.string(),
+  rating_avg: z.string(),
+  is_verified: z.boolean(),
+  price: z.string(),
+  date: z.string(),
 });
 
+// Matches GET /api/market/items/?category=X (same-category items)
 export const similarProductSchema = z.object({
-  id: z.string(),
+  id: z.coerce.number(),
   name: z.string(),
   category: z.string(),
-  price: z.coerce.number(),
   unit: z.string(),
-  trend: z.coerce.number(),
-  imageUrl: z.string().nullable(),
-  savingsVsCurrent: z.coerce.number().nullable(),
+  description: z.string().default(''),
+  image: z.string().nullable().default(null),
 });
 
+// Matches GET /api/market/prices/averages/?item_id=X
 export const priceSubmissionSchema = z.object({
-  id: z.string(),
-  userInitial: z.string(),
-  location: z.string(),
-  price: z.coerce.number(),
-  date: z.string(),
-  verified: z.boolean(),
-  helpfulCount: z.coerce.number(),
+  item_id: z.coerce.number(),
+  item_name: z.string(),
+  average_price: z.string(),
+  city: z.string(),
+  source: z.string(),
+  count: z.coerce.number(),
 });
 
 export const priceAlertInputSchema = z.object({
   targetPrice: z.coerce.number().positive(),
-  itemId: z.string().uuid(),
+  itemId: z.string(),
 });
 
 export const productSearchParamsSchema = z.object({

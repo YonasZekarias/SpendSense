@@ -1,51 +1,210 @@
 import { apiClient } from '@/lib/api';
-import { ProductDetailResponse, PriceHistoryResponse, VendorPriceComparisonResponse, SimilarProductResponse, PriceSubmissionResponse } from '@/types/api/product-details';
-import { productDetailSchema, priceHistorySchema, vendorPriceComparisonSchema, similarProductSchema, priceSubmissionSchema } from './validation/product-details';
+import {
+  ItemResponse,
+  PriceTrendPoint,
+  VendorPriceComparisonResponse,
+  SimilarProductResponse,
+  PriceAverageResponse,
+  ProductDetailResponse,
+  PriceHistoryResponse,
+} from '@/types/api/product-details';
+import {
+  itemResponseSchema,
+  priceTrendPointSchema,
+  vendorPriceComparisonSchema,
+  similarProductSchema,
+  priceSubmissionSchema,
+  productDetailSchema,
+  priceHistorySchema,
+} from './validation/product-details';
 import { z } from 'zod';
 
-export async function getProductDetail(itemId: string) {
-  const raw = await apiClient<ProductDetailResponse>({
-    method: 'GET',
-    endpoint: `/api/products/${itemId}`,
-    next: { tags: [`product:${itemId}`], revalidate: 60 },
-  });
-  return productDetailSchema.parse(raw);
+// Helper: calculate date range from timeRange string
+function getDateRange(timeRange: string): { from_date: string; to_date: string } {
+  const to = new Date();
+  const from = new Date();
+  switch (timeRange) {
+    case '1W': from.setDate(to.getDate() - 7); break;
+    case '1M': from.setMonth(to.getMonth() - 1); break;
+    case '3M': from.setMonth(to.getMonth() - 3); break;
+    case '1Y': from.setFullYear(to.getFullYear() - 1); break;
+    case 'ALL': from.setFullYear(2020, 0, 1); break;
+    case '6M':
+    default:
+      from.setMonth(to.getMonth() - 6);
+  }
+  return {
+    from_date: from.toISOString().split('T')[0],
+    to_date: to.toISOString().split('T')[0],
+  };
 }
 
-export async function getPriceHistory(itemId: string, timeRange?: string) {
-  const raw = await apiClient<PriceHistoryResponse>({
+/**
+ * GET /api/market/items/<itemId>/
+ * Fetches the raw item then enriches it with pricing data.
+ */
+export async function getProductDetail(itemId: string): Promise<ProductDetailResponse> {
+  const [rawItem, priceAverages, vendorPrices] = await Promise.all([
+    apiClient<ItemResponse>({
+      method: 'GET',
+      endpoint: `/api/market/items/${itemId}`,
+      next: { tags: [`product:${itemId}`], revalidate: 60 },
+    }),
+    apiClient<PriceAverageResponse[]>({
+      method: 'GET',
+      endpoint: '/api/market/prices/averages',
+      query: { item_id: itemId },
+      next: { tags: [`product:${itemId}:averages`], revalidate: 60 },
+    }).catch(() => [] as PriceAverageResponse[]),
+    apiClient<VendorPriceComparisonResponse[]>({
+      method: 'GET',
+      endpoint: '/api/market/vendors/prices',
+      query: { item_id: itemId },
+      next: { tags: [`product:${itemId}:vendors`], revalidate: 60 },
+    }).catch(() => [] as VendorPriceComparisonResponse[]),
+  ]);
+
+  const item = itemResponseSchema.parse(rawItem);
+  const averages = z.array(priceSubmissionSchema).catch([]).parse(priceAverages);
+  const vendors = z.array(vendorPriceComparisonSchema).catch([]).parse(vendorPrices);
+
+  // Calculate current average price from all city averages
+  const avgPrices = averages.map(a => parseFloat(a.average_price)).filter(Boolean);
+  const currentAveragePrice =
+    avgPrices.length > 0
+      ? avgPrices.reduce((sum, p) => sum + p, 0) / avgPrices.length
+      : 0;
+
+  // Calculate national average from vendor prices
+  const vendorPriceValues = vendors.map(v => parseFloat(v.price)).filter(Boolean);
+  const nationalAveragePrice =
+    vendorPriceValues.length > 0
+      ? vendorPriceValues.reduce((sum, p) => sum + p, 0) / vendorPriceValues.length
+      : currentAveragePrice;
+
+  // Find lowest/highest vendor
+  let lowestPrice: ProductDetailResponse['lowestPrice'] = null;
+  let highestPrice: ProductDetailResponse['highestPrice'] = null;
+  if (vendors.length > 0) {
+    const sorted = [...vendors].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+    const low = sorted[0];
+    const high = sorted[sorted.length - 1];
+    lowestPrice = { price: parseFloat(low.price), vendorName: low.vendor_name, location: low.city };
+    highestPrice = { price: parseFloat(high.price), vendorName: high.vendor_name, location: high.city };
+  }
+
+  // ItemSerializer returns a relative image path; build a full URL
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const imageUrls = item.image
+    ? [item.image.startsWith('http') ? item.image : `${API_BASE}/media/${item.image}`]
+    : [];
+
+  const composed: ProductDetailResponse = {
+    id: String(item.id),
+    name: item.name,
+    category: item.category,
+    unit: item.unit,
+    description: item.description || `${item.name} — sold per ${item.unit}.`,
+    imageUrls,
+    currentAveragePrice,
+    priceTrend: 0,
+    priceTrendDirection: 'stable',
+    lastUpdated: new Date().toISOString(),
+    lowestPrice,
+    highestPrice,
+    nationalAveragePrice,
+  };
+
+  return productDetailSchema.parse(composed);
+}
+
+/**
+ * GET /api/market/trends/?item_id=<itemId>&from_date=...&to_date=...
+ */
+export async function getPriceHistory(
+  itemId: string,
+  timeRange?: string
+): Promise<PriceHistoryResponse> {
+  const range = timeRange || '6M';
+  const { from_date, to_date } = getDateRange(range);
+
+  const raw = await apiClient<PriceTrendPoint[]>({
     method: 'GET',
-    endpoint: `/api/products/${itemId}/history`,
-    query: { timeRange: timeRange || '6M' },
+    endpoint: '/api/market/trends',
+    query: { item_id: itemId, from_date, to_date },
     next: { tags: [`product:${itemId}:history`], revalidate: 60 },
   });
-  return priceHistorySchema.parse(raw);
+
+  const trendPoints = z.array(priceTrendPointSchema).catch([]).parse(raw);
+
+  const dataPoints = trendPoints.map(p => ({
+    date: p.date,
+    price: parseFloat(p.average_price),
+    isForecast: false as const,
+  }));
+
+  const composed: PriceHistoryResponse = {
+    itemId,
+    timeRange: range,
+    dataPoints,
+    nationalAverageDataPoints: dataPoints.map(d => ({ date: d.date, price: d.price })),
+  };
+
+  return priceHistorySchema.parse(composed);
 }
 
-export async function getVendorPriceComparisons(itemId: string, location?: string) {
+/**
+ * GET /api/market/vendors/prices/?item_id=<itemId>
+ */
+export async function getVendorPriceComparisons(itemId: string, _location?: string) {
   const raw = await apiClient<VendorPriceComparisonResponse[]>({
     method: 'GET',
-    endpoint: `/api/products/${itemId}/vendors`,
-    query: { location: location || undefined },
+    endpoint: '/api/market/vendors/prices',
+    query: { item_id: itemId },
     next: { tags: [`product:${itemId}:vendors`], revalidate: 60 },
   });
-  return z.array(vendorPriceComparisonSchema).parse(raw);
+
+  return z.array(vendorPriceComparisonSchema).catch([]).parse(raw);
 }
 
+/**
+ * GET /api/market/items/?category=<category>
+ * Fetches the item first to get its category, then fetches others in the same category.
+ */
 export async function getSimilarProducts(itemId: string) {
+  // Get item category first
+  const rawItem = await apiClient<ItemResponse>({
+    method: 'GET',
+    endpoint: `/api/market/items/${itemId}`,
+    next: { tags: [`product:${itemId}`], revalidate: 300 },
+  });
+
+  const item = itemResponseSchema.parse(rawItem);
+
   const raw = await apiClient<SimilarProductResponse[]>({
     method: 'GET',
-    endpoint: `/api/products/${itemId}/similar`,
-    next: { tags: [`product:${itemId}:similar`], revalidate: 60 },
+    endpoint: '/api/market/items',
+    query: { category: item.category },
+    next: { tags: [`category:${item.category}`], revalidate: 300 },
   });
-  return z.array(similarProductSchema).parse(raw);
+
+  const items = z.array(similarProductSchema).catch([]).parse(raw);
+
+  // Exclude the current item
+  return items.filter(i => String(i.id) !== String(itemId)).slice(0, 6);
 }
 
+/**
+ * GET /api/market/prices/averages/?item_id=<itemId>
+ * Returns per-city average prices as "recent submissions".
+ */
 export async function getRecentPriceSubmissions(itemId: string) {
-  const raw = await apiClient<PriceSubmissionResponse[]>({
+  const raw = await apiClient<PriceAverageResponse[]>({
     method: 'GET',
-    endpoint: `/api/products/${itemId}/submissions`,
+    endpoint: '/api/market/prices/averages',
+    query: { item_id: itemId },
     next: { tags: [`product:${itemId}:submissions`], revalidate: 60 },
   });
-  return z.array(priceSubmissionSchema).parse(raw);
+
+  return z.array(priceSubmissionSchema).catch([]).parse(raw);
 }
