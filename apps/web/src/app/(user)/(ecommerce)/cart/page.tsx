@@ -188,15 +188,7 @@ export default function CartPage() {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Promo Code */}
-              <div className="flex items-center gap-4 rounded-xl bg-secondary p-4">
-                <div className="relative flex-1">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input className="border-none bg-background pl-10 h-12" placeholder="Promo code" />
-                </div>
-                <Button variant="outline" className="h-12 px-8 font-bold">Apply</Button>
-              </div>
+            
             </div>
 
             {/* Right Column: Checkout */}

@@ -1,6 +1,23 @@
 const path = require("path");
 
 module.exports = {
+  serverActions: {
+    bodySizeLimit: '15mb',
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/media/**',
+      },
+    ],
+  },
   reactStrictMode: true,
   transpilePackages: ["@repo/ui", "@repo/tailwind-config"],
   output: "standalone",

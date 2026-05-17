@@ -25,33 +25,37 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
     setError("");
 
     try {
-      // 1. Update User Profile (names, phone, etc.)
-      const userResult = await updateProfile({
-        full_name: profile.full_name,
-        phone: profile.phone,
-        city: profile.city,
-        income_bracket: profile.income_bracket,
-        household_size: profile.household_size,
-      });
-
-      if (!userResult.success) {
-        setError(userResult.message);
-        return;
-      }
-
-      // 2. Update Vendor Profile (images, shop_name)
-      const vendorFormData = new FormData();
-      if (profile.shop_name) vendorFormData.append("shop_name", profile.shop_name);
-      if (profile.city) vendorFormData.append("city", profile.city);
-      if (imageFile) vendorFormData.append("image", imageFile);
-
-      const vendorResult = await updateVendorProfile(vendorFormData);
+      // Create a unified FormData to handle both user and vendor info (including files)
+      const formData = new FormData();
       
-      if (vendorResult.success) {
-        setProfile({ ...userResult.data, ...vendorResult.data });
-        setMessage("Profile and images updated successfully.");
+      // User fields
+      formData.append("full_name", profile.full_name || "");
+      formData.append("phone", profile.phone || "");
+      formData.append("city", profile.city || "");
+      if (profile.income_bracket) formData.append("income_bracket", profile.income_bracket);
+      if (profile.household_size) formData.append("household_size", String(profile.household_size));
+
+      // Vendor fields (supported by the updated backend)
+      if (profile.shop_name) formData.append("shop_name", profile.shop_name);
+      if (profile.address) formData.append("address", profile.address);
+      if (profile.contact_phone) formData.append("contact_phone", profile.contact_phone);
+      if (imageFile) formData.append("image", imageFile);
+
+      const result = await updateProfile(formData);
+
+      if (result.success) {
+        setProfile(result.data);
+        
+        // Persist vendor_id if we got one in vendor_info
+        const vendorId = result.data.vendor_info?.id || result.data.vendor_info?.vendor_id;
+        if (vendorId) {
+          localStorage.setItem("spendsense_vendor_id", vendorId);
+          setVendorId(vendorId);
+        }
+        
+        setMessage("Profile and business details updated successfully.");
       } else {
-        setError("User info saved, but vendor details failed: " + vendorResult.message);
+        setError(result.message);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unable to save profile.");
@@ -152,12 +156,13 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
               </div>
 
               <div className="col-span-2">
-                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Business Description</label>
+                <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Business Description / Address</label>
                 <textarea
                   className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
                   rows={4}
-                  value={profile?.income_bracket ? `Income profile: ${profile.income_bracket}. Serving customers in ${profile.city || "major cities"}.` : "Specializing in reliable logistics, distribution, and warehouse coordination across Ethiopia."}
-                  onChange={() => undefined}
+                  placeholder="Describe your business or add your physical address..."
+                  value={profile?.address || ""}
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, address: event.target.value } : prev))}
                 />
               </div>
 
@@ -165,9 +170,9 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
                 <label className="mb-2 block text-xs font-bold uppercase text-slate-500">Phone</label>
                 <input
                   className="w-full rounded-lg border-none bg-[#f0f2f4] px-4 py-3 text-sm focus:ring-2 focus:ring-[#135bec]/20"
-                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, phone: event.target.value } : prev))}
+                  onChange={(event) => setProfile((prev) => (prev ? { ...prev, contact_phone: event.target.value } : prev))}
                   type="text"
-                  value={profile?.phone || ""}
+                  value={profile?.contact_phone || profile?.phone || ""}
                 />
               </div>
 

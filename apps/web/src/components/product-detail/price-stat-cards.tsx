@@ -6,7 +6,7 @@ interface PriceStatCardsProps {
 }
 
 export function PriceStatCards({ product }: PriceStatCardsProps) {
-  const { currentAveragePrice, lowestPrice, highestPrice, priceTrend, priceTrendDirection, predictedInflation } = product;
+  const { currentAveragePrice, lowestPrice, highestPrice, priceTrend, priceTrendDirection, nationalAveragePrice } = product;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -42,14 +42,20 @@ export function PriceStatCards({ product }: PriceStatCardsProps) {
           </div>
         </div>
         <p className="text-[#616f89] dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Lowest Found</p>
-        <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-2xl font-black text-[#111318] dark:text-white tabular-nums">{lowestPrice.price.toFixed(2)}</span>
-          <span className="text-sm font-bold text-[#616f89]">ETB</span>
-        </div>
-        <div className="flex items-center gap-1 text-[10px] text-[#616f89] font-medium">
-          <MapPin size={10} />
-          <span className="truncate">{lowestPrice.vendorName}, {lowestPrice.location}</span>
-        </div>
+        {lowestPrice ? (
+          <>
+            <div className="flex items-baseline gap-1 mb-2">
+              <span className="text-2xl font-black text-[#111318] dark:text-white tabular-nums">{lowestPrice.price.toFixed(2)}</span>
+              <span className="text-sm font-bold text-[#616f89]">ETB</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-[#616f89] font-medium">
+              <MapPin size={10} />
+              <span className="truncate">{lowestPrice.vendorName}, {lowestPrice.location}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No data yet</p>
+        )}
       </div>
 
       {/* Highest Price */}
@@ -60,17 +66,23 @@ export function PriceStatCards({ product }: PriceStatCardsProps) {
           </div>
         </div>
         <p className="text-[#616f89] dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Highest Found</p>
-        <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-2xl font-black text-[#111318] dark:text-white tabular-nums">{highestPrice.price.toFixed(2)}</span>
-          <span className="text-sm font-bold text-[#616f89]">ETB</span>
-        </div>
-        <div className="flex items-center gap-1 text-[10px] text-[#616f89] font-medium">
-          <MapPin size={10} />
-          <span className="truncate">{highestPrice.vendorName}, {highestPrice.location}</span>
-        </div>
+        {highestPrice ? (
+          <>
+            <div className="flex items-baseline gap-1 mb-2">
+              <span className="text-2xl font-black text-[#111318] dark:text-white tabular-nums">{highestPrice.price.toFixed(2)}</span>
+              <span className="text-sm font-bold text-[#616f89]">ETB</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-[#616f89] font-medium">
+              <MapPin size={10} />
+              <span className="truncate">{highestPrice.vendorName}, {highestPrice.location}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No data yet</p>
+        )}
       </div>
 
-      {/* Forecast */}
+      {/* National Average */}
       <div className="bg-white dark:bg-[#1e2330] rounded-2xl p-6 border border-[#e5e7eb] dark:border-[#2a3140] shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
           <Target size={100} />
@@ -80,15 +92,14 @@ export function PriceStatCards({ product }: PriceStatCardsProps) {
             <Target size={20} />
           </div>
         </div>
-        <p className="text-[#616f89] dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1 relative z-10">30-Day Forecast</p>
+        <p className="text-[#616f89] dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1 relative z-10">National Average</p>
         <div className="flex items-baseline gap-1 mb-2 relative z-10">
           <span className="text-2xl font-black text-[#111318] dark:text-white tabular-nums">
-            {predictedInflation ? (predictedInflation > 0 ? "+" : "") + predictedInflation.toFixed(1) : "N/A"}%
+            {nationalAveragePrice > 0 ? nationalAveragePrice.toFixed(2) : "N/A"}
           </span>
+          {nationalAveragePrice > 0 && <span className="text-sm font-bold text-[#616f89]">ETB</span>}
         </div>
-        <p className="text-[10px] text-[#616f89] font-medium relative z-10">
-          {predictedInflation && predictedInflation > 0 ? "Expected to increase" : predictedInflation && predictedInflation < 0 ? "Expected to drop" : "Stable outlook"}
-        </p>
+        <p className="text-[10px] text-[#616f89] font-medium relative z-10">Across all markets</p>
       </div>
     </div>
   );

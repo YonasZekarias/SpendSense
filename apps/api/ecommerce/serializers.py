@@ -14,11 +14,16 @@ from .models import Transaction, VendorReview
 
 
 class VendorPublicSerializer(serializers.ModelSerializer):
+    owner_name = serializers.CharField(source='owner.full_name', read_only=True)
+    owner_email = serializers.EmailField(source='owner.email', read_only=True)
+
     class Meta:
         model = Vendor
         fields = (
             'id', 'shop_name', 'city', 'address', 'contact_phone',
-            'latitude', 'longitude', 'is_verified', 'rating_avg', 'rating_count', 'joined_at',
+            'latitude', 'longitude', 'is_verified', 'verification_status',
+            'business_license', 'tin_number', 'rating_avg', 'rating_count', 'joined_at',
+            'owner_name', 'owner_email',
         )
 
 

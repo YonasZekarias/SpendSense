@@ -96,7 +96,11 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     }
   }
 
-  const url = `${API_BASE_URL}${endpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
+  let baseUrlAndEndpoint = `${API_BASE_URL}${endpoint}`;
+  if (!baseUrlAndEndpoint.endsWith('/')) {
+    baseUrlAndEndpoint += '/';
+  }
+  const url = `${baseUrlAndEndpoint}${searchParams.toString() ? `?${searchParams}` : ""}`;
 
   console.log("Prepared url: ", url)
   console.log("Method: ", method)

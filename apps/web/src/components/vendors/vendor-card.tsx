@@ -12,7 +12,7 @@ interface VendorCardProps {
 
 export function VendorCard({ vendor }: VendorCardProps) {
   return (
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-md">
+    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-md gap-0">
       <div className="relative aspect-video w-full bg-muted">
         {vendor.imageUrl ? (
           <Image
@@ -48,7 +48,7 @@ export function VendorCard({ vendor }: VendorCardProps) {
           <span className="truncate">{vendor.location}, {vendor.region}</span>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 text-sm font-medium">
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             <span>{vendor.rating.toFixed(1)}</span>
@@ -59,7 +59,7 @@ export function VendorCard({ vendor }: VendorCardProps) {
           </Badge>
         </div>
 
-        {vendor.topItems.length > 0 && (
+        {/* {vendor.topItems.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase">Top Items</p>
             <div className="flex flex-wrap gap-1.5">
@@ -70,10 +70,10 @@ export function VendorCard({ vendor }: VendorCardProps) {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </CardContent>
 
-      <CardFooter className="p-5 pt-0 mt-auto">
+      <CardFooter className="p-5 pt-0 mt-auto bg-card border-none">
         <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
           <Link href={`/vendors/${vendor.id}`}>View Shop</Link>
         </Button>

@@ -1,35 +1,23 @@
 import AdminPanelShell from "../_components/admin-panel-shell";
 import { apiClient, ApiError } from "@/lib/api";
 
-interface Vendor {
-  id: string;
-  shop_name: string;
-  city: string;
-  address: string;
-  contact_phone: string;
-  latitude: string;
-  longitude: string;
-  is_verified: boolean;
-  rating_avg: string;
-  rating_count: number;
-  joined_at: string;
-}
+import { adminVendorListSchema } from "@/lib/validation/admin-vendors";
+import { z } from "zod";
+
+type Vendor = z.infer<typeof import("@/lib/validation/admin-vendors").adminVendorSchema>;
 
 export default async function AdminPanelVendorsPage() {
   let vendors: Vendor[] = [];
 
   try {
-    const raw = await apiClient<{
-      count: number,
-      next: string,
-      previous: number|null,
-      results:Vendor[]}>({
-          method: "GET",
-          endpoint: "/api/ecommerce/admin/vendors/",
-          next: { revalidate: 300, tags: ["ecommerce:vendors"] },
-        });
+    const raw = await apiClient({
+      method: "GET",
+      endpoint: "/api/ecommerce/admin/vendors/",
+      next: { revalidate: 300, tags: ["admin-vendors"] },
+    });
 
-		vendors = raw.results ?? [];
+    const parsed = adminVendorListSchema.parse(raw);
+    vendors = parsed.results;
   } catch (err) {
     if (err instanceof ApiError) {
       console.error("API error fetching vendors:", err.message, err.payload);

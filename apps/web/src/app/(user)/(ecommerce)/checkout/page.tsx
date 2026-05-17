@@ -326,13 +326,13 @@ export default function CheckoutPage() {
                 </Card>
 
                 {/* Promo Code Card */}
-                <Card className="bg-secondary/30 border-none p-6 rounded-xl">
+                {/* <Card className="bg-secondary/30 border-none p-6 rounded-xl">
                   <h3 className="text-sm font-bold mb-4">Have a promo code?</h3>
                   <div className="flex gap-2">
                     <Input className="bg-background border-border" placeholder="Enter code" />
                     <Button variant="secondary" className="font-bold">Apply</Button>
                   </div>
-                </Card>
+                </Card> */}
 
                 {/* Support Widget */}
                 <div className="flex items-center gap-4 px-2">

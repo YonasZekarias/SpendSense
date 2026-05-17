@@ -65,7 +65,19 @@ class Vendor(models.Model):
     city = models.CharField(max_length=120)
     address = models.CharField(max_length=255, blank=True, default='')
     contact_phone = models.CharField(max_length=30, blank=True, default='')
+    VERIFICATION_STATUS_CHOICES = (
+        ('unrequested', 'Unrequested'),
+        ('requested', 'Requested'),
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    )
     is_verified = models.BooleanField(default=False)
+    verification_status = models.CharField(
+        max_length=20, 
+        choices=VERIFICATION_STATUS_CHOICES, 
+        default='unrequested'
+    )
     # Average rating updated when reviews are posted (denormalized)
     rating_avg = models.DecimalField(max_digits=3, decimal_places=2, default=0)
     rating_count = models.PositiveIntegerField(default=0)
@@ -73,6 +85,8 @@ class Vendor(models.Model):
     longitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
     image = models.ImageField(upload_to='vendor_profiles/', null=True, blank=True)
     theme_image = models.ImageField(upload_to='vendor_themes/', null=True, blank=True)
+    business_license = models.FileField(upload_to='vendor_licenses/', null=True, blank=True)
+    tin_number = models.CharField(max_length=50, blank=True, default='')
     joined_at = models.DateTimeField(auto_now_add=True)
 
 

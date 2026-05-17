@@ -7,12 +7,24 @@ export type ActionResult<T> = { success: true; data: T } | { success: false; mes
 
 export async function updateProfile(payload: FormData | Partial<VendorProfile>): Promise<ActionResult<VendorProfile>> {
   try {
-    const data = await apiClient<VendorProfile>({ 
+    const rawData = await apiClient<any>({ 
       method: "PATCH", 
       endpoint: "/api/users/me/", 
       body: payload 
     });
-    return { success: true, data };
+
+    // Flatten the vendor_info from the response for UI compatibility
+    const vendorInfo = rawData.vendor_info || {};
+    const flattened: VendorProfile = {
+      ...rawData,
+      shop_name: vendorInfo.shop_name || rawData.shop_name,
+      address: vendorInfo.address || rawData.address,
+      contact_phone: vendorInfo.contact_phone || rawData.contact_phone,
+      image: vendorInfo.image || rawData.image,
+      theme_image: vendorInfo.theme_image || rawData.theme_image,
+    };
+
+    return { success: true, data: flattened };
   } catch (err: unknown) {
     if (err instanceof ApiError) {
       return { success: false, message: err.message };

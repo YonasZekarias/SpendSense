@@ -40,52 +40,10 @@ const navItems = [
     matchPaths: ["/budget"],
   },
   {
-    icon: TrendingUp,
-    label: "Live Prices",
-    href: "/market",
-    matchPaths: ["/market", "/live-prices", "/price-trends"],
-  },
-  {
     icon: ReceiptText,
     label: "Expenses",
     href: "/expenses",
     matchPaths: ["/expenses"],
-  },
-  {
-    icon: Bell,
-    label: "Alerts",
-    href: "/alerts",
-    matchPaths: ["/alerts"],
-  },
-  {
-    icon: MessageSquare,
-    label: "Notifications",
-    href: "/notifications",
-    matchPaths: ["/notifications"],
-  },
-  // {
-  //   icon: Settings,
-  //   label: "Settings",
-  //   href: "/settings",
-  //   matchPaths: ["/settings"],
-  // },
-  {
-    icon: UserCircle,
-    label: "Profile",
-    href: "/profile",
-    matchPaths: ["/profile"],
-  },
-  {
-    icon: CirclePlus,
-    label: "Submit price",
-    href: "/market/submit",
-    matchPaths: ["/market/submit"],
-  },
-  {
-    icon: FileDown,
-    label: "Export reports",
-    href: "/reports",
-    matchPaths: ["/reports"],
   },
   {
     icon: Store,
@@ -93,18 +51,57 @@ const navItems = [
     href: "/vendors",
     matchPaths: ["/vendors"],
   },
+  {
+    icon: TrendingUp,
+    label: "Live Prices",
+    href: "/market",
+    matchPaths: ["/market", "/live-prices", "/price-trends"],
+  },
+
+  // {
+  //   icon: Bell,
+  //   label: "Alerts",
+  //   href: "/alerts",
+  //   matchPaths: ["/alerts"],
+  // },
+  // {
+  //   icon: MessageSquare,
+  //   label: "Notifications",
+  //   href: "/notifications",
+  //   matchPaths: ["/notifications"],
+  // },
+  // {
+  //   icon: Settings,
+  //   label: "Settings",
+  //   href: "/settings",
+  //   matchPaths: ["/settings"],
+  // },
+  // {
+  //   icon: UserCircle,
+  //   label: "Profile",
+  //   href: "/profile",
+  //   matchPaths: ["/profile"],
+  // },
+  {
+    icon: CirclePlus,
+    label: "Submit price",
+    href: "/market/submit",
+    matchPaths: ["/market/submit"],
+  },
+
+
   // {
   //   icon: Store,
   //   label: "Vendor Directory",
   //   href: "/shop/vendors",
   //   matchPaths: ["/shop/vendors"],
   // },
-  {
-    icon: ShoppingCart,
-    label: "Cart",
-    href: "/cart",
-    matchPaths: ["/cart"],
-  },
+  // {
+  //   icon: ShoppingCart,
+  //   label: "Cart",
+  //   href: "/cart",
+  //   matchPaths: ["/cart"],
+  // },
   {
     icon: Wallet,
     label: "Checkout",
@@ -123,6 +120,12 @@ const navItems = [
   //   href: "/reviews/new",
   //   matchPaths: ["/reviews", "/reviews/new"],
   // },
+    {
+    icon: FileDown,
+    label: "Export reports",
+    href: "/reports",
+    matchPaths: ["/reports"],
+  }
 ];
 
 interface SidebarProps {
