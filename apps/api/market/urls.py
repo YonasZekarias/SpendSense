@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/submissions/<int:pk>/', views.AdminSubmissionDetailView.as_view(), name='admin-submission-detail'),
     path('admin/submissions/<int:pk>/approve/', views.AdminSubmissionApproveView.as_view(), name='admin-submission-approve'),
     path('admin/submissions/<int:pk>/reject/', views.AdminSubmissionRejectView.as_view(), name='admin-submission-reject'),
+    path('admin/moderation-stats/', views.AdminModerationStatsView.as_view(), name='admin-moderation-stats'),
 ]
 
 # Import new views

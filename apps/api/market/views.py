@@ -139,15 +139,50 @@ class PriceAveragesView(APIView):
 
 
 class AdminPendingSubmissionsView(generics.ListAPIView):
+    """GET /api/market/admin/submissions/ — supports ?status=pending|approved|rejected, ?outlier=true, pagination."""
     permission_classes = [IsAdminRole]
     serializer_class = AdminSubmissionListSerializer
 
     def get_queryset(self):
-        return (
-            PriceSubmission.objects.filter(status="pending")
-            .select_related("item", "user")
-            .order_by("created_at")
-        )
+        status_filter = self.request.query_params.get('status', 'pending')
+        outlier = self.request.query_params.get('outlier')
+        search = self.request.query_params.get('search', '')
+
+        qs = PriceSubmission.objects.select_related("item", "user").order_by("created_at")
+
+        if status_filter in ('pending', 'approved', 'rejected'):
+            qs = qs.filter(status=status_filter)
+
+        if outlier and outlier.lower() in ('true', '1'):
+            qs = qs.filter(outlier_flag=True)
+
+        if search:
+            qs = qs.filter(
+                Q(item__name__icontains=search) |
+                Q(market_location__icontains=search) |
+                Q(city__icontains=search) |
+                Q(user__email__icontains=search)
+            )
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = min(int(request.query_params.get('page_size', 12)), 50)
+        start = (page - 1) * page_size
+        end = start + page_size
+        total = queryset.count()
+        items = queryset[start:end]
+        serializer = self.get_serializer(items, many=True, context={'request': request})
+        return Response({
+            'results': serializer.data,
+            'pagination': {
+                'total_records': total,
+                'total_pages': (total + page_size - 1) // page_size if total else 1,
+                'page_size': page_size,
+                'current_page': page,
+            }
+        })
 
 
 class AdminSubmissionDetailView(generics.RetrieveUpdateAPIView):
@@ -166,18 +201,19 @@ class AdminSubmissionApproveView(APIView):
 
     def post(self, request, pk):
         try:
-            sub = PriceSubmission.objects.get(pk=pk)
+            sub = PriceSubmission.objects.select_related("item", "user").get(pk=pk)
         except PriceSubmission.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         sub.status = "approved"
-        sub.save(update_fields=["status"])
+        sub.rejection_reason = ""
+        sub.save(update_fields=["status", "rejection_reason"])
         AuditLog.objects.create(
             actor=request.user,
             action="submission_approve",
             resource="price_submission",
             resource_id=str(sub.id),
         )
-        return Response(AdminSubmissionListSerializer(sub).data)
+        return Response(AdminSubmissionListSerializer(sub, context={"request": request}).data)
 
 
 class AdminSubmissionRejectView(APIView):
@@ -185,18 +221,46 @@ class AdminSubmissionRejectView(APIView):
 
     def post(self, request, pk):
         try:
-            sub = PriceSubmission.objects.get(pk=pk)
+            sub = PriceSubmission.objects.select_related("item", "user").get(pk=pk)
         except PriceSubmission.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        reason = request.data.get("reason", "")
         sub.status = "rejected"
-        sub.save(update_fields=["status"])
+        sub.rejection_reason = reason
+        sub.save(update_fields=["status", "rejection_reason"])
         AuditLog.objects.create(
             actor=request.user,
             action="submission_reject",
             resource="price_submission",
             resource_id=str(sub.id),
+            detail={"reason": reason},
         )
-        return Response(AdminSubmissionListSerializer(sub).data)
+        return Response(AdminSubmissionListSerializer(sub, context={"request": request}).data)
+
+
+class AdminModerationStatsView(APIView):
+    """GET /api/market/admin/moderation-stats/ — quick counts for the queue header."""
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        today = date.today()
+        pending = PriceSubmission.objects.filter(status='pending').count()
+        approved_today = PriceSubmission.objects.filter(
+            status='approved', created_at__date=today
+        ).count()
+        rejected_today = PriceSubmission.objects.filter(
+            status='rejected', created_at__date=today
+        ).count()
+        outlier_flagged = PriceSubmission.objects.filter(
+            status='pending', outlier_flag=True
+        ).count()
+        return Response({
+            'pending': pending,
+            'approved_today': approved_today,
+            'rejected_today': rejected_today,
+            'outlier_flagged': outlier_flagged,
+        })
+
 
 
 class PriceTrendsView(APIView):
