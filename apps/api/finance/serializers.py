@@ -11,7 +11,7 @@ class BudgetCategorySerializer(serializers.ModelSerializer):
 
 
 class BudgetSerializer(serializers.ModelSerializer):
-    categories = BudgetCategorySerializer(many=True)
+    categories = BudgetCategorySerializer(many=True, required=False)
 
     class Meta:
         model = Budget
@@ -19,7 +19,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created_at')
 
     def create(self, validated_data):
-        categories_data = validated_data.pop('categories')
+        categories_data = validated_data.pop('categories', [])
         user = self.context['request'].user
         budget = Budget.objects.create(user=user, **validated_data)
         for c in categories_data:

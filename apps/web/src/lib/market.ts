@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api";
-import { MarketItem, MarketCategory, PaginatedResponse } from "@/types/api/vendor";
-import { marketItemSchema, marketCategorySchema, paginatedSchema } from "@/lib/validation/vendor";
+import { marketCategorySchema, marketItemSchema, paginatedSchema } from "@/lib/validation/vendor";
+import { MarketCategory, MarketItem, PaginatedResponse } from "@/types/api/vendor";
 import { z } from "zod";
 
 /**
@@ -38,7 +38,7 @@ export async function getMarketCategories(): Promise<MarketCategory[]> {
   const data = await apiClient<MarketCategory[]>({
     method: "GET",
     endpoint: "/api/market/categories/",
-    next: { tags: ["market-categories"] },
+    cache: "no-store",
   });
 
   return z.array(marketCategorySchema).parse(data);
