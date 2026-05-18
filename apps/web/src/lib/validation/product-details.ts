@@ -8,6 +8,7 @@ export const itemResponseSchema = z.object({
   unit: z.string(),
   description: z.string().default(''),
   image: z.string().nullable().default(null),
+  image_url: z.string().nullable().optional(),
 });
 
 // Composed product detail schema
@@ -70,6 +71,7 @@ export const similarProductSchema = z.object({
   unit: z.string(),
   description: z.string().default(''),
   image: z.string().nullable().default(null),
+  image_url: z.string().nullable().optional(),
 });
 
 // Matches GET /api/market/prices/averages/?item_id=X

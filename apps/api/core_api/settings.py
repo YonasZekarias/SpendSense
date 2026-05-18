@@ -260,7 +260,16 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
 }
 
-if DEBUG and os.environ.get('USE_LOCAL_STORAGE', 'true').lower() in ('true', '1', 'yes'):
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-else:
+# Use Cloudinary whenever credentials are present (dev + prod).
+# Set USE_LOCAL_STORAGE=true in .env only to explicitly opt-out during offline work.
+_cloudinary_configured = all([
+    os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    os.environ.get('CLOUDINARY_API_KEY'),
+    os.environ.get('CLOUDINARY_API_SECRET'),
+])
+_force_local = os.environ.get('USE_LOCAL_STORAGE', 'false').lower() in ('true', '1', 'yes')
+
+if _cloudinary_configured and not _force_local:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

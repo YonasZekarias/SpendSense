@@ -8,6 +8,7 @@ export interface ItemResponse {
   unit: string;
   description: string;
   image: string | null;
+  image_url?: string | null;
 }
 
 /** Composed product detail (built from multiple backend calls) */

@@ -9,12 +9,15 @@ export interface VendorProfileResponse {
   is_verified: boolean;
   verification_status: 'unrequested' | 'requested' | 'pending' | 'verified' | 'rejected';
   business_license: string | null;
+  business_license_url: string | null;
   tin_number: string;
   rating_avg: number;
   rating_count: number;
   latitude: number | null;
   longitude: number | null;
   image: string | null;
+  image_url: string | null;
   theme_image: string | null;
+  theme_image_url: string | null;
   joined_at: string;
 }

@@ -18,7 +18,9 @@ export interface VendorProfile {
   income_bracket?: string;
   avatar?: string;
   image?: string;
+  image_url?: string;
   theme_image?: string;
+  theme_image_url?: string;
   shop_name?: string;
   address?: string;
   contact_phone?: string;
@@ -32,8 +34,8 @@ export interface VendorProduct {
   price: number;
   availability?: boolean;
   image?: string;
+  imageUrl?: string;
   updated_at?: string;
-
 }
 
 export interface MarketItem {
@@ -191,6 +193,8 @@ function normalizeProduct(item: Record<string, unknown>): VendorProduct {
         : typeof item.is_available === "boolean"
           ? item.is_available
           : undefined,
+    image: item.image ? String(item.image) : undefined,
+    imageUrl: item.imageUrl ? String(item.imageUrl) : item.image_url ? String(item.image_url) : undefined,
     updated_at: item.updated_at ? String(item.updated_at) : undefined,
   };
 }
@@ -239,7 +243,9 @@ export async function getCurrentUserProfile(): Promise<VendorProfile> {
     address: vendorInfo?.address,
     contact_phone: vendorInfo?.contact_phone,
     image: vendorInfo?.image,
+    image_url: vendorInfo?.image_url,
     theme_image: vendorInfo?.theme_image,
+    theme_image_url: vendorInfo?.theme_image_url,
   };
 }
 
@@ -268,7 +274,9 @@ export async function updateCurrentUserProfile(
     address: vendorInfo?.address,
     contact_phone: vendorInfo?.contact_phone,
     image: vendorInfo?.image,
+    image_url: vendorInfo?.image_url,
     theme_image: vendorInfo?.theme_image,
+    theme_image_url: vendorInfo?.theme_image_url,
   };
 }
 

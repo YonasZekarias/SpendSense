@@ -14,7 +14,7 @@ export default function VendorProfileClient({ initialProfile }: { initialProfile
   const [error, setError] = useState("");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(initialProfile?.image || null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialProfile?.image_url || initialProfile?.image || null);
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

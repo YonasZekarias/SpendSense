@@ -5,10 +5,38 @@ from datetime import timedelta
 from .models import Item, PriceSubmission
 
 
+def _image_url(image_field, request=None):
+    """Return an absolute URL for any ImageField.
+
+    Cloudinary storage already returns a full https://res.cloudinary.com/…
+    URL from `.url`, so we must NOT wrap it with build_absolute_uri.
+    For local FileSystemStorage the URL is relative (e.g. /media/…) and we
+    DO need build_absolute_uri to make it usable by the frontend.
+    """
+    if not image_field:
+        return None
+    try:
+        url = image_field.url
+    except ValueError:
+        return None
+    if url and url.startswith('http'):
+        # Already an absolute URL (Cloudinary, S3, etc.) – return as-is.
+        return url
+    # Relative local path – make absolute using the request.
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
 class ItemSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
-        fields = ('id', 'name', 'category', 'unit', 'description', 'image')
+        fields = ('id', 'name', 'category', 'unit', 'description', 'image', 'image_url')
+
+    def get_image_url(self, obj):
+        return _image_url(obj.image, self.context.get('request'))
 
 
 class AdminItemCreateSerializer(serializers.ModelSerializer):
@@ -94,10 +122,7 @@ class MySubmissionSerializer(serializers.ModelSerializer):
         )
 
     def get_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        return _image_url(obj.image, self.context.get('request'))
 
 
 class AdminSubmissionListSerializer(serializers.ModelSerializer):
@@ -201,10 +226,7 @@ class MarketVendorListCardSerializer(serializers.ModelSerializer):
         ]
 
     def get_imageUrl(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        return _image_url(obj.image, self.context.get('request'))
 
     def get_competitivenessScore(self, obj):
         return 95  # Static for now as requested
@@ -276,9 +298,12 @@ class VendorProductSerializer(serializers.ModelSerializer):
         )
 
     def get_imageUrl(self, obj):
+        # Prefer the listing-specific image; fall back to the item's catalogue image.
+        request = self.context.get('request')
+        if obj.image:
+            return _image_url(obj.image, request)
         if obj.item and obj.item.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.item.image.url) if request else obj.item.image.url
+            return _image_url(obj.item.image, request)
         return None
 
     def get_comparePrice(self, obj):
