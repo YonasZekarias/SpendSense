@@ -45,9 +45,14 @@ export function useDashboardOverview() {
       const [budgets, expenses, notifList] = await Promise.all([
         listBudgets(accessToken),
         listExpenses(accessToken),
-        listNotifications(accessToken).catch(() => [] as InAppNotification[]),
+        listNotifications(accessToken).catch(() => ({
+          results: [] as InAppNotification[],
+          count: 0,
+          next: null,
+          previous: null,
+        })),
       ]);
-      setNotifications(notifList.slice(0, 5));
+      setNotifications((notifList.results ?? []).slice(0, 5));
 
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -141,13 +141,107 @@ function extractRoleFromAccessToken(token: string | undefined): string | null {
   return null;
 }
 
-export function proxy(request: NextRequest) {
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:8000";
+
+async function refreshAccessToken(refreshToken: string) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data as { access: string; refresh?: string };
+    }
+  } catch (error) {
+    console.error("proxy: Failed to refresh token:", error);
+  }
+  return null;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  let accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  let refreshToken = request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value;
   const profileCookie = request.cookies.get(AUTH_PROFILE_COOKIE_NAME)?.value;
+
+  let responseCookiesToSet: { name: string; value: string; options: any }[] = [];
+  let payload = accessToken ? decodeJwtPayload(accessToken) : null;
+  let needsRefresh = false;
+
+  // Check if access token is expired or expires in less than 60 seconds
+  if (payload && typeof payload.exp === "number") {
+    const expiresAt = payload.exp * 1000;
+    const now = Date.now();
+    if (expiresAt - now < 60 * 1000) {
+      needsRefresh = true;
+    }
+  } else if (!accessToken && refreshToken) {
+    needsRefresh = true;
+  }
+
+  // Proactive Token Refresh
+  if (needsRefresh && refreshToken) {
+    const refreshed = await refreshAccessToken(refreshToken);
+    if (refreshed && refreshed.access) {
+      accessToken = refreshed.access;
+      if (refreshed.refresh) {
+        refreshToken = refreshed.refresh;
+      }
+      payload = decodeJwtPayload(accessToken);
+
+      const isProduction = process.env.NODE_ENV === "production";
+      
+      responseCookiesToSet.push({
+        name: AUTH_COOKIE_NAME,
+        value: accessToken,
+        options: {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 15 * 60, // 15 mins
+        }
+      });
+
+      if (refreshed.refresh) {
+        responseCookiesToSet.push({
+          name: AUTH_REFRESH_COOKIE_NAME,
+          value: refreshToken,
+          options: {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: "lax",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+          }
+        });
+      }
+
+      // Update the request cookies so subsequent logic sees the new tokens
+      request.cookies.set(AUTH_COOKIE_NAME, accessToken);
+      if (refreshed.refresh) {
+        request.cookies.set(AUTH_REFRESH_COOKIE_NAME, refreshToken);
+      }
+    } else {
+      // Refresh failed; clear tokens
+      accessToken = undefined;
+      request.cookies.delete(AUTH_COOKIE_NAME);
+      request.cookies.delete(AUTH_REFRESH_COOKIE_NAME);
+    }
+  }
+
   const hasAccessCookie = Boolean(accessToken);
-  const hasRefreshCookie = Boolean(request.cookies.get(AUTH_REFRESH_COOKIE_NAME)?.value);
+  const hasRefreshCookie = Boolean(refreshToken);
   const hasSessionCookie = hasAccessCookie || hasRefreshCookie;
+
   // Prefer role from server-set profile cookie when available
   let role: string | null = null;
   if (profileCookie) {
@@ -163,26 +257,30 @@ export function proxy(request: NextRequest) {
   const effectiveRole = role ?? (hasSessionCookie ? "user" : null);
   const matchedProtectedRoute = findProtectedRoute(pathname);
   console.log(
-    `middleware: pathname=${pathname}, search=${search}, hasSessionCookie=${hasSessionCookie}, effectiveRole=${effectiveRole}, matchedProtectedRoute=${matchedProtectedRoute?.prefix}`)
+    `proxy: pathname=${pathname}, search=${search}, hasSessionCookie=${hasSessionCookie}, effectiveRole=${effectiveRole}, matchedProtectedRoute=${matchedProtectedRoute?.prefix}`)
+
+  let response = NextResponse.next();
+
   if (matchedProtectedRoute && !hasSessionCookie) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("returnTo", `${pathname}${search}`);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (
+    response = NextResponse.redirect(loginUrl);
+  } else if (
     matchedProtectedRoute &&
     hasSessionCookie &&
     (!effectiveRole || !matchedProtectedRoute.allowedRoles.has(effectiveRole))
   ) {
-    return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
+    response = NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
+  } else if (AUTH_ROUTES.has(pathname) && hasSessionCookie) {
+    response = NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
   }
 
-  if (AUTH_ROUTES.has(pathname) && hasSessionCookie) {
-    return NextResponse.redirect(new URL(getDefaultRouteForRole(effectiveRole), request.url));
+  // Attach any refreshed cookies to the response
+  for (const cookie of responseCookiesToSet) {
+    response.cookies.set(cookie.name, cookie.value, cookie.options);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

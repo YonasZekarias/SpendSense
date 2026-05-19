@@ -11,7 +11,7 @@ import {
 } from "@repo/ui/components/popover";
 import { useAuth } from "@/providers/auth-provider";
 import { useRealtime } from "@/providers/realtime-provider";
-import { listNotifications } from "@/services/userService";
+import { listNotifications, type InAppNotification } from "@/services/userService";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_LIMIT = 8;
@@ -34,7 +34,7 @@ export function HeaderNotifications({ className }: { className?: string }) {
   const { accessToken, status } = useAuth();
   const { eventVersion } = useRealtime();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Awaited<ReturnType<typeof listNotifications>>>([]);
+  const [items, setItems] = useState<InAppNotification[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -42,7 +42,7 @@ export function HeaderNotifications({ className }: { className?: string }) {
     setLoading(true);
     try {
       const data = await listNotifications(accessToken);
-      setItems(data);
+      setItems(Array.isArray(data.results) ? data.results : []);
     } finally {
       setLoading(false);
     }

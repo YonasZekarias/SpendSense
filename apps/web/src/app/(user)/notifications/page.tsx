@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { Loader2, Bell, CheckCircle2, Archive, ListFilter } from "lucide-react";
+import { NotificationsPageSkeleton, NotificationsListSkeleton } from "@/components/notifications/notifications-page-skeleton";
 import { Button } from "@repo/ui/components/button";
 import { Badge } from "@repo/ui/components/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@repo/ui/components/dropdown-menu";
@@ -185,13 +186,7 @@ export default function NotificationsPage() {
     return groups;
   }, [items]);
 
-  if (status === "loading" || (loading && page === 1)) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center text-slate-500">
-        <Loader2 className="size-6 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const isLoadingInitial = status === "loading" || (loading && page === 1);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-20">
@@ -265,7 +260,9 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notification List */}
-      {items.length === 0 ? (
+      {isLoadingInitial ? (
+        <NotificationsListSkeleton />
+      ) : items.length === 0 ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center bg-slate-50/50 dark:bg-slate-900/50 dark:border-slate-800">
           <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
             <Bell className="size-8 text-slate-400 dark:text-slate-500" />
