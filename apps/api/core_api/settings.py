@@ -236,6 +236,10 @@ REALTIME_INTERNAL_URL = os.environ.get(
 ).rstrip('/')
 REALTIME_INTERNAL_TOKEN = os.environ.get('REALTIME_INTERNAL_TOKEN', 'dev-only-change-me')
 
+# Optional: Redis PUB/SUB for realtime (Django publishes; Express subscribes).
+# When unset, Django falls back to HTTP POST to REALTIME_INTERNAL_URL/internal/emit.
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+
 PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
 CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY', '')
 CHAPA_INIT_URL = os.environ.get('CHAPA_INIT_URL', 'https://api.chapa.co/v1/transaction/initialize')

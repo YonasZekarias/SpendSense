@@ -334,3 +334,27 @@ class VendorReviewSerializer(serializers.Serializer):
     date = serializers.DateTimeField()
     helpfulCount = serializers.IntegerField()
     verifiedPurchase = serializers.BooleanField()
+
+
+from .models import PriceAlert
+
+
+class PriceAlertSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+
+    class Meta:
+        model = PriceAlert
+        fields = (
+            'id', 'item', 'item_name', 'target_price', 'city',
+            'is_active', 'triggered_at', 'created_at',
+        )
+        read_only_fields = ('id', 'is_active', 'triggered_at', 'created_at')
+
+    def validate_target_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Target price must be a positive number.")
+        return value
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

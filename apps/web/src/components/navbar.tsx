@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
-import { Bell, Search } from "lucide-react";
+import { HeaderNotifications } from "@/components/header-notifications";
 
 const navLinks = [
   { label: "Dashboard", href: "/dashboard" },
@@ -52,14 +52,7 @@ export function Navbar() {
         {/* Vertical Divider */}
         <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-800 lg:block" />
 
-        {/* Notification Bell */}
-        <Link
-          href="/dashboard/alerts"
-          className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200/50 bg-white/50 text-slate-600 backdrop-blur-sm transition-colors hover:border-[#135bec]/30 hover:text-[#135bec] dark:border-slate-800/50 dark:bg-slate-900/50 dark:text-slate-400"
-        >
-          <Bell className="size-5" />
-          <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-[#e73908] ring-2 ring-white dark:ring-slate-950" />
-        </Link>
+        <HeaderNotifications />
 
         {/* Profile Pill */}
         <div className="flex shrink-0 items-center gap-3 rounded-full border border-slate-200/50 bg-white/50 py-1 pl-4 pr-1 backdrop-blur-sm transition-colors hover:border-slate-300/50 dark:border-slate-800/50 dark:bg-slate-900/50 dark:hover:border-slate-700/50">

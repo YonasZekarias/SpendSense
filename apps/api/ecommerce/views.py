@@ -91,21 +91,30 @@ class VendorListingListCreateView(generics.ListCreateAPIView):
 
 
 class VendorListingUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
     serializer_class = VendorPriceSerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return VendorPrice.objects.none()
-        
+
+        qs = VendorPrice.objects.select_related('vendor', 'item').prefetch_related('images')
+
+        # Public reads — return all listings so the product page can fetch any listing by pk
+        if self.request.method in SAFE_METHODS:
+            return qs
+
+        # Mutations — restrict to the authenticated owner (or admin)
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return VendorPrice.objects.none()
-        qs = VendorPrice.objects.select_related('vendor', 'item').prefetch_related('images')
-        user = self.request.user
         if IsAdminRole().has_permission(self.request, self):
             return qs
         return qs.filter(vendor__owner=user)

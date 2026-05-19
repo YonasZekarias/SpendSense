@@ -8,106 +8,81 @@ import { SimilarProducts } from "@/components/product-detail/similar-products";
 import { PriceSubmissions } from "@/components/product-detail/price-submissions";
 import { VendorOfferPanel } from "@/components/product-detail/vendor-offer-panel";
 import type { VendorOfferContext } from "@/components/product-detail/vendor-offer-panel";
-import { 
-  getProductDetail, 
-  getPriceHistory, 
-  getVendorPriceComparisons, 
-  getSimilarProducts, 
-  getRecentPriceSubmissions 
+import {
+  getProductDetail,
+  getPriceHistory,
+  getVendorPriceComparisons,
+  getSimilarProducts,
+  getRecentPriceSubmissions,
 } from "@/lib/product-details";
+import { getVendorListing, getVendorDetail } from "@/lib/vendor-details";
 
 interface ProductPageProps {
-  params: Promise<{
-    itemId: string;
-  }>;
+  params: Promise<{ itemId: string }>;
   searchParams: Promise<{
     timeRange?: string;
     location?: string;
-    // Vendor context (passed when navigating from a vendor page)
+    // Only vendorId + listingId needed — all other vendor data is fetched from the API
     vendorId?: string;
     listingId?: string;
-    vendorPrice?: string;
-    vendorName?: string;
-    vendorLocation?: string;
-    vendorRegion?: string;
-    vendorRating?: string;
-    vendorVerified?: string;
-    vendorImageUrl?: string;
-    stockQty?: string;
-    stockStatus?: string;
   }>;
-}
-
-function parseVendorOffer(
-  sp: Awaited<ProductPageProps["searchParams"]>,
-  itemName: string,
-  unit: string,
-): VendorOfferContext | null {
-  const { vendorId, listingId, vendorPrice, vendorName } = sp;
-  if (!vendorId || !listingId || !vendorPrice || !vendorName) return null;
-
-  const price = parseFloat(vendorPrice);
-  const listingIdNum = parseInt(listingId, 10);
-  if (isNaN(price) || isNaN(listingIdNum)) return null;
-
-  const rawStockStatus = sp.stockStatus;
-  const stockStatus: VendorOfferContext["stockStatus"] =
-    rawStockStatus === "LowStock" ? "LowStock"
-    : rawStockStatus === "OutOfStock" ? "OutOfStock"
-    : "InStock";
-
-  return {
-    listingId: listingIdNum,
-    vendorId,
-    vendorName,
-    vendorLocation: sp.vendorLocation ?? "",
-    vendorRegion: sp.vendorRegion ?? "",
-    vendorRating: parseFloat(sp.vendorRating ?? "0") || 0,
-    vendorVerified: sp.vendorVerified === "true",
-    vendorImageUrl: sp.vendorImageUrl ?? null,
-    price,
-    unit,
-    itemName,
-    stockQuantity: parseInt(sp.stockQty ?? "0", 10) || 0,
-    stockStatus,
-  };
 }
 
 export default async function ProductDetailsPage({ params, searchParams }: ProductPageProps) {
   const { itemId } = await params;
-  const resolvedSearchParams = await searchParams;
-  const timeRange = resolvedSearchParams.timeRange || '6M';
-  const location = resolvedSearchParams.location;
+  const { timeRange = "6M", location, vendorId, listingId } = await searchParams;
 
   try {
-    // Parallel fetch all data for the page
-    const [
-      product,
-      history,
-      vendors,
-      similar,
-      submissions
-    ] = await Promise.all([
+    const [product, history, vendors, similar, submissions] = await Promise.all([
       getProductDetail(itemId),
       getPriceHistory(itemId, timeRange),
       getVendorPriceComparisons(itemId, location),
       getSimilarProducts(itemId),
-      getRecentPriceSubmissions(itemId)
+      getRecentPriceSubmissions(itemId),
     ]);
 
-    const vendorOffer = parseVendorOffer(resolvedSearchParams, product.name, product.unit);
+    // Fetch vendor context from the API when both IDs are present in the URL
+    let vendorOffer: VendorOfferContext | null = null;
+
+    if (vendorId && listingId) {
+      try {
+        const [listing, vendor] = await Promise.all([
+          getVendorListing(listingId),
+          getVendorDetail(vendorId),
+        ]);
+
+        vendorOffer = {
+          listingId: parseInt(listing.id, 10),
+          vendorId,
+          vendorName: vendor.vendorName,
+          vendorLocation: vendor.location,
+          vendorRegion: vendor.region,
+          vendorRating: vendor.rating,
+          vendorVerified: vendor.verifiedStatus === "Verified",
+          vendorImageUrl: vendor.imageUrl,
+          price: listing.price,
+          unit: listing.unit,
+          itemName: listing.itemName,
+          stockQuantity: listing.stockQuantity,
+          stockStatus: listing.stockStatus,
+        };
+      } catch (err) {
+        // Non-fatal — page still renders without the vendor panel
+        console.warn("Could not load vendor context:", err);
+      }
+    }
 
     return (
       <div className="pb-20 max-w-[1600px] mx-auto px-4 md:px-6">
         {/* Vendor Offer Panel — shown only when navigating from a vendor page */}
-        {vendorOffer && (
+        {/* {vendorOffer && (
           <div className="pt-6">
             <VendorOfferPanel offer={vendorOffer} vendorId={vendorOffer.vendorId} />
           </div>
-        )}
+        )} */}
 
-        <ProductHero product={product} />
-        
+        <ProductHero product={product} offer={vendorOffer} />
+
         <div className="mb-8">
           <PriceStatCards product={product} />
         </div>

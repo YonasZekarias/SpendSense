@@ -54,6 +54,17 @@ export function attachSocketIO(httpServer: HttpServer): Server {
       }
     });
 
+    socket.on("subscribe:notifications", (_msg: unknown, ack?: (e: Error | null) => void) => {
+      if (authed.sub) {
+        const room = `user:${authed.sub}`;
+        void socket.join(room);
+        log(`socket ${socket.id} subscribe:notifications → ${room}`);
+        ack?.(null);
+      } else {
+        ack?.(new Error("not authenticated"));
+      }
+    });
+
     socket.on("subscribe_budget", (msg: { budget_id?: number }) => {
       if (msg?.budget_id != null && authed.sub) {
         void socket.join(`budget:${authed.sub}:${msg.budget_id}`);

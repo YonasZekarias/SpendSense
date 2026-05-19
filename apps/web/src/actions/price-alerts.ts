@@ -10,16 +10,19 @@ type ActionResult<T> =
 
 export async function createPriceAlert(
   itemId: string,
-  targetPrice: number
+  targetPrice: number,
 ): Promise<ActionResult<{ alertId: string }>> {
   const parsed = priceAlertInputSchema.parse({ itemId, targetPrice });
   try {
-    const data = await apiClient<{ alertId: string }>({
+    const data = await apiClient<{ id: number }>({
       method: "POST",
-      endpoint: "/api/alerts",
-      body: parsed,
+      endpoint: "/api/market/price-alerts/",
+      body: {
+        item: Number(parsed.itemId),
+        target_price: parsed.targetPrice,
+      },
     });
-    return { success: true, data };
+    return { success: true, data: { alertId: String(data.id) } };
   } catch (error) {
     if (error instanceof ApiError) return { success: false, message: error.message };
     return { success: false, message: "Internal Server Error" };
@@ -30,7 +33,7 @@ export async function deletePriceAlert(alertId: string): Promise<ActionResult<vo
   try {
     await apiClient<void>({
       method: "DELETE",
-      endpoint: `/api/alerts/${alertId}`,
+      endpoint: `/api/market/price-alerts/${alertId}/`,
     });
     return { success: true, data: undefined };
   } catch (error) {

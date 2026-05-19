@@ -41,3 +41,9 @@ urlpatterns.extend([
     path('vendors/<uuid:pk>/products/', VendorProductListView.as_view(), name='vendor-products'),
     path('vendors/<uuid:pk>/reviews/', VendorReviewListView.as_view(), name='vendor-reviews'),
 ])
+
+from .views import PriceAlertListCreateView, PriceAlertDestroyView
+urlpatterns.extend([
+    path('price-alerts/', PriceAlertListCreateView.as_view(), name='price-alert-list-create'),
+    path('price-alerts/<int:pk>/', PriceAlertDestroyView.as_view(), name='price-alert-destroy'),
+])

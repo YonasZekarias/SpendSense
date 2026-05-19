@@ -148,5 +148,5 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ('id', 'type', 'message', 'is_read', 'created_at')
-        read_only_fields = ('id', 'type', 'message', 'created_at')
+        fields = ('id', 'type', 'message', 'metadata', 'is_read', 'is_archived', 'created_at')
+        read_only_fields = ('id', 'type', 'message', 'metadata', 'created_at')

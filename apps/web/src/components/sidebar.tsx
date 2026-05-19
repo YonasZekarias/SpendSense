@@ -21,7 +21,6 @@ import {
   FileDown,
   CirclePlus,
   Settings,
-  MessageSquare,
 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 
@@ -58,18 +57,12 @@ const navItems = [
     matchPaths: [ "/live-prices", "/price-trends"],
   },
 
-  // {
-  //   icon: Bell,
-  //   label: "Alerts",
-  //   href: "/alerts",
-  //   matchPaths: ["/alerts"],
-  // },
-  // {
-  //   icon: MessageSquare,
-  //   label: "Notifications",
-  //   href: "/notifications",
-  //   matchPaths: ["/notifications"],
-  // },
+  {
+    icon: Bell,
+    label: "Notifications",
+    href: "/notifications",
+    matchPaths: ["/notifications"],
+  },
   // {
   //   icon: Settings,
   //   label: "Settings",

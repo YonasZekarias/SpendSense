@@ -95,3 +95,27 @@ class ForecastRun(models.Model):
     detail = models.JSONField(default=dict, blank=True)
     error_log = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PriceAlert(models.Model):
+    """User-defined price threshold alert for a tracked item."""
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='price_alerts')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='price_alerts')
+    target_price = models.DecimalField(max_digits=10, decimal_places=2)
+    city = models.CharField(max_length=120, blank=True, default='')
+    is_active = models.BooleanField(default=True)
+    triggered_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'item', 'city'),
+                condition=models.Q(is_active=True),
+                name='unique_active_price_alert_per_user_item_city',
+            ),
+        ]
+
+    def __str__(self):
+        return f"PriceAlert({self.user_id}, {self.item.name}, target={self.target_price})"
+

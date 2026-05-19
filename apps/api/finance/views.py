@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 
-from users.models import Notification
+from users.notification_utils import create_notification, recent_budget_alert_exists
 
 from .models import Budget, Expense
 from .serializers import BudgetSerializer, ExpenseSerializer
@@ -242,34 +242,94 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
         if budget.total_limit > 0:
             pct_total = total_spent / budget.total_limit * 100
             if pct_total >= 100:
-                Notification.objects.create(
-                    user=self.request.user,
-                    type='budget_warning',
-                    message=f'You have exceeded your {budget.month}/{budget.year} budget.',
-                )
+                if not recent_budget_alert_exists(
+                    self.request.user,
+                    budget_id=budget.id,
+                    severity="critical",
+                    scope="total",
+                ):
+                    create_notification(
+                        user=self.request.user,
+                        notification_type='budget_warning',
+                        message=f'You have exceeded your {budget.month}/{budget.year} budget.',
+                        metadata={
+                            'budget_id': budget.id,
+                            'scope': 'total',
+                            'percent_used': float(round(pct_total, 1)),
+                            'total_spent': str(total_spent),
+                            'total_limit': str(budget.total_limit),
+                            'severity': 'critical',
+                        },
+                    )
             elif pct_total >= 80:
-                Notification.objects.create(
-                    user=self.request.user,
-                    type='budget_warning',
-                    message=f'You reached {round(pct_total, 1)}% of your monthly budget.',
-                )
+                if not recent_budget_alert_exists(
+                    self.request.user,
+                    budget_id=budget.id,
+                    severity="warning",
+                    scope="total",
+                ):
+                    create_notification(
+                        user=self.request.user,
+                        notification_type='budget_warning',
+                        message=f'You reached {round(pct_total, 1)}% of your monthly budget.',
+                        metadata={
+                            'budget_id': budget.id,
+                            'scope': 'total',
+                            'percent_used': float(round(pct_total, 1)),
+                            'total_spent': str(total_spent),
+                            'total_limit': str(budget.total_limit),
+                            'severity': 'warning',
+                        },
+                    )
 
         cat = budget.categories.filter(category_name__iexact=expense.category).first()
         if cat and cat.limit_amount > 0:
             spent_cat = month_qs.filter(category__iexact=expense.category).aggregate(s=Sum('amount'))['s'] or Decimal('0')
             pct_cat = spent_cat / cat.limit_amount * 100
             if pct_cat >= 100:
-                Notification.objects.create(
-                    user=self.request.user,
-                    type='budget_warning',
-                    message=f'You exceeded {expense.category} budget limit.',
-                )
+                if not recent_budget_alert_exists(
+                    self.request.user,
+                    budget_id=budget.id,
+                    severity="critical",
+                    scope="category",
+                    category=expense.category,
+                ):
+                    create_notification(
+                        user=self.request.user,
+                        notification_type='budget_warning',
+                        message=f'You exceeded {expense.category} budget limit.',
+                        metadata={
+                            'budget_id': budget.id,
+                            'scope': 'category',
+                            'category': expense.category,
+                            'percent_used': float(round(pct_cat, 1)),
+                            'spent': str(spent_cat),
+                            'limit': str(cat.limit_amount),
+                            'severity': 'critical',
+                        },
+                    )
             elif pct_cat >= 80:
-                Notification.objects.create(
-                    user=self.request.user,
-                    type='budget_warning',
-                    message=f'{expense.category} spending reached {round(pct_cat, 1)}% of its budget.',
-                )
+                if not recent_budget_alert_exists(
+                    self.request.user,
+                    budget_id=budget.id,
+                    severity="warning",
+                    scope="category",
+                    category=expense.category,
+                ):
+                    create_notification(
+                        user=self.request.user,
+                        notification_type='budget_warning',
+                        message=f'{expense.category} spending reached {round(pct_cat, 1)}% of its budget.',
+                        metadata={
+                            'budget_id': budget.id,
+                            'scope': 'category',
+                            'category': expense.category,
+                            'percent_used': float(round(pct_cat, 1)),
+                            'spent': str(spent_cat),
+                            'limit': str(cat.limit_amount),
+                            'severity': 'warning',
+                        },
+                    )
 
 
 class ExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
