@@ -1,21 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef, useMemo } from "react";
-import { Loader2, Bell, CheckCircle2, Archive, ListFilter } from "lucide-react";
-import { NotificationsPageSkeleton, NotificationsListSkeleton } from "@/components/notifications/notifications-page-skeleton";
-import { Button } from "@repo/ui/components/button";
-import { Badge } from "@repo/ui/components/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@repo/ui/components/dropdown-menu";
+import { NotificationsListSkeleton } from "@/components/notifications/notifications-page-skeleton";
 import { useAuth } from "@/providers/auth-provider";
 import { useRealtime } from "@/providers/realtime-provider";
-import { 
-  listNotifications, 
-  patchNotification, 
+import {
   bulkUpdateNotifications,
-  type InAppNotification 
+  listNotifications,
+  patchNotification,
+  type InAppNotification
 } from "@/services/userService";
-import Link from "next/link";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@repo/ui/components/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
+import { Archive, Bell, CheckCircle2, ListFilter, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type FilterType = "all" | "unread" | "archived" | "prices" | "budgets" | "submissions" | "system";
