@@ -257,7 +257,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     socket.on("disconnect", () => setConnected(false));
     socket.on("auth_error", (e: { detail?: string }) => {
       setConnected(false);
-      if (e?.detail) toast.error(`Realtime: ${e.detail}`);
+      // Silently handle temporary auth errors (such as during token refresh or initial load)
+      console.warn("Realtime auth error:", e?.detail);
     });
 
     for (const name of EVENTS) {

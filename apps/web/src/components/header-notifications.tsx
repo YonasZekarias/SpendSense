@@ -115,16 +115,19 @@ export function HeaderNotifications({ className }: { className?: string }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant={"outline"}
           type="button"
           aria-label={`Notifications, ${unreadCount} unread`}
           aria-expanded={open}
           aria-live="polite"
-          className={cn(
-            "relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200/50 bg-white/50 text-slate-600 backdrop-blur-sm transition-all hover:border-[#135bec]/30 hover:text-[#135bec] dark:border-slate-800/50 dark:bg-slate-900/50 dark:text-slate-400 dark:hover:text-[#135bec]",
-            justArrived && "animate-in zoom-in-95",
-            className,
-          )}
+          className="rounded-full py-2 relative"
+          size={"lg"}
+          // className={cn(
+          //   "relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200/50 bg-white/50 text-slate-600 backdrop-blur-sm transition-all hover:border-[#135bec]/30 hover:text-[#135bec] dark:border-slate-800/50 dark:bg-slate-900/50 dark:text-slate-400 dark:hover:text-[#135bec]",
+          //   justArrived && "animate-in zoom-in-95",
+          //   className,
+          // )}
         >
           <Bell className={cn("size-5", isCritical && unreadCount > 0 && "animate-pulse text-red-500", justArrived && "animate-bounce")} />
           {unreadCount > 0 ? (
@@ -136,7 +139,7 @@ export function HeaderNotifications({ className }: { className?: string }) {
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           ) : null}
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
