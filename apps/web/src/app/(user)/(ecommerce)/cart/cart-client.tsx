@@ -2,14 +2,16 @@
 
 import { useState, useTransition } from "react";
 import {
-  ShoppingCart, Trash2, Minus, Plus, ArrowRight, Lightbulb,
+  ShoppingCart, Trash2, Minus, Plus, Lightbulb,
   TrendingDown, ShieldCheck, HeadphonesIcon, AlertTriangle,
-  CheckCircle2, PiggyBank, TrendingUp, Package, Tag,
+  CheckCircle2, PiggyBank, TrendingUp, Package, Tag, Loader2,
+  XCircle, RefreshCw, X,
 } from "lucide-react";
-import { addToCart } from "@/actions/ecommerce";
+import { addToCart, bulkCheckout } from "@/actions/ecommerce";
 import type { CartItem } from "@/lib/ecommerce-types";
 import type { BudgetRecord, BudgetSummary, BudgetSummaryCategory } from "@/types/finance";
 import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
 import { Separator } from "@repo/ui/components/separator";
 import { Card, CardContent } from "@repo/ui/components/card";
 import { toast } from "sonner";
@@ -70,35 +72,185 @@ function SummaryRow({ label, value, bold }: { label: string; value: string; bold
   );
 }
 
+// ─── checkout error banner ──────────────────────────────────────────────────
+interface CheckoutErrorBannerProps {
+  message: string;
+  onDismiss: () => void;
+  onRetry: () => void;
+  isRetrying: boolean;
+}
+
+function CheckoutErrorBanner({ message, onDismiss, onRetry, isRetrying }: CheckoutErrorBannerProps) {
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive space-y-2"
+    >
+      <div className="flex items-start gap-2">
+        <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+        <p className="flex-1 leading-snug">{message}</p>
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss error"
+          className="shrink-0 text-destructive/60 hover:text-destructive transition-colors"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
+      <button
+        onClick={onRetry}
+        disabled={isRetrying}
+        className="flex items-center gap-1.5 text-xs font-semibold text-destructive hover:text-destructive/80 transition-colors disabled:opacity-50 pl-6"
+      >
+        <RefreshCw className={`size-3 ${isRetrying ? "animate-spin" : ""}`} />
+        {isRetrying ? "Retrying…" : "Try again"}
+      </button>
+    </div>
+  );
+}
+
 // ─── props ─────────────────────────────────────────────────────────────────
 interface CartClientProps {
   initialItems: CartItem[];
   budget: BudgetRecord | null;
   summary: BudgetSummary | null;
+  initialError?: string | null;
 }
 
 // ─── main client component ─────────────────────────────────────────────────
-export function CartClient({ initialItems, budget, summary }: CartClientProps) {
+export function CartClient({ initialItems, budget, summary, initialError = null }: CartClientProps) {
   const [items, setItems] = useState<CartItem[]>(initialItems);
+  const [checkoutError, setCheckoutError] = useState<string | null>(initialError);
+  const [selectedListingIds, setSelectedListingIds] = useState<Set<number>>(
+    new Set(initialItems.map((i) => i.listing_id))
+  );
+  const [isCheckingOut, startCheckout] = useTransition();
   const [, startTransition] = useTransition();
+
+  // ── derived values (computed early so handleBulkCheckout can reference) ──
+  const selectedItems = items.filter((i) => selectedListingIds.has(i.listing_id));
 
   // ── mutations ──────────────────────────────────────────────────────────
 
+  const toggleSelection = (listingId: number) => {
+    // Clear any stale checkout error when the user changes their selection
+    if (checkoutError) setCheckoutError(null);
+
+    setSelectedListingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(listingId)) next.delete(listingId);
+      else next.add(listingId);
+      return next;
+    });
+  };
+
+  const handleBulkCheckout = () => {
+    if (selectedListingIds.size === 0) {
+      toast.warning("Please select at least one item to check out.");
+      return;
+    }
+
+    startCheckout(async () => {
+      setCheckoutError(null);
+
+      try {
+        const itemsToCheckout = items.filter((i) => selectedListingIds.has(i.listing_id));
+
+        if (itemsToCheckout.length === 0) {
+          const msg = "No items selected for checkout.";
+          setCheckoutError(msg);
+          toast.error(msg);
+          return;
+        }
+
+        const payload = itemsToCheckout.map((i) => ({
+          vendor_id: i.vendor_id,
+          listing_id: i.listing_id,
+          quantity: i.quantity,
+        }));
+
+        console.log("[Cart] Starting bulkCheckout with payload:", payload);
+
+        const response = await bulkCheckout({ items: payload, payment_method: "chapa" });
+
+        console.log("[Cart] bulkCheckout response:", response);
+
+        // Find the payment URL from any of the returned purchases
+        const checkoutUrl = response.find((p) => p.payment_url)?.payment_url;
+
+        if (checkoutUrl) {
+          // Persist which listings / references are pending so the callback
+          // page can reconcile and clear them from the cart
+          try {
+            sessionStorage.setItem(
+              "pending_checkout",
+              JSON.stringify({
+                listingIds: Array.from(selectedListingIds),
+                references: response.map((purchase) => purchase.reference),
+              }),
+            );
+            sessionStorage.removeItem("pending_checkout_listings");
+          } catch (storageErr) {
+            // sessionStorage may be blocked (private browsing, etc.) — non-fatal
+            console.warn("[Cart] Could not save pending_checkout to sessionStorage:", storageErr);
+          }
+
+          console.log("[Cart] Redirecting to Chapa payment URL:", checkoutUrl);
+          window.location.href = checkoutUrl;
+        } else {
+          // The backend accepted the request but returned no payment URL —
+          // this typically means Chapa initialisation failed on the server side.
+          const noUrlMsg =
+            "Payment gateway did not return a checkout URL. " +
+            "Please try again or contact support if the problem persists.";
+
+          console.error(
+            "[Cart] bulkCheckout succeeded but no payment_url was found in response:",
+            response,
+          );
+
+          setCheckoutError(noUrlMsg);
+          toast.error(noUrlMsg);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Payment could not be started. Please try again.";
+
+        console.error("[Cart] bulkCheckout threw an error:", error);
+
+        setCheckoutError(message);
+        toast.error(message);
+      }
+    });
+  };
+
   const adjustQty = (item: CartItem, delta: number) => {
     const next = item.quantity + delta;
-    if (next < 1) { removeItem(item.listing_id); return; }
 
-    // Optimistic update
-    setItems(prev => prev.map(i =>
-      i.listing_id === item.listing_id && i.vendor_id === item.vendor_id
-        ? { ...i, quantity: next }
-        : i
-    ));
+    if (next < 1) {
+      removeItem(item.listing_id);
+      return;
+    }
 
-    // Sync with server only on increment
+    // Optimistic update — apply immediately so the UI feels instant
+    setItems((prev) =>
+      prev.map((i) =>
+        i.listing_id === item.listing_id && i.vendor_id === item.vendor_id
+          ? { ...i, quantity: next }
+          : i,
+      ),
+    );
+
+    // Sync increment with the server cookie (decrements are local-only
+    // since the server cart tracks additions, not absolute quantities)
     if (delta > 0) {
       startTransition(async () => {
         try {
+          console.log("[Cart] Syncing quantity increment for listing:", item.listing_id);
+
           const updated = await addToCart({
             listing_id: item.listing_id,
             vendor_id: item.vendor_id,
@@ -108,29 +260,48 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
             quantity: delta,
             unit_price: item.unit_price,
           });
+
           setItems(updated.items);
-        } catch {
+          console.log("[Cart] Quantity synced successfully.");
+        } catch (error) {
+          console.error("[Cart] Failed to sync quantity for listing:", item.listing_id, error);
+
           toast.error("Failed to update quantity — please try again.");
-          // Revert
-          setItems(prev => prev.map(i =>
-            i.listing_id === item.listing_id && i.vendor_id === item.vendor_id
-              ? { ...i, quantity: item.quantity }
-              : i
-          ));
+
+          // Revert the optimistic update
+          setItems((prev) =>
+            prev.map((i) =>
+              i.listing_id === item.listing_id && i.vendor_id === item.vendor_id
+                ? { ...i, quantity: item.quantity }
+                : i,
+            ),
+          );
         }
       });
     }
   };
 
   const removeItem = (listingId: number) => {
-    setItems(prev => prev.filter(i => i.listing_id !== listingId));
-    toast.success("Item removed from cart");
+    try {
+      setItems((prev) => prev.filter((i) => i.listing_id !== listingId));
+      setSelectedListingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(listingId);
+        return next;
+      });
+      // Also clear a stale checkout error that may have referenced this item
+      if (checkoutError) setCheckoutError(null);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      console.error("[Cart] Unexpected error while removing item:", listingId, error);
+      toast.error("Could not remove item. Please refresh the page and try again.");
+    }
   };
 
   // ── derived values ─────────────────────────────────────────────────────
 
-  const groups     = groupByVendor(items);
-  const subtotal   = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const groups     = groupByVendor(selectedItems);
+  const subtotal   = selectedItems.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const delivery   = groups.size * DELIVERY_FEE;
   const tax        = subtotal * 0.08;
   const grandTotal = subtotal + delivery + tax;
@@ -147,9 +318,9 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
     cat: BudgetSummaryCategory;
   };
 
-  const categoryImpact: CategoryImpact[] = summary?.by_category.map(cat => {
-    const catSpend = items
-      .filter(i =>
+  const categoryImpact: CategoryImpact[] = summary?.by_category.map((cat) => {
+    const catSpend = selectedItems
+      .filter((i) =>
         i.item_name.toLowerCase().includes(cat.category_name.toLowerCase()) ||
         cat.category_name.toLowerCase().includes("food") ||
         cat.category_name.toLowerCase().includes("grocery")
@@ -182,8 +353,10 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
             </CardContent>
           </Card>
         ) : (
-          Array.from(groups.entries()).map(([vendorId, vendorItems]) => {
-            const vendorSubtotal = vendorItems.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+          Array.from(groupByVendor(items).entries()).map(([vendorId, vendorItems]) => {
+            const vendorSelected = vendorItems.filter((i) => selectedListingIds.has(i.listing_id));
+            const vendorSubtotal = vendorSelected.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+            const vendorDelivery = vendorSelected.length > 0 ? DELIVERY_FEE : 0;
             const vendorName = vendorItems[0]?.vendor_name ?? `Vendor #${vendorId.slice(0, 8)}…`;
             const avatarLetter = vendorName.charAt(0).toUpperCase();
 
@@ -210,8 +383,15 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
 
                 {/* Items */}
                 <div className="divide-y">
-                  {vendorItems.map(item => (
+                  {vendorItems.map((item) => (
                     <div key={item.listing_id} className="flex items-start gap-4 p-5">
+                      <div className="pt-4">
+                        <Checkbox
+                          checked={selectedListingIds.has(item.listing_id)}
+                          onCheckedChange={() => toggleSelection(item.listing_id)}
+                          className="h-5 w-5"
+                        />
+                      </div>
                       {/* Image placeholder */}
                       <div className="w-16 h-16 rounded-xl bg-primary/5 flex items-center justify-center shrink-0 text-primary/30">
                         <ShoppingCart className="w-7 h-7" />
@@ -235,7 +415,6 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
                             <p className="font-extrabold text-base">
                               ETB {(item.unit_price * item.quantity).toFixed(2)}
                             </p>
-                            {/* Price change badge — 0% for now; extend when stored_price added */}
                             <PriceChangeBadge pct={0} />
                           </div>
                         </div>
@@ -280,10 +459,10 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
                     Subtotal <span className="font-semibold text-foreground">ETB {vendorSubtotal.toFixed(2)}</span>
                   </span>
                   <span className="text-muted-foreground">
-                    Delivery <span className="font-semibold text-foreground">ETB {DELIVERY_FEE.toFixed(2)}</span>
+                    Delivery <span className="font-semibold text-foreground">ETB {vendorDelivery.toFixed(2)}</span>
                   </span>
                   <span className="ml-auto font-bold">
-                    Vendor Total: ETB {(vendorSubtotal + DELIVERY_FEE).toFixed(2)}
+                    Vendor Total: ETB {(vendorSubtotal + vendorDelivery).toFixed(2)}
                   </span>
                 </div>
               </Card>
@@ -301,7 +480,21 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
             <h3 className="font-extrabold text-base">Order Summary</h3>
           </div>
           <CardContent className="p-6 space-y-3">
-            <SummaryRow label={`Subtotal (${items.length} items)`} value={`ETB ${subtotal.toFixed(2)}`} />
+
+            {/* ── checkout error banner ── */}
+            {checkoutError && (
+              <CheckoutErrorBanner
+                message={checkoutError}
+                onDismiss={() => setCheckoutError(null)}
+                onRetry={handleBulkCheckout}
+                isRetrying={isCheckingOut}
+              />
+            )}
+
+            <SummaryRow
+              label={`Subtotal (${selectedItems.length} of ${items.length} item${items.length !== 1 ? "s" : ""} selected)`}
+              value={`ETB ${subtotal.toFixed(2)}`}
+            />
             <SummaryRow
               label={`Delivery (${groups.size} vendor${groups.size !== 1 ? "s" : ""})`}
               value={`ETB ${delivery.toFixed(2)}`}
@@ -310,13 +503,42 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
             <Separator className="border-dashed" />
             <SummaryRow label="Grand Total" value={`ETB ${grandTotal.toFixed(2)}`} bold />
 
-            <Button className="w-full h-12 rounded-xl font-bold gap-2 mt-2 shadow-md shadow-primary/20" asChild>
-              <Link href="/checkout">
-                Proceed to Checkout <ArrowRight size={17} />
-              </Link>
-            </Button>
-            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">
-              Secure Payment · EthioPay
+            {/* ── no items selected warning ── */}
+            {items.length > 0 && selectedItems.length === 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20 p-2.5 text-xs text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span>Select at least one item to proceed.</span>
+              </div>
+            )}
+
+            <div className="pt-2 flex flex-col gap-3">
+              <Button
+                id="pay-with-chapa-btn"
+                onClick={handleBulkCheckout}
+                disabled={isCheckingOut || selectedItems.length === 0}
+                className="w-full h-12 rounded-xl font-bold mt-2 shadow-md bg-[#2D3328] hover:bg-[#1f241a] text-white"
+              >
+                {isCheckingOut ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing {selectedItems.length} item{selectedItems.length !== 1 ? "s" : ""}…
+                  </span>
+                ) : (
+                  `Pay with Chapa${selectedItems.length > 0 ? ` (${selectedItems.length})` : ""}`
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                disabled={selectedItems.length === 0}
+                className="w-full h-12 rounded-xl font-bold border-2"
+                onClick={() => toast.info("Order delivery will be implemented in the future")}
+              >
+                Order delivery
+              </Button>
+            </div>
+
+            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold mt-2">
+              Secure Payment · Chapa
             </p>
           </CardContent>
         </Card>
@@ -358,7 +580,7 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         By Category
                       </p>
-                      {categoryImpact.slice(0, 4).map(c => (
+                      {categoryImpact.slice(0, 4).map((c) => (
                         <div key={c.name}>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="font-medium truncate max-w-[130px]">{c.name}</span>
@@ -389,8 +611,8 @@ export function CartClient({ initialItems, budget, summary }: CartClientProps) {
                   <div className="space-y-2">
                     <BudgetWarning pct={cartPct} label="Total monthly budget" />
                     {categoryImpact
-                      .filter(c => c.pctAfter >= 80)
-                      .map(c => (
+                      .filter((c) => c.pctAfter >= 80)
+                      .map((c) => (
                         <BudgetWarning key={c.name} pct={c.pctAfter} label={c.name} />
                       ))}
                     {cartPct < 80 && (

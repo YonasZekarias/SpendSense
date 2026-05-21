@@ -2,7 +2,7 @@ import math
 from decimal import Decimal
 
 from django.conf import settings
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -16,8 +16,12 @@ from core_api.permissions import IsAdminRole
 from market.models import VendorPrice
 from users.models import AuditLog, Notification, User, Vendor
 
+from django.db import transaction as db_transaction
+from django.utils import timezone
+
 from .models import Transaction, VendorReview
 from .serializers import (
+    PurchaseBulkCreateSerializer,
     PurchaseCreateSerializer,
     PurchaseStatusUpdateSerializer,
     TransactionSerializer,
@@ -199,6 +203,15 @@ class PurchaseListCreateView(generics.ListCreateAPIView):
         return Transaction.objects.filter(user=self.request.user).select_related('vendor').order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
+        # If request contains an 'items' list, use the bulk serializer
+        if 'items' in request.data:
+            ser = PurchaseBulkCreateSerializer(data=request.data, context={'request': request})
+            ser.is_valid(raise_exception=True)
+            transactions = ser.save()
+            data = TransactionSerializer([tx for tx, _ in transactions], many=True).data
+            return Response(data, status=status.HTTP_201_CREATED)
+
+        # Fallback: single-item checkout
         ser = PurchaseCreateSerializer(data=request.data, context={'request': request})
         ser.is_valid(raise_exception=True)
         tx = ser.save()
@@ -256,8 +269,10 @@ class PaymentWebhookView(APIView):
         reference = (
             request.data.get('reference')
             or request.data.get('tx_ref')
+            or request.data.get('trx_ref')
             or data.get('reference')
             or data.get('tx_ref')
+            or data.get('trx_ref')
         )
         result = str(
             request.data.get('status')
@@ -267,34 +282,82 @@ class PaymentWebhookView(APIView):
         gateway_ref = (
             request.data.get('gateway_reference')
             or request.data.get('chapa_reference')
+            or request.data.get('ref_id')
             or data.get('gateway_reference')
+            or data.get('chapa_reference')
             or data.get('reference')
+            or data.get('ref_id')
             or ''
         )
         if not reference:
             return Response({'detail': 'reference is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        tx = get_object_or_404(Transaction, reference=reference)
-        if result in ('success', 'paid'):
-            tx.status = 'paid'
-            tx.paid_at = timezone.now()
-        elif result in ('failed', 'cancelled'):
-            tx.status = result
-        tx.payment_reference = gateway_ref or tx.payment_reference
-        tx.webhook_payload = request.data
-        tx.save(update_fields=['status', 'paid_at', 'payment_reference', 'webhook_payload', 'updated_at'])
-        Notification.objects.create(
-            user=tx.user,
-            type='payment_confirmation',
-            message=f'Payment update for order {tx.reference}: {tx.status}.',
+
+        # Support combined references (e.g. "ref1-ref2-ref3" for bulk checkout)
+        individual_refs = [r for r in reference.split('-') if len(r) == 32]  # uuid hex = 32 chars
+        if not individual_refs:
+            individual_refs = [reference]
+
+        transactions = list(
+            Transaction.objects.filter(
+                Q(reference__in=individual_refs) | Q(payment_reference=reference)
+            )
         )
-        AuditLog.objects.create(
-            actor=None,
-            action='payment_webhook',
-            resource='transaction',
-            resource_id=str(tx.id),
-            detail={'status': tx.status, 'reference': reference},
+        if not transactions:
+            return Response({'detail': 'Transaction not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from finance.models import Expense
+        import datetime
+
+        with db_transaction.atomic():
+            for tx in transactions:
+                if result in ('success', 'paid'):
+                    tx.status = 'paid'
+                    tx.paid_at = timezone.now()
+
+                    # Auto-record as Expense on successful payment
+                    try:
+                        item_name = ''
+                        if tx.vendor_price and hasattr(tx.vendor_price, 'item'):
+                            item_name = tx.vendor_price.item.name if tx.vendor_price.item else ''
+                        Expense.objects.create(
+                            user=tx.user,
+                            category='Shopping',
+                            item=tx.vendor_price.item if tx.vendor_price else None,
+                            amount=tx.amount,
+                            vendor=tx.vendor,
+                            payment_method=tx.payment_method,
+                            date=datetime.date.today(),
+                            note=f'Auto-recorded from Chapa payment. Order ref: {tx.reference}',
+                        )
+                    except Exception:
+                        pass  # Expense recording is best-effort; don't fail the webhook
+
+                elif result in ('failed', 'cancelled'):
+                    tx.status = result
+
+                tx.payment_reference = gateway_ref or tx.payment_reference
+                tx.webhook_payload = request.data
+                tx.save(update_fields=[
+                    'status', 'paid_at', 'payment_reference', 'webhook_payload', 'updated_at'
+                ])
+
+                Notification.objects.create(
+                    user=tx.user,
+                    type='payment_confirmation',
+                    message=f'Payment update for order {tx.reference}: {tx.status}.',
+                )
+                AuditLog.objects.create(
+                    actor=None,
+                    action='payment_webhook',
+                    resource='transaction',
+                    resource_id=str(tx.id),
+                    detail={'status': tx.status, 'reference': tx.reference},
+                )
+
+        return Response(
+            {'detail': 'Webhook processed.', 'status': transactions[0].status, 'count': len(transactions)},
+            status=status.HTTP_200_OK,
         )
-        return Response({'detail': 'Webhook processed.', 'status': tx.status}, status=status.HTTP_200_OK)
 
 
 class VendorReviewListCreateView(generics.ListCreateAPIView):

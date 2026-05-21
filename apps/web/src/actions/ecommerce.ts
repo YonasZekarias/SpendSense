@@ -19,6 +19,7 @@ import {
 import {
   addToCartSchema,
   checkoutSchema,
+  bulkCheckoutSchema,
   purchaseStatusUpdateSchema,
   recommendationQuerySchema,
   reviewCreateSchema,
@@ -26,6 +27,7 @@ import {
   vendorRegisterSchema,
   type AddToCartSchema,
   type CheckoutSchema,
+  type BulkCheckoutSchema,
   type PaymentSchema,
   type PurchaseStatusUpdateSchema,
   type RecommendationQuerySchema,
@@ -57,16 +59,63 @@ class EcommerceApiError extends Error {
   }
 }
 
+function getApiPayloadMessage(payload: unknown): string | null {
+  if (typeof payload === "string") {
+    const chapaPrefix = "Chapa initialization failed: ";
+    if (payload.startsWith(chapaPrefix)) {
+      const rawGatewayPayload = payload.slice(chapaPrefix.length);
+      try {
+        const parsedGatewayPayload = JSON.parse(rawGatewayPayload) as unknown;
+        return getApiPayloadMessage(parsedGatewayPayload) || payload;
+      } catch {
+        return payload;
+      }
+    }
+
+    return payload;
+  }
+
+  if (Array.isArray(payload)) {
+    const messages = payload
+      .map(getApiPayloadMessage)
+      .filter((message): message is string => Boolean(message));
+    return messages.length ? messages.join(" ") : null;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const errorObject = payload as Record<string, unknown>;
+  const directMessage =
+    errorObject.detail ||
+    errorObject.message ||
+    errorObject.error ||
+    errorObject.payment;
+
+  if (typeof directMessage === "string") {
+    return directMessage;
+  }
+
+  const messages = Object.values(errorObject)
+    .map(getApiPayloadMessage)
+    .filter((message): message is string => Boolean(message));
+
+  return messages.length ? messages.join(" ") : null;
+}
+
 function toEcommerceApiError(error: unknown): EcommerceApiError {
   if (error instanceof EcommerceApiError) {
     return error;
   }
 
   if (error instanceof ApiError) {
+    const payloadMessage = getApiPayloadMessage(error.payload);
     const fallbackMessage =
       error.status >= 500
         ? "A server error occurred. Please try again."
-        : error.message ||
+        : payloadMessage ||
+          error.message ||
           "Request failed. Please verify your input and retry.";
 
     return new EcommerceApiError(fallbackMessage, error.status, error.payload);
@@ -220,7 +269,7 @@ export async function registerVendor(
       cache: "no-store",
     });
 
-    revalidateTag(CACHE_TAGS.vendors, "max");
+    revalidateTag(CACHE_TAGS.vendors);
     revalidatePath("/shop/vendors");
 
     return response;
@@ -266,8 +315,8 @@ export async function createVendorListing(
       cache: "no-store",
     });
 
-    revalidateTag(CACHE_TAGS.listings, "max");
-    revalidateTag(CACHE_TAGS.recommendations, "max");
+    revalidateTag(CACHE_TAGS.listings);
+    revalidateTag(CACHE_TAGS.recommendations);
     revalidatePath(`/shop/vendors/${payload.vendor_id}`);
     revalidatePath("/shop");
 
@@ -309,8 +358,8 @@ export async function createReview(input: ReviewCreateSchema): Promise<Review> {
       cache: "no-store",
     });
 
-    revalidateTag(CACHE_TAGS.reviews, "max");
-    revalidateTag(CACHE_TAGS.vendors, "max");
+    revalidateTag(CACHE_TAGS.reviews);
+    revalidateTag(CACHE_TAGS.vendors);
     revalidatePath(`/shop/vendors/${payload.vendor_id}`);
 
     return response;
@@ -374,9 +423,38 @@ export async function addToCart(input: AddToCartSchema): Promise<Cart> {
 
     await writeCartToCookie(nextCart);
 
-    revalidateTag(CACHE_TAGS.cart, "max");
+    revalidateTag(CACHE_TAGS.cart);
     revalidatePath("/cart");
     revalidatePath("/checkout");
+
+    return nextCart;
+  } catch (error) {
+    throw toEcommerceApiError(error);
+  }
+}
+
+export async function removeBulkFromCart(listingIdsTarget: number[]): Promise<Cart> {
+  try {
+    const currentCart = await readCartFromCookie();
+    const nextItems = currentCart.items.filter(
+      (i) => !listingIdsTarget.includes(i.listing_id),
+    );
+
+    const total = nextItems.reduce(
+      (sum, item) => sum + item.unit_price * item.quantity,
+      0,
+    );
+    const nextCart: Cart = {
+      items: nextItems,
+      total,
+      currency: "ETB",
+      updated_at: new Date().toISOString(),
+    };
+
+    await writeCartToCookie(nextCart);
+
+    revalidateTag(CACHE_TAGS.cart);
+    revalidatePath("/cart");
 
     return nextCart;
   } catch (error) {
@@ -395,10 +473,7 @@ export async function checkout(input: CheckoutSchema): Promise<Purchase> {
       cache: "no-store",
     });
 
-    await writeCartToCookie(normalizeCart(null));
-
-    revalidateTag(CACHE_TAGS.cart, "max");
-    revalidateTag(CACHE_TAGS.purchases, "max");
+    revalidateTag(CACHE_TAGS.purchases);
     revalidatePath("/cart");
     revalidatePath("/checkout");
     revalidatePath("/orders");
@@ -406,6 +481,44 @@ export async function checkout(input: CheckoutSchema): Promise<Purchase> {
     return response;
   } catch (error) {
     throw toEcommerceApiError(error);
+  }
+}
+
+export async function bulkCheckout(input: BulkCheckoutSchema): Promise<Purchase[]> {
+  const payload = bulkCheckoutSchema.parse(input);
+
+  try {
+    // The backend only supports single-item checkout at /api/ecommerce/purchases/.
+    // We fan out one POST per selected item and collect the results in parallel.
+    const results = await Promise.all(
+      payload.items.map((item) =>
+        apiClient<Purchase>({
+          method: "POST",
+          endpoint: "/api/ecommerce/purchases/",
+          body: {
+            vendor_id: item.vendor_id,
+            listing_id: item.listing_id,
+            quantity: item.quantity,
+            payment_method: payload.payment_method,
+          },
+          cache: "no-store",
+        }),
+      ),
+    );
+
+    // We don't clear the entire cart here because the user might have unchecked
+    // items they didn't pay for. Let the client remove only the purchased items.
+    revalidateTag(CACHE_TAGS.purchases);
+    revalidatePath("/cart");
+    revalidatePath("/orders");
+    revalidatePath("/payment-history");
+
+    return results;
+  } catch (error) {
+    // Throw a plain Error so Next.js can serialize it across the Server Action
+    // boundary. Custom error subclasses with unknown payloads cause
+    // "Error in input stream" on the client.
+    throw new Error(toEcommerceApiError(error).message);
   }
 }
 
@@ -463,7 +576,7 @@ export async function updateOrderStatus(
       cache: "no-store",
     });
 
-    revalidateTag(CACHE_TAGS.purchases, "max");
+    revalidateTag(CACHE_TAGS.purchases);
     revalidatePath("/orders");
     revalidatePath(`/orders/${payload.purchase_id}`);
 

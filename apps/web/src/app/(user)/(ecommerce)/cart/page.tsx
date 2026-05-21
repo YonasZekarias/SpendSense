@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getCart } from "@/actions/ecommerce";
+import { AlertTriangle } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import type { BudgetRecord, BudgetSummary } from "@/types/finance";
 import { CartClient } from "./cart-client";
@@ -32,6 +33,28 @@ function CartSkeleton() {
   );
 }
 
+function getDisplayError(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Something went wrong while loading your cart.";
+}
+
+function CartLoadError({ message }: { message: string }) {
+  return (
+    <Card className="mb-6 border-destructive/30 bg-destructive/5">
+      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-destructive">
+            We could not load everything on this cart page.
+          </p>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── data fetcher (runs on server) ────────────────────────────────────────
 async function CartData() {
   const [cartRes, budgetRes] = await Promise.allSettled([
@@ -40,6 +63,10 @@ async function CartData() {
   ]);
 
   const items = cartRes.status === "fulfilled" ? cartRes.value.items : [];
+  const cartError =
+    cartRes.status === "rejected" ? getDisplayError(cartRes.reason) : null;
+  const budgetError =
+    budgetRes.status === "rejected" ? getDisplayError(budgetRes.reason) : null;
 
   let budget: BudgetRecord | null = null;
   let summary: BudgetSummary | null = null;
@@ -63,7 +90,20 @@ async function CartData() {
     }
   }
 
-  return <CartClient initialItems={items} budget={budget} summary={summary} />;
+  return (
+    <>
+      {cartError && <CartLoadError message={cartError} />}
+      {!cartError && budgetError && (
+        <CartLoadError message={`Budget details are unavailable: ${budgetError}`} />
+      )}
+      <CartClient
+        initialItems={items}
+        budget={budget}
+        summary={summary}
+        initialError={cartError}
+      />
+    </>
+  );
 }
 
 // ─── page (Server Component) ───────────────────────────────────────────────
