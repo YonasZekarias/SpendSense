@@ -16,9 +16,9 @@ export async function approveSubmission(
       method: "POST",
       endpoint: `/api/market/admin/submissions/${id}/approve`,
     });
-    revalidateTag("admin-submissions");
-    revalidateTag("admin-moderation-stats");
-    revalidateTag(`admin-submission-${id}`);
+    revalidateTag("admin-submissions", "max");
+    revalidateTag("admin-moderation-stats", "max");
+    revalidateTag(`admin-submission-${id}`, "max");
     return { success: true, data };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -38,9 +38,9 @@ export async function rejectSubmission(
       endpoint: `/api/market/admin/submissions/${id}/reject`,
       body: { reason },
     });
-    revalidateTag("admin-submissions");
-    revalidateTag("admin-moderation-stats");
-    revalidateTag(`admin-submission-${id}`);
+    revalidateTag("admin-submissions", "max");
+    revalidateTag("admin-moderation-stats", "max");
+    revalidateTag(`admin-submission-${id}`, "max");
     return { success: true, data };
   } catch (error) {
     if (error instanceof ApiError) {
@@ -70,8 +70,8 @@ export async function bulkApproveSubmissions(
     }
   }
 
-  revalidateTag("admin-submissions");
-  revalidateTag("admin-moderation-stats");
+  revalidateTag("admin-submissions", "max");
+  revalidateTag("admin-moderation-stats", "max");
 
   if (errors.length > 0 && results.length === 0) {
     return { success: false, message: errors.join("; ") };

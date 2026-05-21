@@ -264,10 +264,30 @@ class NotificationListView(generics.ListAPIView):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
             return Notification.objects.none()
-        return self.request.user.notifications.all().order_by('-created_at')
+        
+        queryset = self.request.user.notifications.all()
+        
+        # Filtering
+        n_type = self.request.query_params.get('type')
+        if n_type:
+            queryset = queryset.filter(type=n_type)
+            
+        status = self.request.query_params.get('status')
+        if status == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif status == 'read':
+            queryset = queryset.filter(is_read=True)
+            
+        archived = self.request.query_params.get('archived')
+        if archived == 'true':
+            queryset = queryset.filter(is_archived=True)
+        elif archived == 'false':
+            queryset = queryset.filter(is_archived=False)
+            
+        return queryset.order_by('-created_at')
 
 
-class NotificationDetailView(generics.RetrieveUpdateAPIView):
+class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = NotificationSerializer
     lookup_field = 'pk'
@@ -276,3 +296,30 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
         if getattr(self, 'swagger_fake_view', False) or not self.request.user.is_authenticated:
             return Notification.objects.none()
         return self.request.user.notifications.all()
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+class NotificationBulkUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        action = request.data.get('action')
+        notification_ids = request.data.get('ids', [])
+        
+        if not action or not notification_ids:
+            return Response({"error": "action and ids are required"}, status=400)
+            
+        queryset = request.user.notifications.filter(id__in=notification_ids)
+        
+        if action == 'mark_read':
+            queryset.update(is_read=True)
+        elif action == 'archive':
+            queryset.update(is_archived=True)
+        elif action == 'delete':
+            queryset.delete()
+        else:
+            return Response({"error": "invalid action"}, status=400)
+            
+        return Response({"status": "success"})

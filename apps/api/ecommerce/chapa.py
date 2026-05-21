@@ -15,8 +15,8 @@ def initialize_chapa_checkout(*, tx_ref, amount, email, first_name='SpendSense',
     Initialize Chapa checkout and return checkout_url.
     Uses mock URL when CHAPA_USE_MOCK=true or no secret key is configured.
     """
-    if settings.CHAPA_USE_MOCK or not settings.CHAPA_SECRET_KEY:
-        return f'https://checkout.chapa.co/checkout/mock?tx_ref={tx_ref}'
+    if not settings.CHAPA_SECRET_KEY:
+        raise ChapaInitError("CHAPA_SECRET_KEY is not configured in settings. Please add it to your environment variables.")
 
     payload = {
         'amount': str(Decimal(amount)),
@@ -27,8 +27,10 @@ def initialize_chapa_checkout(*, tx_ref, amount, email, first_name='SpendSense',
         'tx_ref': tx_ref,
         'callback_url': settings.CHAPA_CALLBACK_URL,
         'return_url': settings.CHAPA_RETURN_URL,
-        'customization[title]': 'SpendSense Checkout',
-        'customization[description]': 'Smart shopping order payment',
+        'customization': {
+            'title': 'SpendSense',
+            'description': 'Smart shopping order payment',
+        },
     }
     headers = {
         'Authorization': f'Bearer {settings.CHAPA_SECRET_KEY}',
@@ -43,7 +45,13 @@ def initialize_chapa_checkout(*, tx_ref, amount, email, first_name='SpendSense',
     try:
         with urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode('utf-8'))
-    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+    except HTTPError as exc:
+        try:
+            detail = exc.read().decode('utf-8')
+        except Exception:
+            detail = str(exc)
+        raise ChapaInitError(f'Chapa initialization failed: {detail}') from exc
+    except (URLError, TimeoutError, ValueError) as exc:
         raise ChapaInitError(f'Chapa initialization failed: {exc}') from exc
 
     checkout_url = (

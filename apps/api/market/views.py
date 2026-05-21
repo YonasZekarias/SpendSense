@@ -18,13 +18,14 @@ from users.models import AuditLog
 logger = logging.getLogger(__name__)
 
 from core_api.permissions import IsAdminRole
-from .models import Forecast, ForecastRun, Item, NationalPrice, PriceSubmission
+from .models import Forecast, ForecastRun, Item, NationalPrice, PriceAlert, PriceSubmission
 from .serializers import (
     AdminItemCreateSerializer,
     AdminSubmissionListSerializer,
     AdminSubmissionUpdateSerializer,
     ItemSerializer,
     MySubmissionSerializer,
+    PriceAlertSerializer,
     PriceSubmissionSerializer,
 )
 
@@ -784,3 +785,38 @@ class ItemAveragesView(APIView):
             'recent_submissions': recent_data,
             'total_submissions': total_count,
         })
+
+
+# ---------------------------------------------------------------------------
+# Price Alert CRUD
+# ---------------------------------------------------------------------------
+
+class PriceAlertListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/market/price-alerts/ — list current user's active alerts.
+    POST /api/market/price-alerts/ — create a new price alert.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        return PriceAlert.objects.filter(
+            user=self.request.user,
+            is_active=True,
+        ).select_related('item').order_by('-created_at')
+
+
+class PriceAlertDestroyView(generics.DestroyAPIView):
+    """
+    DELETE /api/market/price-alerts/<pk>/ — deactivate a price alert.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        return PriceAlert.objects.filter(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
+

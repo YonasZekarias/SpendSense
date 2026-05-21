@@ -38,7 +38,7 @@ export function ProductActions({ productId, unit }: ProductActionsProps) {
         Set Price Alert
       </Button>
       
-      <ShoppingListQuickAdd itemId={productId} unit={unit} />
+      {/* <ShoppingListQuickAdd itemId={productId} unit={unit} /> */}
 
       <Button variant="outline" className="gap-2" asChild>
         <a href="#compare">

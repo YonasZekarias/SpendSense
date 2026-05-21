@@ -189,6 +189,106 @@ class PurchaseCreateSerializer(serializers.Serializer):
         return rec
 
 
+class PurchaseBulkCreateSerializer(serializers.Serializer):
+    """
+    Accepts a list of cart items and creates one Transaction per item,
+    then initializes a single Chapa checkout for the combined total.
+    All transactions share the same combined tx_ref (joined by '-').
+    """
+
+    class ItemSerializer(serializers.Serializer):
+        vendor_id = serializers.UUIDField()
+        listing_id = serializers.IntegerField(help_text='VendorPrice id')
+        quantity = serializers.IntegerField(min_value=1, default=1)
+
+    items = ItemSerializer(many=True, min_length=1)
+    payment_method = serializers.ChoiceField(
+        choices=['chapa', 'telebirr', 'cash'],
+        required=False,
+        default='chapa',
+    )
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        payment_method = validated_data.get('payment_method') or 'chapa'
+        items_data = validated_data['items']
+
+        transactions = []
+        with transaction.atomic():
+            for item_data in items_data:
+                vendor_id = item_data['vendor_id']
+                listing_id = item_data['listing_id']
+                qty = item_data['quantity']
+
+                try:
+                    vp = VendorPrice.objects.select_related('vendor').get(
+                        pk=listing_id, vendor_id=vendor_id
+                    )
+                except VendorPrice.DoesNotExist:
+                    raise serializers.ValidationError(
+                        f'Invalid vendor_id or listing_id: {listing_id}.'
+                    )
+
+                if not vp.vendor.is_verified:
+                    raise serializers.ValidationError(
+                        f'Vendor "{vp.vendor.shop_name}" is not verified yet.'
+                    )
+
+                amount = (vp.price * Decimal(str(qty))).quantize(Decimal('0.01'))
+                ref = uuid.uuid4().hex
+
+                tx = Transaction.objects.create(
+                    user=user,
+                    vendor=vp.vendor,
+                    vendor_price=vp,
+                    quantity=qty,
+                    amount=amount,
+                    status='pending',
+                    reference=ref,
+                    payment_method=payment_method,
+                    payment_url='',
+                )
+                transactions.append((tx, vp))
+
+            # Chapa expects a compact unique tx_ref. Keep individual order refs
+            # on each transaction and store this group ref for webhook lookup.
+            combined_ref = uuid.uuid4().hex
+            total_amount = sum(tx.amount for tx, _ in transactions)
+
+            if payment_method == 'chapa':
+                try:
+                    full_name = (user.full_name or 'SpendSense User').split()
+                    first_name = full_name[0]
+                    last_name = ' '.join(full_name[1:]) if len(full_name) > 1 else 'User'
+                    checkout_url = initialize_chapa_checkout(
+                        tx_ref=combined_ref,
+                        amount=total_amount,
+                        email=user.email,
+                        first_name=first_name,
+                        last_name=last_name,
+                    )
+                except ChapaInitError as exc:
+                    raise serializers.ValidationError({'payment': str(exc)})
+            else:
+                checkout_url = (
+                    f"{settings.FRONTEND_URL.rstrip('/')}/shop/payment/return"
+                    f"?reference={combined_ref}"
+                )
+
+            # Update all transactions with the checkout URL
+            refs = [tx.reference for tx, _ in transactions]
+            Transaction.objects.filter(reference__in=refs).update(
+                payment_reference=combined_ref,
+                payment_url=checkout_url,
+            )
+            for tx, _ in transactions:
+                tx.payment_reference = combined_ref
+                tx.payment_url = checkout_url
+
+        return transactions
+
+
 class PurchaseStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=['shipped', 'delivered', 'cancelled'])
 

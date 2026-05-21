@@ -1,6 +1,22 @@
 import { apiClient } from "@/lib/api";
 import { VendorDetailResponse, VendorProductListResponse, VendorReviewListResponse } from "@/types/api/vendor-details";
-import { vendorDetailSchema, vendorProductListSchema, vendorReviewListSchema, productSearchParamsSchema } from "@/lib/validation/vendor-details";
+import { vendorDetailSchema, vendorProductListSchema, vendorProductSchema, vendorReviewListSchema, productSearchParamsSchema } from "@/lib/validation/vendor-details";
+
+// Raw shape returned by GET /api/ecommerce/listings/<pk>/
+interface RawListing {
+  id: string | number;
+  item: string | number;
+  item_name: string;
+  category?: string | null;
+  image?: string | null;
+  price: number | string;
+  unit: string;
+  stock_count: number | string;
+  date: string;
+  is_verified?: boolean;
+  vendor_id?: string;
+  vendor_name?: string;
+}
 import { z } from "zod";
 
 type ProductQueryParams = z.infer<typeof productSearchParamsSchema>;
@@ -33,4 +49,13 @@ export async function getVendorReviews(vendorId: string, page: number = 1) {
     next: { tags: [`vendor:${vendorId}:reviews`], revalidate: 60 },
   });
   return vendorReviewListSchema.parse(rawData);
+}
+
+export async function getVendorListing(listingId: string) {
+  const rawData = await apiClient<RawListing>({
+    method: "GET",
+    endpoint: `/api/ecommerce/listings/${listingId}/`,
+    next: { tags: [`listing:${listingId}`], revalidate: 60 },
+  });
+  return vendorProductSchema.parse(rawData);
 }

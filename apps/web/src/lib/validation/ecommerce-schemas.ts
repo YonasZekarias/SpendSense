@@ -24,6 +24,15 @@ export const checkoutSchema = z.object({
   payment_method: z.enum(["chapa", "telebirr", "cash"]).default("chapa"),
 });
 
+export const bulkCheckoutSchema = z.object({
+  items: z.array(z.object({
+    vendor_id: uuidSchema,
+    listing_id: z.number().int().positive(),
+    quantity: z.number().int().min(1).max(999).default(1),
+  })).min(1),
+  payment_method: z.enum(["chapa", "telebirr", "cash"]).default("chapa"),
+});
+
 export const paymentSchema = z.object({
   purchase_id: uuidSchema,
   payment_method: z.enum(["chapa", "telebirr", "cash"]).default("chapa"),
@@ -66,6 +75,7 @@ export const reviewCreateSchema = z.object({
 
 export type AddToCartSchema = z.infer<typeof addToCartSchema>;
 export type CheckoutSchema = z.infer<typeof checkoutSchema>;
+export type BulkCheckoutSchema = z.infer<typeof bulkCheckoutSchema>;
 export type PaymentSchema = z.infer<typeof paymentSchema>;
 export type RecommendationQuerySchema = z.infer<
   typeof recommendationQuerySchema

@@ -236,6 +236,10 @@ REALTIME_INTERNAL_URL = os.environ.get(
 ).rstrip('/')
 REALTIME_INTERNAL_TOKEN = os.environ.get('REALTIME_INTERNAL_TOKEN', 'dev-only-change-me')
 
+# Optional: Redis PUB/SUB for realtime (Django publishes; Express subscribes).
+# When unset, Django falls back to HTTP POST to REALTIME_INTERNAL_URL/internal/emit.
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+
 PAYMENT_WEBHOOK_SECRET = os.environ.get('PAYMENT_WEBHOOK_SECRET', '')
 CHAPA_SECRET_KEY = os.environ.get('CHAPA_SECRET_KEY', '')
 CHAPA_INIT_URL = os.environ.get('CHAPA_INIT_URL', 'https://api.chapa.co/v1/transaction/initialize')
@@ -260,7 +264,16 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
 }
 
-if DEBUG and os.environ.get('USE_LOCAL_STORAGE', 'true').lower() in ('true', '1', 'yes'):
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-else:
+# Use Cloudinary whenever credentials are present (dev + prod).
+# Set USE_LOCAL_STORAGE=true in .env only to explicitly opt-out during offline work.
+_cloudinary_configured = all([
+    os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    os.environ.get('CLOUDINARY_API_KEY'),
+    os.environ.get('CLOUDINARY_API_SECRET'),
+])
+_force_local = os.environ.get('USE_LOCAL_STORAGE', 'false').lower() in ('true', '1', 'yes')
+
+if _cloudinary_configured and not _force_local:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

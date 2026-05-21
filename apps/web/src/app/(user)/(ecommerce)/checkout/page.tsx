@@ -100,6 +100,14 @@ export default function CheckoutPage() {
 
         setSuccess("Purchase created successfully.");
         if (response.payment_url) {
+          sessionStorage.setItem(
+            "pending_checkout",
+            JSON.stringify({
+              listingIds: [selectedItem.listing_id],
+              references: [response.reference],
+            }),
+          );
+          sessionStorage.removeItem("pending_checkout_listings");
           window.location.assign(response.payment_url);
           return;
         }

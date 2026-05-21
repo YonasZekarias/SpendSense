@@ -151,7 +151,6 @@ export async function apiClient<T>(config: ApiClientConfig): Promise<T> {
     }
 
     const message = getErrorMessage(parsedError, response.status, contentType);
-
     throw new ApiError(message, response.status, parsedError);
   }
 

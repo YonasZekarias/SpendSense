@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, Search } from "lucide-react";
+import { HeaderNotifications } from "@/components/header-notifications";
 
 interface MobileHeaderProps {
   onMenuOpen: () => void;
@@ -18,15 +19,17 @@ export function MobileHeader({ onMenuOpen }: MobileHeaderProps) {
         <Menu className="size-5" />
       </button>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#dbdfe6] bg-[#f6f6f8] px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900">
-        <Search className="size-4 text-slate-500" />
+      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-[#dbdfe6] bg-[#f6f6f8] px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+        <Search className="size-4 shrink-0 text-slate-500" />
         <input
           aria-label="Search"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-slate-500"
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-500"
           placeholder="Search analytics..."
           type="text"
         />
       </div>
+
+      <HeaderNotifications className="border-[#dbdfe6] bg-[#f6f6f8] dark:border-slate-800 dark:bg-slate-900" />
     </header>
   );
 }

@@ -4,6 +4,25 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Notification, User
 
 
+def _image_url(image_field, request=None):
+    """Return an absolute URL for any ImageField.
+
+    Cloudinary storage returns full https://res.cloudinary.com/… URLs;
+    local FileSystemStorage returns relative /media/… paths.
+    """
+    if not image_field:
+        return None
+    try:
+        url = image_field.url
+    except ValueError:
+        return None
+    if url and url.startswith('http'):
+        return url
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Accept 'email' in request body instead of 'username' for login."""
 
@@ -47,15 +66,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     vendor_info = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
             'id', 'full_name', 'email', 'phone', 'role',
             'city', 'household_size', 'income_bracket', 'onboarding_completed', 'created_at',
-            'avatar', 'vendor_info',
+            'avatar', 'avatar_url', 'vendor_info',
         )
         read_only_fields = ('id', 'email', 'role', 'created_at')
+
+    def get_avatar_url(self, obj):
+        return _image_url(obj.avatar, self.context.get('request'))
 
     def get_vendor_info(self, obj):
         from .vendor_serializers import VendorSerializer
@@ -125,5 +148,5 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ('id', 'type', 'message', 'is_read', 'created_at')
-        read_only_fields = ('id', 'type', 'message', 'created_at')
+        fields = ('id', 'type', 'message', 'metadata', 'is_read', 'is_archived', 'created_at')
+        read_only_fields = ('id', 'type', 'message', 'metadata', 'created_at')
